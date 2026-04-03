@@ -22,3 +22,42 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# Java / Spring Boot
+backend/target/
+backend/.mvn/
+*.class
+*.jar
+*.war
+*.env
+
+# Node / React
+frontend-web/node_modules/
+frontend-web/dist/
+frontend-web/.env
+
+# Flutter
+mobile/.dart_tool/
+mobile/build/
+mobile/.flutter-plugins
+
+# Python / AI service
+ai-service/__pycache__/
+ai-service/.venv/
+ai-service/*.pyc
+ai-service/.env
+
+# IDE
+.idea/
+.vscode/settings.json
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment secrets — NEVER commit these
+*.env
+.env.local
+.env.production
+application-prod.yml
