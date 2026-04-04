@@ -6,6 +6,7 @@ import CropsPage from './pages/CropsPage'
 import ExpensesPage from './pages/ExpensesPage'
 import HarvestsPage from './pages/HarvestsPage'
 import RegisterPage from './pages/RegisterPage'
+import AIAdvisorPage from './pages/AIAdvisorPage'
 
 function PrivateRoute({ children }) {
   const { user } = useAuth()
@@ -28,6 +29,9 @@ function App() {
       }/>
       <Route path="/harvests" element={
         <PrivateRoute><HarvestsPage /></PrivateRoute>
+      }/>
+      <Route path="/ai-advisor" element={
+        <PrivateRoute><AIAdvisorPage /></PrivateRoute>
       }/>
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
