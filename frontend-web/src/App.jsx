@@ -5,6 +5,7 @@ import DashboardPage from './pages/DashboardPage'
 import CropsPage from './pages/CropsPage'
 import ExpensesPage from './pages/ExpensesPage'
 import HarvestsPage from './pages/HarvestsPage'
+import RegisterPage from './pages/RegisterPage'
 
 function PrivateRoute({ children }) {
   const { user } = useAuth()
@@ -15,6 +16,7 @@ function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
       <Route path="/dashboard" element={
         <PrivateRoute><DashboardPage /></PrivateRoute>
       }/>
