@@ -17,8 +17,12 @@ import com.cultivation.app.entity.Harvest;
 import com.cultivation.app.entity.User;
 import com.cultivation.app.service.HarvestService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/crops/{cropId}/harvests")
+@Tag(name = "Harvests", description = "Record harvest data and revenue")
 public class HarvestController {
 
     private final HarvestService harvestService;
@@ -28,6 +32,7 @@ public class HarvestController {
     }
 
     @PostMapping
+    @Operation(summary = "Add a harvest record")
     public ResponseEntity<Harvest> addHarvest(
             @PathVariable Long cropId,
             @RequestBody HarvestRequest request,
@@ -36,6 +41,7 @@ public class HarvestController {
     }
 
     @GetMapping
+    @Operation(summary = "Get all harvest for a crop")
     public ResponseEntity<List<Harvest>> getHarvests(
             @PathVariable Long cropId,
             @AuthenticationPrincipal User currentUser) {
@@ -43,6 +49,7 @@ public class HarvestController {
     }
 
     @DeleteMapping("/{harvestId}")
+    @Operation(summary = "delete harvest record")
     public ResponseEntity<Void> deleteHarvest(
             @PathVariable Long cropId,
             @PathVariable Long harvestId,

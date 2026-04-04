@@ -18,8 +18,12 @@ import com.cultivation.app.entity.Expense;
 import com.cultivation.app.entity.User;
 import com.cultivation.app.service.ExpenseService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 @RestController
 @RequestMapping("/api/crops/{cropId}/expenses")
+@Tag(name = "Expenses", description = "Track cultivation costs")
 public class ExpenseController {
 
     private final ExpenseService expenseService;
@@ -29,6 +33,7 @@ public class ExpenseController {
     }
 
     @PostMapping
+    @Operation(summary = "Add an expense to a crop")
     public ResponseEntity<Expense> addExpense(
             @PathVariable Long cropId,
             @RequestBody ExpenseRequest request,
@@ -37,6 +42,7 @@ public class ExpenseController {
     }
 
     @GetMapping
+    @Operation(summary = "Get all expenses for a crop")
     public ResponseEntity<List<Expense>> getExpenses(
             @PathVariable Long cropId,
             @AuthenticationPrincipal User currentUser) {
@@ -44,6 +50,7 @@ public class ExpenseController {
     }
 
     @DeleteMapping("/{expenseId}")
+    @Operation(summary = "Calculate profit or loss for a crop")
     public ResponseEntity<Void> deleteExpense(
             @PathVariable Long cropId,
             @PathVariable Long expenseId,

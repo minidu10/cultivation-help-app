@@ -27,3 +27,13 @@ app:
   jwt:
     secret: 3a7f9c2e1b8d4f6a0e5c3b2d9f1a7e4c8b6d3f0a2e9c5b1d7f4a8e2c6b0d3f
     expiration: 86400000
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+  info:
+    title: Cultivation Help App API
+    version: 1.0.0
+    description: Farm management system with AI integration
