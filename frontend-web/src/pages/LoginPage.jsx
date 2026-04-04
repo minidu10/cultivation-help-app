@@ -37,9 +37,9 @@ export default function LoginPage() {
                     flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md">
 
-        {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <img src={logo} alt="logo" className="w-10 h-10" />
+        
+        <div className="flex items-center justify-center  mb-8">
+          <img src={logo} alt="logo" className="w-16 h-16" />
           <h1 className="text-2xl font-bold text-green-800">
             Cultivation Help
           </h1>
