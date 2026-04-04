@@ -8,6 +8,7 @@ const navItems = [
   { path: '/crops', icon: '🌾', label: 'My Crops' },
   { path: '/expenses', icon: '💰', label: 'Expenses' },
   { path: '/harvests', icon: '🌽', label: 'Harvests' },
+   { path: '/ai-advisor', icon: '🤖', label: 'AI Advisor' },
 ]
 
 export default function Sidebar({ isOpen, setIsOpen }) {

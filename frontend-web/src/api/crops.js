@@ -1,4 +1,5 @@
 import api from './axios'
+import axios from 'axios'
 
 export const getCrops = () => api.get('/crops')
 
@@ -22,3 +23,12 @@ export const addHarvest = (cropId, data) =>
 
 export const getProfitLoss = (cropId) =>
   api.get(`/crops/${cropId}/expenses/profit-loss`)
+
+export const askAI = (question, cropContext = '') =>
+  axios.post('http://localhost:8000/ai/ask', {
+    question,
+    crop_context: cropContext,
+  })
+
+export const getCropInsights = (data) =>
+  axios.post('http://localhost:8000/ai/insights', data)
