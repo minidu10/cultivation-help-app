@@ -1,10 +1,28 @@
+import { Routes, Route, Navigate } from 'react-router-dom'
+import { useAuth } from './context/AuthContext'
+import LoginPage from './pages/LoginPage'
+import DashboardPage from './pages/DashboardPage'
+
+// Protects routes — redirects to login if not logged in
+function PrivateRoute({ children }) {
+  const { user } = useAuth()
+  return user ? children : <Navigate to="/login" />
+}
+
 function App() {
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <h1 className="text-3xl font-bold text-green-700">
-        🌾 Cultivation Help App
-      </h1>
-    </div>
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route
+        path="/dashboard"
+        element={
+          <PrivateRoute>
+            <DashboardPage />
+          </PrivateRoute>
+        }
+      />
+      <Route path="*" element={<Navigate to="/login" />} />
+    </Routes>
   )
 }
 
