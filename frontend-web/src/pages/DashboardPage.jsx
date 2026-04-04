@@ -6,6 +6,7 @@ import {
 import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
 import { getCrops, getProfitLoss } from '../api/crops'
+import { getCropInsights } from '../api/crops'
 
 const COLORS = ['#16a34a', '#dc2626', '#2563eb', '#d97706', '#7c3aed']
 
@@ -13,6 +14,8 @@ export default function DashboardPage() {
   const [crops, setCrops] = useState([])
   const [profitData, setProfitData] = useState([])
   const [loading, setLoading] = useState(true)
+  const [insights, setInsights] = useState({})
+  const [loadingInsights, setLoadingInsights] = useState(false)
 
   useEffect(() => {
     loadDashboard()
@@ -48,11 +51,34 @@ export default function DashboardPage() {
         })
       )
       setProfitData(plData)
+      loadInsights(plData)
     } catch (err) {
       console.error('Dashboard load failed:', err)
     } finally {
       setLoading(false)
     }
+  }
+  const loadInsights = async (plData) => {
+    setLoadingInsights(true)
+    const results = {}
+
+    for (const crop of plData) {
+      try {
+        const res = await getCropInsights({
+          crop_name: crop.name,
+          total_expenses: crop.expenses,
+          total_revenue: crop.revenue,
+          net_profit: crop.profit,
+          status: crop.result,
+        })
+        results[crop.name] = res.data.insights
+      } catch {
+        results[crop.name] = null
+      }
+    }
+
+    setInsights(results)
+    setLoadingInsights(false)
   }
 
   // Summary totals
@@ -239,6 +265,92 @@ export default function DashboardPage() {
           </table>
         )}
       </div>
+      {/* AI Insights */}
+     {profitData.length > 0 && (
+        <div className="mt-6">
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-base font-semibold text-gray-700">
+              🤖 AI Insights
+            </h2>
+            <span className="text-xs bg-green-100 text-green-700
+                            px-2 py-1 rounded-full font-medium">
+              Powered by Groq
+            </span>
+          </div>
+
+          {loadingInsights ? (
+            <div className="bg-white rounded-xl border border-gray-200
+                            p-8 text-center">
+              <p className="text-gray-400 animate-pulse text-sm">
+                🤖 AI is analysing your crops...
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {profitData.map((crop, i) => (
+                <div key={i}
+                    className="bg-white rounded-xl border border-gray-200 p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-lg">🌾</span>
+                    <h3 className="font-semibold text-gray-800">
+                      {crop.name}
+                    </h3>
+                    <span className={`ml-auto text-xs px-2 py-1
+                                    rounded-full font-medium ${
+                      crop.result === 'PROFIT'
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {crop.result}
+                    </span>
+                  </div>
+
+                  {insights[crop.name] ? (
+                    <div className="text-sm text-gray-600 leading-relaxed
+                                    space-y-1">
+                      {insights[crop.name]
+                        .split('\n')
+                        .filter((line) => line.trim())
+                        .map((line, j) => (
+                          <p key={j}>{line}</p>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-gray-400">
+                      No insights available
+                    </p>
+                  )}
+
+                  <div className="mt-4 pt-3 border-t border-gray-100
+                                  grid grid-cols-3 gap-2 text-center">
+                    <div>
+                      <p className="text-xs text-gray-400">Revenue</p>
+                      <p className="text-sm font-semibold text-green-600">
+                        Rs. {crop.revenue.toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Expenses</p>
+                      <p className="text-sm font-semibold text-red-500">
+                        Rs. {crop.expenses.toLocaleString()}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-400">Profit</p>
+                      <p className={`text-sm font-semibold ${
+                        crop.profit >= 0
+                          ? 'text-green-700' : 'text-red-600'
+                      }`}>
+                        Rs. {crop.profit.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </Layout>
   )
 }
