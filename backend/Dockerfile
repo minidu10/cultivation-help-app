@@ -1,11 +1,9 @@
 FROM eclipse-temurin:17-jdk-alpine AS build
 WORKDIR /app
-COPY mvnw .
-COPY .mvn .mvn
 COPY pom.xml .
 COPY src src
-RUN chmod +x mvnw
-RUN ./mvnw package -DskipTests
+RUN apt-get update && apt-get install -y maven 2>/dev/null || apk add --no-cache maven
+RUN mvn package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
