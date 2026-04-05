@@ -24,11 +24,13 @@ export const addHarvest = (cropId, data) =>
 export const getProfitLoss = (cropId) =>
   api.get(`/crops/${cropId}/expenses/profit-loss`)
 
+const AI_URL = import.meta.env.VITE_AI_URL || 'http://localhost:8000'
+
 export const askAI = (question, cropContext = '') =>
-  axios.post('http://localhost:8000/ai/ask', {
+  axios.post('/ai/ask', {
     question,
     crop_context: cropContext,
   })
 
 export const getCropInsights = (data) =>
-  axios.post('http://localhost:8000/ai/insights', data)
+  axios.post('/ai/insights', data)
