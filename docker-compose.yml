@@ -47,9 +47,11 @@ services:
     container_name: cultivation_frontend
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - backend
       - ai-service
-
 volumes:
   postgres_data:
