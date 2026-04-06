@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 import logo from '../assets/logo.png'
@@ -213,10 +213,10 @@ export default function RegisterPage() {
         {/* Login link */}
         <p className="text-center text-sm text-gray-500 mt-6">
           Already have an account?{' '}
-          <a href="/login"
-             className="text-green-600 font-medium hover:underline">
+          <Link to="/login"
+                className="text-green-600 font-medium hover:underline">
             Sign in here
-          </a>
+          </Link>
         </p>
       </div>
     </div>

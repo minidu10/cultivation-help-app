@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 import logo from '../assets/logo.png'
@@ -105,10 +105,10 @@ export default function LoginPage() {
         {/* Register link */}
         <p className="text-center text-sm text-gray-500 mt-6">
           Don't have an account?{' '}
-          <a href="/register"
-             className="text-green-600 font-medium hover:underline">
+          <Link to="/register"
+                className="text-green-600 font-medium hover:underline">
             Register here
-          </a>
+          </Link>
         </p>
       </div>
     </div>
