@@ -2,10 +2,11 @@ spring:
   application:
     name: cultivation-help-app
 
-  datasource:
-    url: jdbc:postgresql://localhost:5433/cultivation_db1
-    username: postgres
-    password: 132435
+  spring:
+    datasource:
+      url: jdbc:postgresql://db.fosdjsyvbdrhoghntebf.supabase.co:5432/postgres
+      username: postgres
+      password: Mini132435#VDU
 
   jpa:
     hibernate:
