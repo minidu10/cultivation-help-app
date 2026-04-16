@@ -9,10 +9,12 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require
-      SPRING_DATASOURCE_USERNAME: postgres.fosdjsyvbdrhoghntebf
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
-      APP_JWT_SECRET: ${JWT_SECRET}
+      SPRING_DATASOURCE_URL: ${DB_URL:-jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require&preferQueryMode=simple}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-postgres.fosdjsyvbdrhoghntebf}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-Mini132435#VDU}
+      APP_JWT_SECRET: ${JWT_SECRET:-3a7f9c2e1b8d4f6a0e5c3b2d9f1a7e4c8b6d3f0a2e9c5b1d7f4a8e2c6b0d3f}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
+      OPENWEATHER_BASE_URL: ${OPENWEATHER_BASE_URL:-https://api.openweathermap.org}
 
   ai-service:
     build: ./ai-service

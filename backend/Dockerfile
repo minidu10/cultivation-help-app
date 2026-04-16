@@ -1,9 +1,8 @@
-FROM eclipse-temurin:17-jdk-alpine AS build
+FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /app
 COPY pom.xml .
 COPY src src
-RUN apt-get update && apt-get install -y maven 2>/dev/null || apk add --no-cache maven
-RUN mvn package -DskipTests
+RUN mvn -B package -DskipTests
 
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app

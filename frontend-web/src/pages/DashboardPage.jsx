@@ -7,6 +7,11 @@ import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
 import { getCrops, getProfitLoss } from '../api/crops'
 import { getCropInsights } from '../api/crops'
+import {
+  getCurrentWeather,
+  getCurrentWeatherByLocation,
+  getWeatherForecast,
+} from '../api/weather'
 
 const COLORS = ['#16a34a', '#dc2626', '#2563eb', '#d97706', '#7c3aed']
 
@@ -16,16 +21,79 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
   const [insights, setInsights] = useState({})
   const [loadingInsights, setLoadingInsights] = useState(false)
+  const [weatherCurrent, setWeatherCurrent] = useState(null)
+  const [weatherForecast, setWeatherForecast] = useState([])
+  const [loadingWeather, setLoadingWeather] = useState(true)
+  const [weatherError, setWeatherError] = useState('')
+  const [cropWeatherById, setCropWeatherById] = useState({})
 
   useEffect(() => {
     loadDashboard()
+    loadWeather()
   }, [])
+
+  const fetchWeatherByCoords = async (lat, lon) => {
+    const [currentRes, forecastRes] = await Promise.all([
+      getCurrentWeather(lat, lon),
+      getWeatherForecast(lat, lon, 5),
+    ])
+
+    setWeatherCurrent(currentRes.data)
+    setWeatherForecast(forecastRes.data?.items ?? [])
+  }
+
+  const loadWeather = async () => {
+    setLoadingWeather(true)
+    setWeatherError('')
+
+    // Fallback to Colombo if location permission is blocked.
+    const fallbackLat = 6.9271
+    const fallbackLon = 79.8612
+
+    try {
+      if (!navigator.geolocation) {
+        await fetchWeatherByCoords(fallbackLat, fallbackLon)
+        return
+      }
+
+      await new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            try {
+              const { latitude, longitude } = position.coords
+              await fetchWeatherByCoords(latitude, longitude)
+              resolve()
+            } catch {
+              try {
+                await fetchWeatherByCoords(fallbackLat, fallbackLon)
+              } catch {
+                setWeatherError('Unable to load weather now.')
+              }
+              resolve()
+            }
+          },
+          async () => {
+            try {
+              await fetchWeatherByCoords(fallbackLat, fallbackLon)
+            } catch {
+              setWeatherError('Unable to load weather now.')
+            }
+            resolve()
+          },
+          { enableHighAccuracy: false, timeout: 7000, maximumAge: 300000 }
+        )
+      })
+    } finally {
+      setLoadingWeather(false)
+    }
+  }
 
   const loadDashboard = async () => {
     try {
       const cropsRes = await getCrops()
       const cropList = cropsRes.data
       setCrops(cropList)
+      loadCropWeather(cropList)
 
       // Load profit/loss for each crop
       const plData = await Promise.all(
@@ -33,7 +101,9 @@ export default function DashboardPage() {
           try {
             const pl = await getProfitLoss(crop.id)
             return {
+              cropId: crop.id,
               name: crop.name,
+              fieldLocation: crop.fieldLocation,
               expenses: Number(pl.data.totalExpenses),
               revenue: Number(pl.data.totalRevenue),
               profit: Number(pl.data.netProfit),
@@ -41,7 +111,9 @@ export default function DashboardPage() {
             }
           } catch {
             return {
+              cropId: crop.id,
               name: crop.name,
+              fieldLocation: crop.fieldLocation,
               expenses: 0,
               revenue: 0,
               profit: 0,
@@ -57,6 +129,25 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const loadCropWeather = async (cropList) => {
+    const weatherEntries = await Promise.all(
+      cropList.map(async (crop) => {
+        if (!crop.fieldLocation || !crop.fieldLocation.trim()) {
+          return [crop.id, null]
+        }
+
+        try {
+          const res = await getCurrentWeatherByLocation(crop.fieldLocation)
+          return [crop.id, res.data]
+        } catch {
+          return [crop.id, null]
+        }
+      })
+    )
+
+    setCropWeatherById(Object.fromEntries(weatherEntries))
   }
   const loadInsights = async (plData) => {
     setLoadingInsights(true)
@@ -89,11 +180,54 @@ export default function DashboardPage() {
     (c) => c.status !== 'HARVESTED' && c.status !== 'FAILED'
   ).length
 
+  const weatherAlerts = []
+  if ((weatherCurrent?.temperatureC ?? 0) >= 34) {
+    weatherAlerts.push('High heat today. Check irrigation timing and mulch moisture retention.')
+  }
+  if ((weatherCurrent?.rainMm ?? 0) > 0) {
+    weatherAlerts.push('Rain has started. Avoid pesticide spraying until conditions clear.')
+  }
+  if (weatherForecast.some((f) => (f.rainChancePercent ?? 0) >= 60)) {
+    weatherAlerts.push('Strong rain chance in forecast. Plan drainage and postpone field spraying.')
+  }
+
   // Pie chart data — expense vs revenue
   const pieData = [
     { name: 'Total Revenue', value: totalRevenue },
     { name: 'Total Expenses', value: totalExpenses },
   ]
+
+  const renderInsightContent = (rawInsight) => {
+    const lines = rawInsight
+      .split('\n')
+      .map((line) => line.replace(/\*\*/g, '').trim())
+      .filter((line) => line.length > 0)
+
+    return lines.map((line, idx) => {
+      if (line.startsWith('* ')) {
+        return (
+          <div key={idx} className="flex items-start gap-2 text-sm text-gray-700">
+            <span className="mt-1 text-green-600">•</span>
+            <p className="leading-7">{line.replace(/^\*\s+/, '')}</p>
+          </div>
+        )
+      }
+
+      if (/^\d+\./.test(line)) {
+        return (
+          <p key={idx} className="text-sm font-semibold text-gray-800 leading-7 mt-1">
+            {line}
+          </p>
+        )
+      }
+
+      return (
+        <p key={idx} className="text-sm text-gray-700 leading-7">
+          {line}
+        </p>
+      )
+    })
+  }
 
   if (loading) {
     return (
@@ -113,6 +247,80 @@ export default function DashboardPage() {
         <p className="text-gray-500 mt-1">
           Your farm performance at a glance
         </p>
+      </div>
+
+      {/* Weather */}
+      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-semibold text-gray-700">
+            Weather Overview
+          </h2>
+          <button
+            onClick={loadWeather}
+            className="text-sm text-green-700 hover:text-green-800 font-medium"
+          >
+            Refresh
+          </button>
+        </div>
+
+        {loadingWeather ? (
+          <p className="text-gray-400 text-sm animate-pulse">Loading weather...</p>
+        ) : weatherError ? (
+          <p className="text-red-500 text-sm">{weatherError}</p>
+        ) : weatherCurrent ? (
+          <>
+            <div className="flex flex-wrap items-center gap-4 mb-4">
+              {weatherCurrent.iconUrl && (
+                <img
+                  src={weatherCurrent.iconUrl}
+                  alt={weatherCurrent.description || 'weather icon'}
+                  className="w-14 h-14"
+                />
+              )}
+              <div>
+                <p className="text-lg font-semibold text-gray-800">
+                  {weatherCurrent.location || 'Current Location'}
+                </p>
+                <p className="text-sm text-gray-500 capitalize">
+                  {weatherCurrent.description || 'No description'}
+                </p>
+              </div>
+              <div className="ml-auto grid grid-cols-2 gap-3 text-sm">
+                <p><span className="text-gray-500">Temp:</span> {Math.round(weatherCurrent.temperatureC ?? 0)}°C</p>
+                <p><span className="text-gray-500">Feels:</span> {Math.round(weatherCurrent.feelsLikeC ?? 0)}°C</p>
+                <p><span className="text-gray-500">Humidity:</span> {weatherCurrent.humidity ?? 0}%</p>
+                <p><span className="text-gray-500">Wind:</span> {weatherCurrent.windSpeed ?? 0} m/s</p>
+              </div>
+            </div>
+
+            {weatherForecast.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
+                {weatherForecast.map((item, idx) => (
+                  <div key={idx} className="bg-gray-50 rounded-lg p-3 text-center">
+                    <p className="text-xs text-gray-500 mb-1">{item.dateTime?.slice(5, 16) || '-'}</p>
+                    {item.iconUrl && (
+                      <img src={item.iconUrl} alt={item.description || 'forecast icon'} className="w-10 h-10 mx-auto" />
+                    )}
+                    <p className="text-sm font-medium text-gray-700">{Math.round(item.temperatureC ?? 0)}°C</p>
+                    <p className="text-xs text-blue-600">Rain {item.rainChancePercent ?? 0}%</p>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {weatherAlerts.length > 0 && (
+              <div className="space-y-2">
+                {weatherAlerts.map((alert, idx) => (
+                  <p key={idx} className="text-sm bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-3 py-2">
+                    {alert}
+                  </p>
+                ))}
+              </div>
+            )}
+          </>
+        ) : (
+          <p className="text-gray-400 text-sm">No weather data available.</p>
+        )}
       </div>
 
       {/* Stat cards */}
@@ -289,7 +497,9 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {profitData.map((crop, i) => (
                 <div key={i}
-                    className="bg-white rounded-xl border border-gray-200 p-5">
+                    className={`bg-white rounded-xl border border-gray-200 p-5 ${
+                      profitData.length === 1 ? 'md:col-span-2' : ''
+                    }`}>
                   <div className="flex items-center gap-2 mb-3">
                     <span className="text-lg">🌾</span>
                     <h3 className="font-semibold text-gray-800">
@@ -305,15 +515,38 @@ export default function DashboardPage() {
                     </span>
                   </div>
 
+                  <div className="mb-3 bg-sky-50 border border-sky-100 rounded-lg p-3">
+                    <p className="text-xs text-sky-700 font-medium mb-1">Field Weather</p>
+                    {cropWeatherById[crop.cropId] ? (
+                      <div className="flex items-center gap-2 text-sm text-sky-900">
+                        {cropWeatherById[crop.cropId].iconUrl && (
+                          <img
+                            src={cropWeatherById[crop.cropId].iconUrl}
+                            alt={cropWeatherById[crop.cropId].description || 'weather icon'}
+                            className="w-8 h-8"
+                          />
+                        )}
+                        <div>
+                          <p className="font-medium">
+                            {Math.round(cropWeatherById[crop.cropId].temperatureC ?? 0)}°C
+                            {' '}
+                            {cropWeatherById[crop.cropId].description || ''}
+                          </p>
+                          <p className="text-xs text-sky-700">
+                            {cropWeatherById[crop.cropId].location || crop.fieldLocation || 'Field location'}
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-xs text-sky-700">
+                        Weather not available for {crop.fieldLocation || 'this field location'}.
+                      </p>
+                    )}
+                  </div>
+
                   {insights[crop.name] ? (
-                    <div className="text-sm text-gray-600 leading-relaxed
-                                    space-y-1">
-                      {insights[crop.name]
-                        .split('\n')
-                        .filter((line) => line.trim())
-                        .map((line, j) => (
-                          <p key={j}>{line}</p>
-                        ))}
+                    <div className="rounded-lg border border-gray-100 bg-gray-50/70 p-3 space-y-2 wrap-break-word">
+                      {renderInsightContent(insights[crop.name])}
                     </div>
                   ) : (
                     <p className="text-sm text-gray-400">
