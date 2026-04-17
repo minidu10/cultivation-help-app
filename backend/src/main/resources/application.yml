@@ -1,18 +1,35 @@
 spring:
   application:
     name: cultivation-help-app
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require&preferQueryMode=simple}
-    username: ${SPRING_DATASOURCE_USERNAME:postgres.fosdjsyvbdrhoghntebf}
-    password: ${SPRING_DATASOURCE_PASSWORD:Mini132435#VDU}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require&preferQueryMode=simple&connectTimeout=30&socketTimeout=120&tcpKeepAlive=true}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres.your_project_ref}
+    password: ${SPRING_DATASOURCE_PASSWORD:change_me}
+    hikari:
+      connection-timeout: 30000
+      validation-timeout: 5000
+      initialization-fail-timeout: 0
+      minimum-idle: 1
+      maximum-pool-size: 5
+      keepalive-time: 30000
+
+  flyway:
+    enabled: ${SPRING_FLYWAY_ENABLED:true}
+    baseline-on-migrate: true
+    baseline-version: 0
+    connect-retries: ${FLYWAY_CONNECT_RETRIES:10}
+    connect-retries-interval: ${FLYWAY_CONNECT_RETRIES_INTERVAL:5s}
 
   jpa:
+    open-in-view: false
     hibernate:
-      ddl-auto: update
+      ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:none}
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
 server:
@@ -24,7 +41,7 @@ logging:
 
 app:
   jwt:
-    secret: ${APP_JWT_SECRET:3a7f9c2e1b8d4f6a0e5c3b2d9f1a7e4c8b6d3f0a2e9c5b1d7f4a8e2c6b0d3f}
+    secret: ${APP_JWT_SECRET:change_me_with_a_long_random_secret}
     expiration: 86400000
 
 weather:

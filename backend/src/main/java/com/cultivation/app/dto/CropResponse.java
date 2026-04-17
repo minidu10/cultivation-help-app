@@ -15,6 +15,7 @@ public class CropResponse {
     private LocalDate plantingDate;
     private LocalDate expectedHarvestDate;
     private Crop.CropStatus status;
+    private Boolean aiInsightsEnabled;
     private String notes;
     private LocalDateTime createdAt;
 
@@ -28,6 +29,7 @@ public class CropResponse {
         this.plantingDate = crop.getPlantingDate();
         this.expectedHarvestDate = crop.getExpectedHarvestDate();
         this.status = crop.getStatus();
+        this.aiInsightsEnabled = crop.getAiInsightsEnabled();
         this.notes = crop.getNotes();
         this.createdAt = crop.getCreatedAt();
     }
@@ -41,6 +43,7 @@ public class CropResponse {
     public LocalDate getPlantingDate() { return plantingDate; }
     public LocalDate getExpectedHarvestDate() { return expectedHarvestDate; }
     public Crop.CropStatus getStatus() { return status; }
+    public Boolean getAiInsightsEnabled() { return aiInsightsEnabled; }
     public String getNotes() { return notes; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

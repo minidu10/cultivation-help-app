@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import CropsPage from './pages/CropsPage'
+import CropManagementPage from './pages/CropManagementPage'
 import ExpensesPage from './pages/ExpensesPage'
 import HarvestsPage from './pages/HarvestsPage'
 import RegisterPage from './pages/RegisterPage'
@@ -23,6 +24,9 @@ function App() {
       }/>
       <Route path="/crops" element={
         <PrivateRoute><CropsPage /></PrivateRoute>
+      }/>
+      <Route path="/crops/:id" element={
+        <PrivateRoute><CropManagementPage /></PrivateRoute>
       }/>
       <Route path="/expenses" element={
         <PrivateRoute><ExpensesPage /></PrivateRoute>

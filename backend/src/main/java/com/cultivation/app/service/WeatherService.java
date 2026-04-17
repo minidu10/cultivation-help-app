@@ -143,7 +143,8 @@ public class WeatherService {
             .queryParam("q", locationQuery)
             .queryParam("limit", 1)
             .queryParam("appid", apiKey)
-            .build(true)
+            .build()
+            .encode()
             .toUri();
 
         try {
@@ -191,7 +192,7 @@ public class WeatherService {
             builder.queryParam("cnt", count);
         }
 
-        return builder.build(true).toUri();
+        return builder.build().encode().toUri();
     }
 
     private static JsonNode firstWeatherNode(JsonNode root) {

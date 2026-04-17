@@ -3,6 +3,8 @@ import axios from 'axios'
 
 export const getCrops = () => api.get('/crops')
 
+export const getCrop = (id) => api.get(`/crops/${id}`)
+
 export const createCrop = (data) => api.post('/crops', data)
 
 export const updateCrop = (id, data) => api.put(`/crops/${id}`, data)
@@ -23,6 +25,20 @@ export const addHarvest = (cropId, data) =>
 
 export const getProfitLoss = (cropId) =>
   api.get(`/crops/${cropId}/expenses/profit-loss`)
+
+export const getCropReminders = (cropId) =>
+  api.get(`/crops/${cropId}/reminders`)
+
+export const createCropReminder = (cropId, data) =>
+  api.post(`/crops/${cropId}/reminders`, data)
+
+export const updateCropReminder = (cropId, reminderId, data) =>
+  api.put(`/crops/${cropId}/reminders/${reminderId}`, data)
+
+export const deleteCropReminder = (cropId, reminderId) =>
+  api.delete(`/crops/${cropId}/reminders/${reminderId}`)
+
+export const getDueReminders = () => api.get('/reminders/due')
 
 const AI_URL = import.meta.env.VITE_AI_URL || 'http://localhost:8000'
 
