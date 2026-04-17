@@ -5,7 +5,7 @@ import {
 } from 'recharts'
 import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
-import { getCrops, getProfitLoss } from '../api/crops'
+import { getCrops, getDueReminders, getProfitLoss, updateCropReminder } from '../api/crops'
 import { getCropInsights } from '../api/crops'
 import {
   getCurrentWeather,
@@ -26,10 +26,12 @@ export default function DashboardPage() {
   const [loadingWeather, setLoadingWeather] = useState(true)
   const [weatherError, setWeatherError] = useState('')
   const [cropWeatherById, setCropWeatherById] = useState({})
+  const [dueReminders, setDueReminders] = useState([])
 
   useEffect(() => {
     loadDashboard()
     loadWeather()
+    loadDueReminders()
   }, [])
 
   const fetchWeatherByCoords = async (lat, lon) => {
@@ -123,7 +125,7 @@ export default function DashboardPage() {
         })
       )
       setProfitData(plData)
-      loadInsights(plData)
+      loadInsights(plData, cropList)
     } catch (err) {
       console.error('Dashboard load failed:', err)
     } finally {
@@ -149,11 +151,18 @@ export default function DashboardPage() {
 
     setCropWeatherById(Object.fromEntries(weatherEntries))
   }
-  const loadInsights = async (plData) => {
+  const loadInsights = async (plData, cropList) => {
     setLoadingInsights(true)
     const results = {}
+    const cropMapByName = Object.fromEntries(cropList.map((c) => [c.name, c]))
 
     for (const crop of plData) {
+      const cropMeta = cropMapByName[crop.name]
+      if (cropMeta && cropMeta.aiInsightsEnabled === false) {
+        results[crop.name] = '__AI_OFF__'
+        continue
+      }
+
       try {
         const res = await getCropInsights({
           crop_name: crop.name,
@@ -170,6 +179,27 @@ export default function DashboardPage() {
 
     setInsights(results)
     setLoadingInsights(false)
+  }
+
+  const loadDueReminders = async () => {
+    try {
+      const res = await getDueReminders()
+      setDueReminders(res.data)
+    } catch {
+      setDueReminders([])
+    }
+  }
+
+  const markReminderDone = async (reminderId) => {
+    const reminder = dueReminders.find((item) => item.id === reminderId)
+    if (!reminder) return
+
+    try {
+      await updateCropReminder(reminder.cropId, reminderId, { completed: true })
+      setDueReminders((prev) => prev.filter((item) => item.id !== reminderId))
+    } catch {
+      // Ignore to keep dashboard flow smooth when reminder update fails.
+    }
   }
 
   // Summary totals
@@ -349,6 +379,40 @@ export default function DashboardPage() {
           sub={`${crops.length} total`}
           color="blue"
         />
+      </div>
+
+      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-semibold text-gray-700">Today Reminders</h2>
+          <button
+            onClick={loadDueReminders}
+            className="text-xs text-green-700 hover:text-green-800 font-medium"
+          >
+            Refresh
+          </button>
+        </div>
+        {dueReminders.length === 0 ? (
+          <p className="text-sm text-gray-400">No due reminders right now.</p>
+        ) : (
+          <div className="space-y-2">
+            {dueReminders.map((item) => (
+              <div key={item.id} className="flex items-center justify-between gap-3 border border-gray-100 rounded-lg p-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">{item.title}</p>
+                  <p className="text-xs text-gray-500">
+                    {item.type?.replaceAll('_', ' ')} • {item.reminderAt?.replace('T', ' ').slice(0, 16)}
+                  </p>
+                </div>
+                <button
+                  onClick={() => markReminderDone(item.id)}
+                  className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200"
+                >
+                  Done
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Charts row */}
@@ -544,10 +608,14 @@ export default function DashboardPage() {
                     )}
                   </div>
 
-                  {insights[crop.name] ? (
+                  {insights[crop.name] && insights[crop.name] !== '__AI_OFF__' ? (
                     <div className="rounded-lg border border-gray-100 bg-gray-50/70 p-3 space-y-2 wrap-break-word">
                       {renderInsightContent(insights[crop.name])}
                     </div>
+                  ) : insights[crop.name] === '__AI_OFF__' ? (
+                    <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                      AI off by farmer for this crop.
+                    </p>
                   ) : (
                     <p className="text-sm text-gray-400">
                       No insights available

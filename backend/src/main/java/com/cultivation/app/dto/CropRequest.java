@@ -2,6 +2,8 @@ package com.cultivation.app.dto;
 
 import java.time.LocalDate;
 
+import com.cultivation.app.entity.Crop;
+
 public class CropRequest {
 
     private String name;
@@ -10,6 +12,8 @@ public class CropRequest {
     private Double fieldSizeAcres;
     private LocalDate plantingDate;
     private LocalDate expectedHarvestDate;
+    private Crop.CropStatus status;
+    private Boolean aiInsightsEnabled;
     private String notes;
 
     // Getters and Setters
@@ -30,6 +34,12 @@ public class CropRequest {
 
     public LocalDate getExpectedHarvestDate() { return expectedHarvestDate; }
     public void setExpectedHarvestDate(LocalDate expectedHarvestDate) { this.expectedHarvestDate = expectedHarvestDate; }
+
+    public Crop.CropStatus getStatus() { return status; }
+    public void setStatus(Crop.CropStatus status) { this.status = status; }
+
+    public Boolean getAiInsightsEnabled() { return aiInsightsEnabled; }
+    public void setAiInsightsEnabled(Boolean aiInsightsEnabled) { this.aiInsightsEnabled = aiInsightsEnabled; }
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }

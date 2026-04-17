@@ -50,6 +50,9 @@ public class Crop {
     @Column(nullable = false)
     private CropStatus status = CropStatus.PLANTED;
 
+    @Column(name = "ai_insights_enabled", nullable = false)
+    private Boolean aiInsightsEnabled = true;
+
     @Column(length = 500)
     private String notes;
 
@@ -91,6 +94,9 @@ public class Crop {
 
     public CropStatus getStatus() { return status; }
     public void setStatus(CropStatus status) { this.status = status; }
+
+    public Boolean getAiInsightsEnabled() { return aiInsightsEnabled; }
+    public void setAiInsightsEnabled(Boolean aiInsightsEnabled) { this.aiInsightsEnabled = aiInsightsEnabled; }
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }

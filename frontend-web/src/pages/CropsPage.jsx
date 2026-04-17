@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { getCrops, createCrop, deleteCrop } from '../api/crops'
 
@@ -11,6 +12,7 @@ const STATUS_COLORS = {
 }
 
 export default function CropsPage() {
+  const navigate = useNavigate()
   const [crops, setCrops] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -277,7 +279,8 @@ export default function CropsPage() {
             <div
               key={crop.id}
               className="bg-white rounded-xl border border-gray-200
-                         p-5 hover:shadow-md transition-shadow"
+                         p-5 hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => navigate(`/crops/${crop.id}`)}
             >
               {/* Crop header */}
               <div className="flex items-start justify-between mb-3">
@@ -314,7 +317,10 @@ export default function CropsPage() {
               <div className="flex gap-2 mt-4 pt-4
                               border-t border-gray-100">
                 <button
-                  onClick={() => handleDelete(crop.id)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDelete(crop.id)
+                  }}
                   className="text-xs text-red-400 hover:text-red-600
                              font-medium transition-colors"
                 >

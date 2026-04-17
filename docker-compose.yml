@@ -6,13 +6,18 @@ services:
   backend:
     build: ./backend
     container_name: cultivation_backend
+    restart: unless-stopped
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: ${DB_URL:-jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require&preferQueryMode=simple}
-      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-postgres.fosdjsyvbdrhoghntebf}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-Mini132435#VDU}
-      APP_JWT_SECRET: ${JWT_SECRET:-3a7f9c2e1b8d4f6a0e5c3b2d9f1a7e4c8b6d3f0a2e9c5b1d7f4a8e2c6b0d3f}
+      SPRING_DATASOURCE_URL: ${DB_URL:-jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:6543/postgres?sslmode=require&preferQueryMode=simple&connectTimeout=30&socketTimeout=120&tcpKeepAlive=true}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-postgres.your_project_ref}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-change_me}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-none}
+      SPRING_FLYWAY_ENABLED: ${SPRING_FLYWAY_ENABLED:-true}
+      FLYWAY_CONNECT_RETRIES: ${FLYWAY_CONNECT_RETRIES:-10}
+      FLYWAY_CONNECT_RETRIES_INTERVAL: ${FLYWAY_CONNECT_RETRIES_INTERVAL:-5s}
+      APP_JWT_SECRET: ${JWT_SECRET:-change_me_with_a_long_random_secret}
       OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
       OPENWEATHER_BASE_URL: ${OPENWEATHER_BASE_URL:-https://api.openweathermap.org}
 
