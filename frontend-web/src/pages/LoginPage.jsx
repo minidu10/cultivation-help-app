@@ -20,9 +20,16 @@ export default function LoginPage() {
 
     try {
       const response = await api.post('/auth/login', { email, password })
-      const { token, fullName, email: userEmail } = response.data
+      const {
+        token,
+        fullName,
+        email: userEmail,
+        city,
+        themePreference,
+        desktopMode,
+      } = response.data
 
-      login({ fullName, email: userEmail }, token)
+      login({ fullName, email: userEmail, city, themePreference, desktopMode }, token)
       navigate('/dashboard')
 
     } catch (err) {

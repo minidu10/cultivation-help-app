@@ -1,29 +1,25 @@
 package com.cultivation.app.dto;
 
-import com.fasterxml.jackson.annotation.JsonAlias;
-
-public class RegisterRequest {
+public class UserUpdateRequest {
 
     private String fullName;
-    private String email;
-    private String password;
     private String phone;
-    @JsonAlias("location")
     private String city;
+    private String themePreference;
+    private Boolean desktopMode;
 
-    // Getters and Setters
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
-
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-
-    public String getPassword() { return password; }
-    public void setPassword(String password) { this.password = password; }
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
 
     public String getCity() { return city; }
     public void setCity(String city) { this.city = city; }
+
+    public String getThemePreference() { return themePreference; }
+    public void setThemePreference(String themePreference) { this.themePreference = themePreference; }
+
+    public Boolean getDesktopMode() { return desktopMode; }
+    public void setDesktopMode(Boolean desktopMode) { this.desktopMode = desktopMode; }
 }

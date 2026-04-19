@@ -1,7 +1,14 @@
 package com.cultivation.app.entity;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
 
 @Entity
 @Table(name = "users")
@@ -22,6 +29,15 @@ public class User {
 
     @Column(length = 20)
     private String phone;
+
+    @Column(length = 100)
+    private String city;
+
+    @Column(name = "theme_preference", nullable = false, length = 20)
+    private String themePreference = "LIGHT";
+
+    @Column(name = "desktop_mode", nullable = false)
+    private Boolean desktopMode = false;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -46,6 +62,15 @@ public class User {
 
     public String getPhone() { return phone; }
     public void setPhone(String phone) { this.phone = phone; }
+
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+
+    public String getThemePreference() { return themePreference; }
+    public void setThemePreference(String themePreference) { this.themePreference = themePreference; }
+
+    public Boolean getDesktopMode() { return desktopMode; }
+    public void setDesktopMode(Boolean desktopMode) { this.desktopMode = desktopMode; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

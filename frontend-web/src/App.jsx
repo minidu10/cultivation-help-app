@@ -8,10 +8,12 @@ import ExpensesPage from './pages/ExpensesPage'
 import HarvestsPage from './pages/HarvestsPage'
 import RegisterPage from './pages/RegisterPage'
 import AIAdvisorPage from './pages/AIAdvisorPage'
+import SettingsPage from './pages/SettingsPage'
 
 function PrivateRoute({ children }) {
   const { user } = useAuth()
-  return user ? children : <Navigate to="/login" />
+  const token = localStorage.getItem('token')
+  return user && token ? children : <Navigate to="/login" />
 }
 
 function App() {
@@ -36,6 +38,9 @@ function App() {
       }/>
       <Route path="/ai-advisor" element={
         <PrivateRoute><AIAdvisorPage /></PrivateRoute>
+      }/>
+      <Route path="/settings" element={
+        <PrivateRoute><SettingsPage /></PrivateRoute>
       }/>
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>

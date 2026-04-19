@@ -102,6 +102,19 @@ public class WeatherService {
         return response;
     }
 
+    public WeatherForecastResponse getForecastByLocation(String locationQuery, Integer count) {
+        if (locationQuery == null || locationQuery.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Location is required");
+        }
+
+        GeocodedPoint point = geocodeLocation(locationQuery);
+        WeatherForecastResponse response = getForecast(point.lat(), point.lon(), count);
+        if (response.getLocation() == null || response.getLocation().isBlank()) {
+            response.setLocation(point.displayName());
+        }
+        return response;
+    }
+
     private JsonNode fetchWeatherJson(String path, Double lat, Double lon, Integer count) {
         if (apiKey == null || apiKey.isBlank()) {
             throw new ResponseStatusException(

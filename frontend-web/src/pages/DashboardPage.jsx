@@ -5,17 +5,20 @@ import {
 } from 'recharts'
 import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
+import { useAuth } from '../context/AuthContext'
 import { getCrops, getDueReminders, getProfitLoss, updateCropReminder } from '../api/crops'
 import { getCropInsights } from '../api/crops'
 import {
   getCurrentWeather,
   getCurrentWeatherByLocation,
   getWeatherForecast,
+  getWeatherForecastByLocation,
 } from '../api/weather'
 
 const COLORS = ['#16a34a', '#dc2626', '#2563eb', '#d97706', '#7c3aed']
 
 export default function DashboardPage() {
+  const { user } = useAuth()
   const [crops, setCrops] = useState([])
   const [profitData, setProfitData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -51,8 +54,19 @@ export default function DashboardPage() {
     // Fallback to Colombo if location permission is blocked.
     const fallbackLat = 6.9271
     const fallbackLon = 79.8612
+    const savedCity = user?.city?.trim()
 
     try {
+      if (savedCity) {
+        const [currentRes, forecastRes] = await Promise.all([
+          getCurrentWeatherByLocation(savedCity),
+          getWeatherForecastByLocation(savedCity, 5),
+        ])
+        setWeatherCurrent(currentRes.data)
+        setWeatherForecast(forecastRes.data?.items ?? [])
+        return
+      }
+
       if (!navigator.geolocation) {
         await fetchWeatherByCoords(fallbackLat, fallbackLon)
         return

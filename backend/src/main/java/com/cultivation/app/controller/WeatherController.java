@@ -47,4 +47,12 @@ public class WeatherController {
             @RequestParam(defaultValue = "5") Integer count) {
         return ResponseEntity.ok(weatherService.getForecast(lat, lon, count));
     }
+
+    @GetMapping("/forecast/by-location")
+    @Operation(summary = "Get short forecast by location name")
+    public ResponseEntity<WeatherForecastResponse> getForecastByLocation(
+            @RequestParam String location,
+            @RequestParam(defaultValue = "5") Integer count) {
+        return ResponseEntity.ok(weatherService.getForecastByLocation(location, count));
+    }
 }

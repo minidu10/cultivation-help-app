@@ -11,7 +11,7 @@ export default function RegisterPage() {
     password: '',
     confirmPassword: '',
     phone: '',
-    location: '',
+    city: '',
   })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -46,11 +46,18 @@ export default function RegisterPage() {
         email: form.email,
         password: form.password,
         phone: form.phone,
-        location: form.location,
+        city: form.city,
       })
 
-      const { token, fullName, email } = response.data
-      login({ fullName, email }, token)
+      const {
+        token,
+        fullName,
+        email,
+        city,
+        themePreference,
+        desktopMode,
+      } = response.data
+      login({ fullName, email, city, themePreference, desktopMode }, token)
       navigate('/dashboard')
 
     } catch (err) {
@@ -143,15 +150,15 @@ export default function RegisterPage() {
             />
           </div>
 
-          {/* Location */}
+          {/* City */}
           <div>
             <label className="block text-sm font-medium
                               text-gray-600 mb-1">
-              Location
+              City
             </label>
             <input
-              name="location"
-              value={form.location}
+              name="city"
+              value={form.city}
               onChange={handleChange}
               placeholder="e.g. Ratnapura"
               className="w-full border border-gray-300 rounded-lg

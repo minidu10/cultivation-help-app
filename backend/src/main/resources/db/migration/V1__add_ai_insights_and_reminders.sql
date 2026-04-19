@@ -16,7 +16,9 @@ CREATE TABLE IF NOT EXISTS reminders (
 
 DO $$
 BEGIN
-    IF NOT EXISTS (
+    IF to_regclass('public.reminders') IS NOT NULL
+       AND to_regclass('public.crops') IS NOT NULL
+       AND NOT EXISTS (
         SELECT 1
         FROM pg_constraint
         WHERE conname = 'fk_reminders_crop'

@@ -25,7 +25,6 @@ replay_pid*
 
 # Java / Spring Boot
 backend/target/
-backend/.mvn/
 *.class
 *.jar
 *.war
@@ -44,6 +43,7 @@ mobile/.flutter-plugins
 # Python / AI service
 ai-service/__pycache__/
 ai-service/.venv/
+ai-service/venv/
 ai-service/*.pyc
 ai-service/.env
 
