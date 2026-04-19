@@ -51,13 +51,32 @@ API will be available at `http://localhost:8080`
 Swagger UI at `http://localhost:8080/swagger-ui.html`
 
 ## 📁 Project Structure
-
+```text
 cultivation-help-app/
 ├── backend/          # Spring Boot REST API
+│   ├── src/
+│   └── .mvn/         # Maven wrapper support files (keep tracked)
 ├── frontend-web/     # React + Vite dashboard
-├── mobile/           # Flutter mobile app
+│   ├── src/
+│   └── public/
 ├── ai-service/       # Python FastAPI AI microservice
-└── docs/             # Architecture diagrams & API docs
+│   ├── routers/
+│   └── services/
+├── mobile/           # Flutter mobile app
+├── docs/             # Architecture and notes
+├── docker-compose.yml
+└── .env.example      # Root environment template
+```
+
+## 🧹 Repository Hygiene
+
+- Keep source code and config files tracked; keep generated artifacts untracked.
+- Do not commit local environments or build output:
+	- `backend/target/`
+	- `frontend-web/node_modules/`
+	- `frontend-web/dist/`
+	- `ai-service/venv/`, `ai-service/.venv/`, `ai-service/__pycache__/`
+- Keep secrets only in local `.env` files. Use `.env.example` templates for sharing expected keys.
 
 ## 🔗 Live Demo
 > Coming soon — deploying to Azure
