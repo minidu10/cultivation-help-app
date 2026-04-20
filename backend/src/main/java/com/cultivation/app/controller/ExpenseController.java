@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cultivation.app.dto.ExpenseRequest;
+import com.cultivation.app.dto.ExpenseResponse;
 import com.cultivation.app.dto.ProfitLossResponse;
-import com.cultivation.app.entity.Expense;
 import com.cultivation.app.entity.User;
 import com.cultivation.app.service.ExpenseService;
 
@@ -34,19 +34,26 @@ public class ExpenseController {
 
     @PostMapping
     @Operation(summary = "Add an expense to a crop")
-    public ResponseEntity<Expense> addExpense(
+    public ResponseEntity<ExpenseResponse> addExpense(
             @PathVariable Long cropId,
             @RequestBody ExpenseRequest request,
             @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(expenseService.addExpense(cropId, request, currentUser));
+        return ResponseEntity.ok(
+                ExpenseResponse.fromEntity(expenseService.addExpense(cropId, request, currentUser))
+        );
     }
 
     @GetMapping
     @Operation(summary = "Get all expenses for a crop")
-    public ResponseEntity<List<Expense>> getExpenses(
+    public ResponseEntity<List<ExpenseResponse>> getExpenses(
             @PathVariable Long cropId,
             @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(expenseService.getExpensesForCrop(cropId, currentUser));
+        return ResponseEntity.ok(
+                expenseService.getExpensesForCrop(cropId, currentUser)
+                        .stream()
+                        .map(ExpenseResponse::fromEntity)
+                        .toList()
+        );
     }
 
     @DeleteMapping("/{expenseId}")
