@@ -83,8 +83,9 @@ export default function ExpensesPage() {
         notes: '',
       })
       loadExpenses(selectedCrop)
-    } catch {
-      setError('Failed to add expense')
+    } catch (err) {
+      const backendMessage = err?.response?.data?.message
+      setError(backendMessage || 'Failed to add expense')
     } finally {
       setSubmitting(false)
     }
