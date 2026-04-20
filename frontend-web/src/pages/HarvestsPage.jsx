@@ -41,8 +41,9 @@ export default function HarvestsPage() {
     try {
       const res = await getHarvests(cropId)
       setHarvests(res.data)
-    } catch {
-      setError('Failed to load harvests')
+    } catch (err) {
+      const backendMessage = err?.response?.data?.message
+      setError(backendMessage || 'Failed to load harvests')
     }
   }
 
@@ -66,8 +67,9 @@ export default function HarvestsPage() {
         pricePerUnit: '', buyerName: '', notes: '',
       })
       loadHarvests(selectedCrop)
-    } catch {
-      setError('Failed to add harvest')
+    } catch (err) {
+      const backendMessage = err?.response?.data?.message
+      setError(backendMessage || 'Failed to add harvest')
     } finally {
       setSubmitting(false)
     }
