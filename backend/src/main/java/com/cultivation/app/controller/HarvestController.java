@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cultivation.app.dto.HarvestRequest;
-import com.cultivation.app.entity.Harvest;
+import com.cultivation.app.dto.HarvestResponse;
 import com.cultivation.app.entity.User;
 import com.cultivation.app.service.HarvestService;
 
@@ -33,19 +33,26 @@ public class HarvestController {
 
     @PostMapping
     @Operation(summary = "Add a harvest record")
-    public ResponseEntity<Harvest> addHarvest(
+    public ResponseEntity<HarvestResponse> addHarvest(
             @PathVariable Long cropId,
             @RequestBody HarvestRequest request,
             @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(harvestService.addHarvest(cropId, request, currentUser));
+        return ResponseEntity.ok(
+                HarvestResponse.fromEntity(harvestService.addHarvest(cropId, request, currentUser))
+        );
     }
 
     @GetMapping
     @Operation(summary = "Get all harvest for a crop")
-    public ResponseEntity<List<Harvest>> getHarvests(
+    public ResponseEntity<List<HarvestResponse>> getHarvests(
             @PathVariable Long cropId,
             @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(harvestService.getHarvestsForCrop(cropId, currentUser));
+        return ResponseEntity.ok(
+                harvestService.getHarvestsForCrop(cropId, currentUser)
+                        .stream()
+                        .map(HarvestResponse::fromEntity)
+                        .toList()
+        );
     }
 
     @DeleteMapping("/{harvestId}")
