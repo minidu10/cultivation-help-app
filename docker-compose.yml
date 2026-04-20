@@ -10,15 +10,15 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: ${DB_URL:-jdbc:postgresql://localhost:5432/cultivation_db}
-      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-postgres}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-change_me}
+      SPRING_DATASOURCE_URL: ${DB_URL}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-none}
       SPRING_FLYWAY_ENABLED: ${SPRING_FLYWAY_ENABLED:-true}
       FLYWAY_CONNECT_RETRIES: ${FLYWAY_CONNECT_RETRIES:-10}
       FLYWAY_CONNECT_RETRIES_INTERVAL: ${FLYWAY_CONNECT_RETRIES_INTERVAL:-5s}
       APP_JWT_SECRET: ${JWT_SECRET:-change_me_with_a_long_random_secret}
-      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY:-}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
       OPENWEATHER_BASE_URL: ${OPENWEATHER_BASE_URL:-https://api.openweathermap.org}
 
   ai-service:
@@ -34,7 +34,7 @@ services:
     build: ./frontend-web
     container_name: cultivation_frontend
     ports:
-      - "80:80"
+      - "3000:80"
       - "443:443"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
