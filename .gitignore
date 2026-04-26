@@ -52,6 +52,9 @@ ai-service/.env
 .vscode/settings.json
 *.iml
 
+# Claude Code local files
+.claude/
+
 # OS
 .DS_Store
 Thumbs.db
