@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { getCrops, getExpenses, addExpense } from '../api/crops'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const CATEGORIES = ['FERTILIZER', 'LABOR', 'TRANSPORT', 'EQUIPMENT', 'SEEDS', 'PESTICIDES', 'IRRIGATION', 'MISCELLANEOUS']
 const CATEGORY_ICONS = { FERTILIZER: '🌿', LABOR: '👷', TRANSPORT: '🚛', EQUIPMENT: '⚙️', SEEDS: '🌱', PESTICIDES: '🧪', IRRIGATION: '💧', MISCELLANEOUS: '📦' }
@@ -11,6 +12,7 @@ const inputStyle = { width: '100%', boxSizing: 'border-box', background: 'var(--
 const labelStyle = { display: 'block', fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 500 }
 
 export default function ExpensesPage() {
+  const isMobile = useIsMobile()
   const [crops, setCrops] = useState([])
   const [selectedCrop, setSelectedCrop] = useState('')
   const [expenses, setExpenses] = useState([])
@@ -48,8 +50,8 @@ export default function ExpensesPage() {
   return (
     <Layout>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           {/* Crop selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 14px' }}>
             <span style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Select Crop:</span>
@@ -85,7 +87,7 @@ export default function ExpensesPage() {
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '22px' }}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
                 <div>
                   <label style={labelStyle}>Category *</label>
                   <select name="category" value={form.category} onChange={handleChange} style={inputStyle}>
@@ -127,7 +129,8 @@ export default function ExpensesPage() {
         </div>
       ) : (
         <div style={cardStyle}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="table-scroll">
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '550px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(74,222,128,0.1)' }}>
                 {['Category', 'Description', 'Date', 'Notes', 'Amount'].map(h => (
@@ -165,6 +168,7 @@ export default function ExpensesPage() {
               </tr>
             </tfoot>
           </table>
+          </div>
         </div>
       )}
     </Layout>

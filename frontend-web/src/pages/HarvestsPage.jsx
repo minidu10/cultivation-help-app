@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { getCrops, getHarvests, addHarvest } from '../api/crops'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const UNITS = ['KG', 'TONNE', 'BUSHEL', 'POUND', 'LITER']
 
@@ -9,6 +10,7 @@ const inputStyle = { width: '100%', boxSizing: 'border-box', background: 'var(--
 const labelStyle = { display: 'block', fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 500 }
 
 export default function HarvestsPage() {
+  const isMobile = useIsMobile()
   const [crops, setCrops] = useState([])
   const [selectedCrop, setSelectedCrop] = useState('')
   const [harvests, setHarvests] = useState([])
@@ -46,8 +48,8 @@ export default function HarvestsPage() {
   return (
     <Layout>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 14px' }}>
             <span style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Select Crop:</span>
             {crops.length === 0 ? (
@@ -82,7 +84,7 @@ export default function HarvestsPage() {
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '22px' }}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={labelStyle}>Harvest Date *</label>
                   <input name="harvestDate" type="date" value={form.harvestDate} onChange={handleChange} required style={inputStyle} />
@@ -136,7 +138,7 @@ export default function HarvestsPage() {
       ) : (
         <>
           {/* Summary */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '16px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: '16px', marginBottom: '20px' }}>
             {[
               { label: 'Total Revenue', value: `Rs. ${totalRevenue.toLocaleString()}`, color: '#4ade80' },
               { label: 'Total Records', value: harvests.length, color: '#60a5fa' },

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { useAuth } from '../context/AuthContext'
 import { getMyProfile, updateMyProfile } from '../api/users'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const sectionTitle = {
   fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: '13px',
@@ -40,6 +41,7 @@ function InputField({ label, value, onChange, disabled, placeholder }) {
 }
 
 export default function SettingsPage() {
+  const isMobile = useIsMobile()
   const { user, updateUser } = useAuth()
   const [fullName, setFullName] = useState(user?.fullName || '')
   const [email, setEmail] = useState(user?.email || '')
@@ -134,7 +136,7 @@ export default function SettingsPage() {
       {/* ── Appearance ── */}
       <div style={{ marginBottom: '28px' }}>
         <div style={sectionTitle}>Appearance</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
           {THEME_OPTIONS.map(t => {
             const active = activeThemeKey === t.id
             return (
@@ -171,7 +173,7 @@ export default function SettingsPage() {
       <div style={{ marginBottom: '28px' }}>
         <div style={sectionTitle}>Profile</div>
         <div style={{ ...cardStyle, padding: '24px' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px' }}>
             <div style={{ gridColumn: '1 / -1' }}>
               <InputField label="Full Name" value={fullName} onChange={e => setFullName(e.target.value)} placeholder="Your full name" />
             </div>
