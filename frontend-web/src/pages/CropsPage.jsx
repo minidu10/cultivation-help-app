@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Layout from '../components/Layout'
 import { getCrops, createCrop, deleteCrop } from '../api/crops'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const STATUS_STYLE = {
   PLANTED:          { bg: 'rgba(96,165,250,0.12)',  border: 'rgba(96,165,250,0.3)',  text: '#60a5fa',  label: 'Planted' },
@@ -27,6 +28,7 @@ const labelStyle = {
 
 export default function CropsPage() {
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const [crops, setCrops] = useState([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
@@ -83,7 +85,7 @@ export default function CropsPage() {
   return (
     <Layout>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
           {filters.map(f => {
             const sc = STATUS_STYLE[f]
@@ -123,7 +125,7 @@ export default function CropsPage() {
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '22px' }}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
                 {[
                   { label: 'Crop Name *', name: 'name', placeholder: 'e.g. Rice', required: true },
                   { label: 'Variety', name: 'variety', placeholder: 'e.g. Samba' },
@@ -171,7 +173,7 @@ export default function CropsPage() {
           </p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3, 1fr)', gap: '16px' }}>
           {visible.map((crop) => {
             const sc = STATUS_STYLE[crop.status] || STATUS_STYLE.PLANTED
             return (

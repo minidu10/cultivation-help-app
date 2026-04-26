@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import Layout from '../components/Layout'
 import { useAuth } from '../context/AuthContext'
 import { getMyProfile, updateMyProfile } from '../api/users'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const inputStyle = {
   width: '100%', boxSizing: 'border-box',
@@ -19,6 +20,7 @@ const labelStyle = {
 }
 
 export default function ProfilePage() {
+  const isMobile = useIsMobile()
   const { updateUser } = useAuth()
   const [form, setForm] = useState({ fullName: '', email: '', phone: '', city: '' })
   const [loading, setLoading] = useState(true)
@@ -146,7 +148,7 @@ export default function ProfilePage() {
                   <p style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-faint)', marginTop: '4px' }}>Email cannot be changed</p>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
                   <div>
                     <label style={labelStyle}>Phone</label>
                     <input

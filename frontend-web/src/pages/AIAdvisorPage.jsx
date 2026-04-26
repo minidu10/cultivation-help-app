@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Layout from '../components/Layout'
 import { askAI } from '../api/crops'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 const SUGGESTED_QUESTIONS = [
   'What is the best fertilizer for rice cultivation?',
@@ -19,6 +20,7 @@ const cardStyle = {
 }
 
 export default function AIAdvisorPage() {
+  const isMobile = useIsMobile()
   const [messages, setMessages] = useState([
     {
       role: 'ai',
@@ -64,7 +66,7 @@ export default function AIAdvisorPage() {
 
   return (
     <Layout>
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '24px', height: 'calc(100vh - 140px)', minHeight: '500px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '280px 1fr', gap: '24px', height: isMobile ? 'auto' : 'calc(100vh - 140px)', minHeight: '500px' }}>
 
         {/* ── Left sidebar ── */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
@@ -122,7 +124,7 @@ export default function AIAdvisorPage() {
         </div>
 
         {/* ── Chat area ── */}
-        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: isMobile ? '500px' : 'auto' }}>
 
           {/* Header */}
           <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
