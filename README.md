@@ -203,6 +203,26 @@ Open `https://yourdomain.com` in the browser.
 
 ---
 
+## CI/CD
+
+Every push to the `main` branch automatically deploys to production via GitHub Actions.
+
+**Workflow:** `.github/workflows/deploy.yml`
+
+```
+push to main → SSH into EC2 → git pull → docker compose down → docker compose up --build
+```
+
+**Required GitHub Secrets** (Settings → Secrets → Actions):
+
+| Secret | Description |
+|--------|-------------|
+| `EC2_HOST` | EC2 public IP address |
+| `EC2_USER` | SSH username (`ubuntu`) |
+| `EC2_SSH_KEY` | Contents of your `.pem` private key file |
+
+---
+
 ## Useful Commands
 
 ```bash
