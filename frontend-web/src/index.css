@@ -183,3 +183,12 @@ select option { background: #0d2b1a; color: #e8f5e2; }
 
 /* ── Page fade-in ────────────────────────────────────────────── */
 .page-content { animation: fadeUp 0.4s ease; }
+
+/* ── Responsive table scroll ─────────────────────────────── */
+.table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+
+/* ── Mobile overrides ────────────────────────────────────── */
+@media (max-width: 768px) {
+  .page-content { padding: 14px 12px !important; }
+  .hide-mobile  { display: none !important; }
+}

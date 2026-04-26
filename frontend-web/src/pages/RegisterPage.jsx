@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
+import { useIsMobile } from '../hooks/useIsMobile'
 
 function StyledInput({ label, type = 'text', value, onChange, placeholder, name, required, half }) {
   const [focused, setFocused] = useState(false)
@@ -32,6 +33,7 @@ function StyledInput({ label, type = 'text', value, onChange, placeholder, name,
 }
 
 export default function RegisterPage() {
+  const isMobile = useIsMobile()
   const [form, setForm] = useState({ fullName: '', email: '', password: '', confirmPassword: '', phone: '', city: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -111,7 +113,7 @@ export default function RegisterPage() {
           )}
 
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
               <StyledInput label="Full Name *" name="fullName" value={form.fullName} onChange={handleChange} placeholder="Kamal Perera" required />
               <StyledInput label="Email *" type="email" name="email" value={form.email} onChange={handleChange} placeholder="farmer@example.com" required />
               <StyledInput label="Phone" name="phone" value={form.phone} onChange={handleChange} placeholder="+94 77 123 4567" half />
