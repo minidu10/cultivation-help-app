@@ -73,6 +73,22 @@ function HeroBackground() {
         @keyframes lp-spin-slow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
         @keyframes lp-cloud  { 0%{transform:translateX(0)} 100%{transform:translateX(120px)} }
         @keyframes lp-cloud2 { 0%{transform:translateX(0)} 100%{transform:translateX(-80px)} }
+        .lp-stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:40px; }
+        .lp-features-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+        .lp-steps-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:48px; }
+        .lp-testimonials-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+        .lp-footer-inner { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
+        @media(max-width:768px){
+          .lp-stats-grid { grid-template-columns:repeat(2,1fr); gap:20px; }
+          .lp-features-grid { grid-template-columns:1fr; }
+          .lp-steps-grid { grid-template-columns:1fr; gap:32px; }
+          .lp-testimonials-grid { grid-template-columns:1fr; }
+          .lp-footer-inner { flex-direction:column; text-align:center; }
+          .lp-section { padding:72px 20px !important; }
+          .lp-hero-title { font-size:clamp(36px,10vw,72px) !important; letter-spacing:-1px !important; }
+          .lp-windmill-left { display:none; }
+          .lp-windmill-right { display:none; }
+        }
       `}</style>
 
       {/* Sky */}
@@ -195,44 +211,71 @@ function HowItWorksLine() {
 // ── Navbar ─────────────────────────────────────────────────────
 function NavBar({ onSignIn, onGetStarted }) {
   const [scrolled, setScrolled] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+
   useEffect(() => {
-    const handler = () => setScrolled(window.scrollY > 40)
-    window.addEventListener('scroll', handler)
-    return () => window.removeEventListener('scroll', handler)
+    const onScroll = () => setScrolled(window.scrollY > 40)
+    const onResize = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('scroll', onScroll)
+    window.addEventListener('resize', onResize)
+    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onResize) }
   }, [])
 
   return (
-    <nav style={{
-      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-      background: scrolled ? 'rgba(10,26,15,0.95)' : 'transparent',
-      backdropFilter: scrolled ? 'blur(16px)' : 'none',
-      borderBottom: scrolled ? '1px solid rgba(74,222,128,0.1)' : 'none',
-      transition: 'all 0.3s ease',
-      padding: '0 40px',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      height: 64,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🌿</div>
-        <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 20, color: '#e8f5e2', letterSpacing: '-0.5px' }}>AgroMaster</span>
-      </div>
-      <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
-        {['Features', 'How It Works', 'Testimonials'].map(item => (
-          <a key={item} href={`#${item.toLowerCase().replace(/ /g, '-')}`} style={{ color: 'rgba(232,245,226,0.7)', fontFamily: 'Inter, sans-serif', fontSize: 14, textDecoration: 'none', transition: 'color 0.2s' }}
-            onMouseEnter={e => e.currentTarget.style.color = '#4ade80'}
-            onMouseLeave={e => e.currentTarget.style.color = 'rgba(232,245,226,0.7)'}
-          >{item}</a>
-        ))}
-        <button onClick={onSignIn} style={{ background: 'transparent', color: '#e8f5e2', border: '1px solid rgba(232,245,226,0.25)', borderRadius: 8, padding: '8px 20px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s' }}
-          onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(74,222,128,0.5)'; e.currentTarget.style.color = '#4ade80' }}
-          onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(232,245,226,0.25)'; e.currentTarget.style.color = '#e8f5e2' }}
-        >Sign In</button>
-        <button onClick={onGetStarted} style={{ background: '#4ade80', color: '#0a1a0f', border: 'none', borderRadius: 8, padding: '8px 20px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 0 20px rgba(74,222,128,0.4)', transition: 'all 0.2s' }}
-          onMouseEnter={e => { e.currentTarget.style.background = '#86efac'; e.currentTarget.style.boxShadow = '0 0 30px rgba(74,222,128,0.6)' }}
-          onMouseLeave={e => { e.currentTarget.style.background = '#4ade80'; e.currentTarget.style.boxShadow = '0 0 20px rgba(74,222,128,0.4)' }}
-        >Get Started Free</button>
-      </div>
-    </nav>
+    <>
+      <nav style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+        background: scrolled || menuOpen ? 'rgba(10,26,15,0.97)' : 'transparent',
+        backdropFilter: scrolled || menuOpen ? 'blur(16px)' : 'none',
+        borderBottom: scrolled || menuOpen ? '1px solid rgba(74,222,128,0.1)' : 'none',
+        transition: 'all 0.3s ease',
+        padding: isMobile ? '0 20px' : '0 40px',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        height: 64,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🌿</div>
+          <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 20, color: '#e8f5e2', letterSpacing: '-0.5px' }}>AgroMaster</span>
+        </div>
+
+        {isMobile ? (
+          <button onClick={() => setMenuOpen(o => !o)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e8f5e2', padding: 4, display: 'flex', alignItems: 'center' }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              {menuOpen ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></> : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>}
+            </svg>
+          </button>
+        ) : (
+          <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
+            {['Features', 'How It Works', 'Testimonials'].map(item => (
+              <a key={item} href={`#${item.toLowerCase().replace(/ /g, '-')}`} style={{ color: 'rgba(232,245,226,0.7)', fontFamily: 'Inter, sans-serif', fontSize: 14, textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.color = '#4ade80'}
+                onMouseLeave={e => e.currentTarget.style.color = 'rgba(232,245,226,0.7)'}
+              >{item}</a>
+            ))}
+            <button onClick={onSignIn} style={{ background: 'transparent', color: '#e8f5e2', border: '1px solid rgba(232,245,226,0.25)', borderRadius: 8, padding: '8px 20px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(74,222,128,0.5)'; e.currentTarget.style.color = '#4ade80' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(232,245,226,0.25)'; e.currentTarget.style.color = '#e8f5e2' }}
+            >Sign In</button>
+            <button onClick={onGetStarted} style={{ background: '#4ade80', color: '#0a1a0f', border: 'none', borderRadius: 8, padding: '8px 20px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 0 20px rgba(74,222,128,0.4)', transition: 'all 0.2s' }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#86efac'; e.currentTarget.style.boxShadow = '0 0 30px rgba(74,222,128,0.6)' }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#4ade80'; e.currentTarget.style.boxShadow = '0 0 20px rgba(74,222,128,0.4)' }}
+            >Get Started Free</button>
+          </div>
+        )}
+      </nav>
+
+      {/* Mobile dropdown menu */}
+      {isMobile && menuOpen && (
+        <div style={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: 99, background: 'rgba(10,26,15,0.97)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(74,222,128,0.1)', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+          {['Features', 'How It Works', 'Testimonials'].map(item => (
+            <a key={item} href={`#${item.toLowerCase().replace(/ /g, '-')}`} onClick={() => setMenuOpen(false)} style={{ color: 'rgba(232,245,226,0.8)', fontFamily: 'Inter, sans-serif', fontSize: 15, textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid rgba(74,222,128,0.08)' }}>{item}</a>
+          ))}
+          <button onClick={() => { setMenuOpen(false); onSignIn() }} style={{ background: 'transparent', color: '#e8f5e2', border: '1px solid rgba(232,245,226,0.25)', borderRadius: 8, padding: '10px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600, fontSize: 14, cursor: 'pointer', marginTop: 4 }}>Sign In</button>
+          <button onClick={() => { setMenuOpen(false); onGetStarted() }} style={{ background: '#4ade80', color: '#0a1a0f', border: 'none', borderRadius: 8, padding: '10px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Get Started Free</button>
+        </div>
+      )}
+    </>
   )
 }
 
@@ -280,8 +323,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── STATS ── */}
-      <section style={{ padding: '80px 40px', background: 'rgba(74,222,128,0.04)', borderTop: '1px solid rgba(74,222,128,0.08)', borderBottom: '1px solid rgba(74,222,128,0.08)' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 40 }}>
+      <section className="lp-section" style={{ padding: '80px 40px', background: 'rgba(74,222,128,0.04)', borderTop: '1px solid rgba(74,222,128,0.08)', borderBottom: '1px solid rgba(74,222,128,0.08)' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto' }} className="lp-stats-grid">
           {STATS.map((s, i) => (
             <FadeUp key={i} delay={i * 100}>
               <div style={{ textAlign: 'center' }}>
@@ -302,7 +345,7 @@ export default function LandingPage() {
               <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 'clamp(32px,5vw,56px)', fontWeight: 800, color: '#e8f5e2', letterSpacing: '-2px', margin: 0 }}>Built for the field.</h2>
             </div>
           </FadeUp>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div className="lp-features-grid">
             {FEATURES.map((f, i) => (
               <FadeUp key={i} delay={i * 80}>
                 <div style={{ background: 'rgba(13,43,26,0.5)', border: '1px solid rgba(74,222,128,0.12)', borderRadius: 16, padding: 32, backdropFilter: 'blur(12px)', transition: 'all 0.3s', cursor: 'default', height: '100%' }}
@@ -328,7 +371,7 @@ export default function LandingPage() {
               <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 'clamp(32px,5vw,56px)', fontWeight: 800, color: '#e8f5e2', letterSpacing: '-2px', margin: 0 }}>How It Works</h2>
             </div>
           </FadeUp>
-          <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 48 }}>
+          <div style={{ position: 'relative' }} className="lp-steps-grid">
             <HowItWorksLine />
             {STEPS.map((s, i) => (
               <FadeUp key={i} delay={i * 150}>
@@ -352,7 +395,7 @@ export default function LandingPage() {
               <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 'clamp(32px,5vw,56px)', fontWeight: 800, color: '#e8f5e2', letterSpacing: '-2px', margin: 0 }}>Trusted across Sri Lanka</h2>
             </div>
           </FadeUp>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24 }}>
+          <div className="lp-testimonials-grid">
             {TESTIMONIALS.map((t, i) => (
               <FadeUp key={i} delay={i * 100}>
                 <div style={{ background: 'rgba(13,43,26,0.4)', border: '1px solid rgba(74,222,128,0.12)', borderRadius: 16, padding: 32, backdropFilter: 'blur(12px)' }}>
@@ -386,7 +429,7 @@ export default function LandingPage() {
 
       {/* ── FOOTER ── */}
       <footer style={{ padding: '48px 40px', background: 'rgba(10,16,12,0.9)', borderTop: '1px solid rgba(74,222,128,0.06)' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }} className="lp-footer-inner">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🌿</div>
             <span style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 16, color: '#e8f5e2' }}>AgroMaster</span>

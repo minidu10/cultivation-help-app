@@ -6,6 +6,7 @@ import {
 import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
 import { useAuth } from '../context/AuthContext'
+import { useIsMobile } from '../hooks/useIsMobile'
 import { getCrops, getDueReminders, getProfitLoss, updateCropReminder, getCropInsights } from '../api/crops'
 import {
   getCurrentWeather, getCurrentWeatherByLocation,
@@ -40,6 +41,7 @@ function CustomTooltip({ active, payload, label }) {
 
 export default function DashboardPage() {
   const { user } = useAuth()
+  const isMobile = useIsMobile()
   const [crops, setCrops] = useState([])
   const [profitData, setProfitData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -221,7 +223,7 @@ export default function DashboardPage() {
   return (
     <Layout>
       {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
         <StatCard title="Harvest Revenue" value={`Rs. ${totalRevenue.toLocaleString()}`} sub="All crops" color="green" icon="📦" />
         <StatCard title="Total Expenses"  value={`Rs. ${totalExpenses.toLocaleString()}`} sub="All crops" color="red" icon="💸" />
         <StatCard title="Net Profit"      value={`Rs. ${netProfit.toLocaleString()}`} sub={netProfit >= 0 ? 'Profitable ✓' : 'Loss'} color={netProfit >= 0 ? 'green' : 'red'} icon="📈" />
@@ -229,7 +231,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '16px', marginBottom: '20px' }}>
 
         {/* Bar chart */}
         <div style={cardStyle}>
@@ -324,7 +326,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Reminders + Pie chart row */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
 
         {/* Today's Reminders */}
         <div style={cardStyle}>
@@ -403,7 +405,8 @@ export default function DashboardPage() {
         {profitData.length === 0 ? (
           <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-faint)', textAlign: 'center', padding: '24px 0' }}>No crops added yet</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="table-scroll">
+          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '480px' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(74,222,128,0.1)' }}>
                 {['Crop', 'Revenue', 'Expenses', 'Net Profit', 'Result'].map(h => (
@@ -429,6 +432,7 @@ export default function DashboardPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -453,7 +457,7 @@ export default function DashboardPage() {
               <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)' }}>🤖 AI is analysing your crops…</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: profitData.length === 1 ? '1fr' : '1fr 1fr', gap: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile || profitData.length === 1 ? '1fr' : '1fr 1fr', gap: '16px' }}>
               {profitData.map((crop, i) => (
                 <div key={i} style={cardStyle}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
@@ -31,15 +31,38 @@ const PAGE_LABELS = {
 
 export default function Layout({ children }) {
   const [open, setOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener('resize', handler)
+    return () => window.removeEventListener('resize', handler)
+  }, [])
+
+  // Close sidebar on route change (mobile)
+  useEffect(() => { if (isMobile) setOpen(false) }, [location.pathname, isMobile])
 
   const currentLabel = PAGE_LABELS[location.pathname] || 'Dashboard'
   const initials = (user?.fullName || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 
   return (
     <div className="grain" style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
+
+      {/* Mobile backdrop */}
+      {isMobile && open && (
+        <div
+          onClick={() => setOpen(false)}
+          style={{
+            position: 'fixed', inset: 0,
+            background: 'rgba(0,0,0,0.55)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 9,
+          }}
+        />
+      )}
 
       {/* ── Sidebar ── */}
       <aside style={{
@@ -51,8 +74,9 @@ export default function Layout({ children }) {
         display: 'flex',
         flexDirection: 'column',
         transition: 'width 0.25s ease',
-        position: 'sticky',
+        position: isMobile ? 'fixed' : 'sticky',
         top: 0,
+        left: 0,
         alignSelf: 'flex-start',
         height: '100vh',
         zIndex: 10,
@@ -81,7 +105,7 @@ export default function Layout({ children }) {
           }}>Agromaster</span>
         </div>
 
-        {/* Nav — text only, no icons */}
+        {/* Nav */}
         <nav style={{ flex: 1, padding: '14px 0', overflowY: 'auto' }}>
           {NAV_ITEMS.map(item => (
             <NavLink
@@ -136,11 +160,11 @@ export default function Layout({ children }) {
 
         {/* Topbar */}
         <header style={{
-          padding: '14px 28px',
+          padding: isMobile ? '12px 14px' : '14px 28px',
           background: 'var(--bg-header)',
           backdropFilter: 'blur(16px)',
           borderBottom: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', gap: '16px',
+          display: 'flex', alignItems: 'center', gap: '12px',
           position: 'sticky', top: 0, zIndex: 5,
         }}>
           {/* Hamburger */}
@@ -158,20 +182,24 @@ export default function Layout({ children }) {
             <MenuIcon />
           </button>
 
-          <div style={{ flex: 1 }}>
-            <h1 style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '20px', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px' }}>{currentLabel}</h1>
-            <div style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-faint)', marginTop: '1px' }}>
-              {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h1 style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: isMobile ? '16px' : '20px', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentLabel}</h1>
+            {!isMobile && (
+              <div style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-faint)', marginTop: '1px' }}>
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </div>
+            )}
           </div>
 
           {/* User badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: '6px 12px', flexShrink: 0 }}>
-            <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#0a1a0f', fontFamily: 'Space Grotesk' }}>{initials}</div>
-            <div>
-              <div style={{ fontFamily: 'Space Grotesk', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{user?.fullName || 'User'}</div>
-              <div style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-muted)' }}>{user?.city || 'Agromaster Farm'}</div>
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: isMobile ? '6px 8px' : '6px 12px', flexShrink: 0 }}>
+            <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#0a1a0f', fontFamily: 'Space Grotesk', flexShrink: 0 }}>{initials}</div>
+            {!isMobile && (
+              <div>
+                <div style={{ fontFamily: 'Space Grotesk', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{user?.fullName || 'User'}</div>
+                <div style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-muted)' }}>{user?.city || 'Agromaster Farm'}</div>
+              </div>
+            )}
           </div>
         </header>
 
