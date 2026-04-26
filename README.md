@@ -1,181 +1,276 @@
-# Cultivation Help App
+# AgroMaster — Smart Farm Management Platform
 
-A cloud-based farm management platform for tracking crops, expenses, harvests, and farm profit/loss, with an AI advisor for farming guidance.
+AgroMaster is an AI-powered farm management platform built for Sri Lankan farmers. It combines crop tracking, expense management, harvest records, profit analytics, and an AI advisor — all in one dashboard.
 
-## Live URL
+**Live:** https://agromaster.live
 
-- https://agromaster.live
+---
+
+## Features
+
+- **Crop Management** — Track every crop from seed to harvest with status monitoring and growth milestones
+- **Expense Tracking** — Log seeds, fertilizer, labor and equipment costs by category
+- **Harvest Records** — Record yield quantities and revenue with historical comparisons
+- **Profit Analytics** — Real-time P&L charts with seasonal breakdowns and per-crop profitability scores
+- **AI Advisor** — Personalized crop recommendations and cost optimizations powered by Groq AI
+- **Weather Integration** — Live weather data and 7-day forecasts tailored to your farm location in Sri Lanka
+
+---
 
 ## Tech Stack
 
-- Backend: Spring Boot 3, Java 17
-- Frontend: React 18, Vite, Nginx
-- AI Service: FastAPI (Python), Groq/Ollama modes
-- Database: PostgreSQL (AWS RDS)
-- Deployment: Docker Compose on AWS EC2
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 19, Vite, React Router, Recharts, Nginx |
+| Backend | Spring Boot 4, Spring Security, Flyway, JWT, Java 17 |
+| AI Service | FastAPI, Python 3.12, Groq API |
+| Database | PostgreSQL (AWS RDS) |
+| Deployment | Docker Compose, AWS EC2, Let's Encrypt SSL |
 
-## Core Features
+---
 
-- Crop and planting management
-- Expense tracking by category
-- Harvest and revenue records
-- Automatic profit/loss analytics
-- AI crop advisory assistant
-- Weather integration (OpenWeather)
+## Architecture
+
+```
+Browser
+  │
+  ▼
+Nginx (port 80 → redirect HTTPS / port 443 → SSL)
+  ├── /        → React SPA (static files)
+  ├── /api     → Spring Boot backend (internal port 8080)
+  └── /ai      → FastAPI AI service (internal port 8000)
+                        │
+                        ▼
+                  AWS RDS PostgreSQL
+```
+
+---
 
 ## Project Structure
 
-```text
+```
 cultivation-help-app/
-|- ai-service/
-|  |- main.py
-|  |- requirements.txt
-|  |- routers/
-|  |  `- chat.py
-|  `- services/
-|     |- gemini.py
-|     |- groq_service.py
-|     `- ollama.py
-|- backend/
-|  |- pom.xml
-|  `- src/
-|     |- main/
-|     |  |- java/com/cultivation/app/
-|     |  |  |- config/
-|     |  |  |- controller/
-|     |  |  |- dto/
-|     |  |  |- entity/
-|     |  |  |- exception/
-|     |  |  |- repository/
-|     |  |  |- security/
-|     |  |  |- service/
-|     |  |  `- AppApplication.java
-|     |  `- resources/
-|     |     |- application.yml
-|     |     `- db/migration/
-|     |        |- V0__init_core_schema.sql
-|     |        |- V1__add_ai_insights_and_reminders.sql
-|     |        |- V2__add_user_city_column.sql
-|     |        `- V3__add_user_preferences.sql
-|     `- test/java/com/cultivation/app/
-|        `- AppApplicationTests.java
-|- docs/
-|- frontend-web/
-|  |- nginx.conf
-|  |- package.json
-|  |- src/
-|  |  |- api/
-|  |  |- components/
-|  |  |- context/
-|  |  |- pages/
-|  |  |- utils/
-|  |  |- App.jsx
-|  |  `- main.jsx
-|  `- public/
-|- mobile/
-|- .env.example
-|- docker-compose.yml
-`- README.md
+├── backend/              # Spring Boot REST API
+│   ├── src/
+│   │   └── main/java/com/cultivation/app/
+│   │       ├── controller/
+│   │       ├── service/
+│   │       ├── repository/
+│   │       ├── entity/
+│   │       ├── dto/
+│   │       ├── security/
+│   │       └── config/
+│   └── Dockerfile
+├── frontend-web/         # React + Vite SPA
+│   ├── src/
+│   │   ├── pages/
+│   │   ├── components/
+│   │   ├── context/
+│   │   └── api/
+│   ├── nginx.conf
+│   └── Dockerfile
+├── ai-service/           # FastAPI AI microservice
+│   ├── main.py
+│   ├── routers/
+│   ├── services/
+│   └── Dockerfile
+├── docker-compose.yml
+├── .env.example
+└── README.md
 ```
 
-## Environment Variables
+---
 
-1. Copy the root env template:
+## Local Development
 
+### Prerequisites
+- Docker and Docker Compose
+
+### 1. Clone the repository
 ```bash
-cp .env.example .env
-```
-
-2. Fill all required values in .env:
-
-```env
-DB_URL=jdbc:postgresql://<rds-endpoint>:5432/postgres?sslmode=require&preferQueryMode=simple&connectTimeout=30&socketTimeout=120&tcpKeepAlive=true
-DB_USERNAME=postgres
-DB_PASSWORD=<your-password>
-JWT_SECRET=<long-random-secret>
-GROQ_API_KEY=<optional>
-OPENWEATHER_API_KEY=<optional>
-```
-
-Notes:
-- Use your AWS RDS endpoint in DB_URL.
-- sslmode=require is recommended for RDS.
-- Do not commit .env to GitHub.
-
-## Run Locally with Docker
-
-```bash
-docker-compose up -d --build
-```
-
-Services:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8080
-- Swagger: http://localhost:8080/swagger-ui.html
-- AI Service: http://localhost:8000
-
-## AWS Deployment (EC2 + RDS)
-
-### 1. Prepare AWS RDS (PostgreSQL)
-
-- Create a PostgreSQL RDS instance.
-- In RDS security group, allow inbound port 5432 from your EC2 security group.
-- Copy endpoint, username, password, and database name.
-- Use the endpoint in DB_URL inside .env.
-
-### 2. Prepare AWS EC2
-
-- Launch Ubuntu EC2 instance.
-- Open inbound ports: 22, 80, 443 (and 3000 only if needed for temporary direct access).
-- Install Docker and Docker Compose plugin.
-
-### 3. Deploy Application
-
-```bash
-git clone https://github.com/<your-username>/cultivation-help-app.git
+git clone https://github.com/minidu10/cultivation-help-app.git
 cd cultivation-help-app
+```
+
+### 2. Set up environment variables
+```bash
 cp .env.example .env
-# edit .env with your AWS RDS and API keys
+```
+
+Edit `.env` with your credentials:
+```env
+DB_URL=jdbc:postgresql://your-rds-endpoint:5432/postgres?sslmode=require&preferQueryMode=simple&connectTimeout=30&socketTimeout=120&tcpKeepAlive=true
+DB_USERNAME=postgres
+DB_PASSWORD=your_password
+SPRING_JPA_HIBERNATE_DDL_AUTO=none
+SPRING_FLYWAY_ENABLED=true
+JWT_SECRET=your_long_random_secret_min_32_chars
+GROQ_API_KEY=your_groq_api_key
+OPENWEATHER_API_KEY=your_openweather_api_key
+OPENWEATHER_BASE_URL=https://api.openweathermap.org
+```
+
+```bash
+cp frontend-web/.env.example frontend-web/.env
+```
+
+Edit `frontend-web/.env`:
+```env
+VITE_API_URL=http://localhost:8080/api
+VITE_AI_URL=http://localhost:8000
+VITE_WEATHER_API_KEY=your_openweather_api_key
+```
+
+### 3. Run with Docker Compose
+```bash
 docker compose up -d --build
 ```
 
-### 4. Domain and HTTPS (agromaster.live)
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3000 |
+| Backend API | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| AI Service | http://localhost:8000 |
 
-- Point DNS A record for agromaster.live to your EC2 public IP.
-- Point www.agromaster.live similarly (optional but recommended).
-- Ensure SSL cert files exist at:
-  - /etc/letsencrypt/live/agromaster.live/fullchain.pem
-  - /etc/letsencrypt/live/agromaster.live/privkey.pem
-- Restart frontend container after issuing/renewing certs:
+---
 
+## Production Deployment (AWS EC2)
+
+### Prerequisites
+- Ubuntu EC2 instance with inbound ports **22, 80, 443** open
+- Domain A record pointing to the EC2 public IP
+- AWS RDS PostgreSQL instance running
+
+### 1. Install Docker
 ```bash
-docker compose restart frontend
+sudo apt-get update
+sudo apt-get install -y ca-certificates curl gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker ubuntu && newgrp docker
 ```
 
-### 5. Verify Deployment
+### 2. Get SSL certificate
+```bash
+sudo snap install --classic certbot
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+sudo certbot certonly --standalone \
+  -d yourdomain.com -d www.yourdomain.com \
+  --email your@email.com --agree-tos --non-interactive
+```
 
-- Open https://agromaster.live
-- Check API: https://agromaster.live/api
-- Check AI route: https://agromaster.live/ai
+### 3. Clone and configure
+```bash
+git clone https://github.com/minidu10/cultivation-help-app.git
+cd cultivation-help-app
+```
+
+Create root `.env`:
+```bash
+cp .env.example .env
+# Fill in your RDS credentials and API keys
+```
+
+Create `frontend-web/.env` for production:
+```bash
+cat > frontend-web/.env << 'EOF'
+VITE_API_URL=/api
+VITE_AI_URL=/ai
+VITE_WEATHER_API_KEY=your_openweather_api_key
+EOF
+```
+
+> **Important:** Use `/api` and `/ai` (not `localhost`) for production — nginx proxies these internally.
+
+### 4. Deploy
+```bash
+docker compose up -d --build
+```
+
+Backend Maven build takes ~3–5 minutes on first run.
+
+### 5. Verify
+```bash
+docker compose ps   # all 3 containers should show "Up"
+```
+
+Open `https://yourdomain.com` in the browser.
+
+---
 
 ## Useful Commands
 
 ```bash
+# Check status
 docker compose ps
+
+# Stream logs
+docker compose logs -f
 docker compose logs -f backend
 docker compose logs -f frontend
 docker compose logs -f ai-service
+
+# Rebuild a single service
+docker compose up -d --build frontend
+
+# Restart all
 docker compose restart
+
+# Full stop
 docker compose down
+
+# Hard reset (removes containers, images, volumes)
+docker system prune -af --volumes
 ```
+
+---
+
+## Auto-renew SSL
+
+```bash
+sudo crontab -e
+# Add this line:
+0 3 * * * certbot renew --quiet && cd /home/ubuntu/cultivation-help-app && docker compose restart frontend
+```
+
+---
+
+## Environment Variables Reference
+
+### Root `.env`
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DB_URL` | Yes | PostgreSQL JDBC connection URL |
+| `DB_USERNAME` | Yes | Database username |
+| `DB_PASSWORD` | Yes | Database password |
+| `JWT_SECRET` | Yes | Secret key for JWT signing (min 32 chars) |
+| `GROQ_API_KEY` | Yes | Groq API key for AI advisor |
+| `OPENWEATHER_API_KEY` | Yes | OpenWeather API key |
+
+### `frontend-web/.env`
+| Variable | Local | Production |
+|----------|-------|------------|
+| `VITE_API_URL` | `http://localhost:8080/api` | `/api` |
+| `VITE_AI_URL` | `http://localhost:8000` | `/ai` |
+| `VITE_WEATHER_API_KEY` | your key | your key |
+
+---
 
 ## Security Checklist
 
-- Keep .env out of Git.
-- Use a strong JWT_SECRET.
-- Restrict RDS inbound rules to EC2 security group only.
-- Rotate API keys and DB passwords periodically.
+- Never commit `.env` files to Git
+- Use a strong random `JWT_SECRET` (32+ characters)
+- Restrict RDS inbound rules to EC2 security group only
+- Keep SSL certificates up to date (auto-renew cron above)
+- Rotate API keys and database passwords periodically
+
+---
 
 ## License
 
-MIT
+MIT — Built for Sri Lankan Farmers

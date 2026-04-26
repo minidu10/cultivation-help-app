@@ -434,7 +434,7 @@ export default function LandingPage() {
             <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🌿</div>
             <span style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 16, color: '#e8f5e2' }}>AgroMaster</span>
           </div>
-          <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(232,245,226,0.3)' }}>© 2026 AgroMaster · Built for Sri Lankan Farmers</div>
+          <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(232,245,226,0.3)' }}>© 2026 AgroMaster · Built for Sri Lankan Farmers 🌿</div>
           <div style={{ display: 'flex', gap: 24 }}>
             {['Privacy', 'Terms', 'Contact'].map(l => (
               <a key={l} href="#" style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(232,245,226,0.4)', textDecoration: 'none' }}>{l}</a>
