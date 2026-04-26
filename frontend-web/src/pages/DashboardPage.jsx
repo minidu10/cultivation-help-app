@@ -6,16 +6,37 @@ import {
 import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
 import { useAuth } from '../context/AuthContext'
-import { getCrops, getDueReminders, getProfitLoss, updateCropReminder } from '../api/crops'
-import { getCropInsights } from '../api/crops'
+import { getCrops, getDueReminders, getProfitLoss, updateCropReminder, getCropInsights } from '../api/crops'
 import {
-  getCurrentWeather,
-  getCurrentWeatherByLocation,
-  getWeatherForecast,
-  getWeatherForecastByLocation,
+  getCurrentWeather, getCurrentWeatherByLocation,
+  getWeatherForecast, getWeatherForecastByLocation,
 } from '../api/weather'
 
-const COLORS = ['#16a34a', '#dc2626', '#2563eb', '#d97706', '#7c3aed']
+const CHART_COLORS = ['#4ade80', '#f87171', '#60a5fa', '#f59e0b', '#c084fc']
+
+const CUSTOM_TOOLTIP_STYLE = {
+  background: 'var(--bg-card)',
+  border: '1px solid rgba(74,222,128,0.2)',
+  borderRadius: '10px',
+  fontFamily: 'Inter, sans-serif',
+  fontSize: '13px',
+  color: 'var(--text-primary)',
+}
+
+function CustomTooltip({ active, payload, label }) {
+  if (!active || !payload || !payload.length) return null
+  return (
+    <div style={CUSTOM_TOOLTIP_STYLE}>
+      <p style={{ padding: '8px 12px 4px', fontFamily: 'Space Grotesk', fontWeight: 700, borderBottom: '1px solid rgba(74,222,128,0.1)', marginBottom: '4px' }}>{label}</p>
+      {payload.map((p, i) => (
+        <p key={i} style={{ padding: '2px 12px', color: p.color }}>
+          {p.name}: Rs. {Number(p.value).toLocaleString()}
+        </p>
+      ))}
+      <div style={{ height: 4 }} />
+    </div>
+  )
+}
 
 export default function DashboardPage() {
   const { user } = useAuth()
@@ -42,7 +63,6 @@ export default function DashboardPage() {
       getCurrentWeather(lat, lon),
       getWeatherForecast(lat, lon, 5),
     ])
-
     setWeatherCurrent(currentRes.data)
     setWeatherForecast(forecastRes.data?.items ?? [])
   }
@@ -50,12 +70,8 @@ export default function DashboardPage() {
   const loadWeather = async () => {
     setLoadingWeather(true)
     setWeatherError('')
-
-    // Fallback to Colombo if location permission is blocked.
-    const fallbackLat = 6.9271
-    const fallbackLon = 79.8612
+    const fallbackLat = 6.9271, fallbackLon = 79.8612
     const savedCity = user?.city?.trim()
-
     try {
       if (savedCity) {
         const [currentRes, forecastRes] = await Promise.all([
@@ -66,42 +82,22 @@ export default function DashboardPage() {
         setWeatherForecast(forecastRes.data?.items ?? [])
         return
       }
-
-      if (!navigator.geolocation) {
-        await fetchWeatherByCoords(fallbackLat, fallbackLon)
-        return
-      }
-
+      if (!navigator.geolocation) { await fetchWeatherByCoords(fallbackLat, fallbackLon); return }
       await new Promise((resolve) => {
         navigator.geolocation.getCurrentPosition(
           async (position) => {
-            try {
-              const { latitude, longitude } = position.coords
-              await fetchWeatherByCoords(latitude, longitude)
-              resolve()
-            } catch {
-              try {
-                await fetchWeatherByCoords(fallbackLat, fallbackLon)
-              } catch {
-                setWeatherError('Unable to load weather now.')
-              }
-              resolve()
-            }
+            try { await fetchWeatherByCoords(position.coords.latitude, position.coords.longitude) }
+            catch { try { await fetchWeatherByCoords(fallbackLat, fallbackLon) } catch { setWeatherError('Unable to load weather now.') } }
+            resolve()
           },
           async () => {
-            try {
-              await fetchWeatherByCoords(fallbackLat, fallbackLon)
-            } catch {
-              setWeatherError('Unable to load weather now.')
-            }
+            try { await fetchWeatherByCoords(fallbackLat, fallbackLon) } catch { setWeatherError('Unable to load weather now.') }
             resolve()
           },
           { enableHighAccuracy: false, timeout: 7000, maximumAge: 300000 }
         )
       })
-    } finally {
-      setLoadingWeather(false)
-    }
+    } finally { setLoadingWeather(false) }
   }
 
   const loadDashboard = async () => {
@@ -110,31 +106,17 @@ export default function DashboardPage() {
       const cropList = cropsRes.data
       setCrops(cropList)
       loadCropWeather(cropList)
-
-      // Load profit/loss for each crop
       const plData = await Promise.all(
         cropList.map(async (crop) => {
           try {
             const pl = await getProfitLoss(crop.id)
             return {
-              cropId: crop.id,
-              name: crop.name,
-              fieldLocation: crop.fieldLocation,
-              expenses: Number(pl.data.totalExpenses),
-              revenue: Number(pl.data.totalRevenue),
-              profit: Number(pl.data.netProfit),
-              result: pl.data.result,
+              cropId: crop.id, name: crop.name, fieldLocation: crop.fieldLocation,
+              expenses: Number(pl.data.totalExpenses), revenue: Number(pl.data.totalRevenue),
+              profit: Number(pl.data.netProfit), result: pl.data.result,
             }
           } catch {
-            return {
-              cropId: crop.id,
-              name: crop.name,
-              fieldLocation: crop.fieldLocation,
-              expenses: 0,
-              revenue: 0,
-              profit: 0,
-              result: 'N/A',
-            }
+            return { cropId: crop.id, name: crop.name, fieldLocation: crop.fieldLocation, expenses: 0, revenue: 0, profit: 0, result: 'N/A' }
           }
         })
       )
@@ -142,142 +124,95 @@ export default function DashboardPage() {
       loadInsights(plData, cropList)
     } catch (err) {
       console.error('Dashboard load failed:', err)
-    } finally {
-      setLoading(false)
-    }
+    } finally { setLoading(false) }
   }
 
   const loadCropWeather = async (cropList) => {
     const weatherEntries = await Promise.all(
       cropList.map(async (crop) => {
-        if (!crop.fieldLocation || !crop.fieldLocation.trim()) {
-          return [crop.id, null]
-        }
-
-        try {
-          const res = await getCurrentWeatherByLocation(crop.fieldLocation)
-          return [crop.id, res.data]
-        } catch {
-          return [crop.id, null]
-        }
+        if (!crop.fieldLocation?.trim()) return [crop.id, null]
+        try { const res = await getCurrentWeatherByLocation(crop.fieldLocation); return [crop.id, res.data] }
+        catch { return [crop.id, null] }
       })
     )
-
     setCropWeatherById(Object.fromEntries(weatherEntries))
   }
+
   const loadInsights = async (plData, cropList) => {
     setLoadingInsights(true)
     const results = {}
     const cropMapByName = Object.fromEntries(cropList.map((c) => [c.name, c]))
-
     for (const crop of plData) {
       const cropMeta = cropMapByName[crop.name]
-      if (cropMeta && cropMeta.aiInsightsEnabled === false) {
-        results[crop.name] = '__AI_OFF__'
-        continue
-      }
-
+      if (cropMeta && cropMeta.aiInsightsEnabled === false) { results[crop.name] = '__AI_OFF__'; continue }
       try {
-        const res = await getCropInsights({
-          crop_name: crop.name,
-          total_expenses: crop.expenses,
-          total_revenue: crop.revenue,
-          net_profit: crop.profit,
-          status: crop.result,
-        })
+        const res = await getCropInsights({ crop_name: crop.name, total_expenses: crop.expenses, total_revenue: crop.revenue, net_profit: crop.profit, status: crop.result })
         results[crop.name] = res.data.insights
-      } catch {
-        results[crop.name] = null
-      }
+      } catch { results[crop.name] = null }
     }
-
     setInsights(results)
     setLoadingInsights(false)
   }
 
   const loadDueReminders = async () => {
-    try {
-      const res = await getDueReminders()
-      setDueReminders(res.data)
-    } catch {
-      setDueReminders([])
-    }
+    try { const res = await getDueReminders(); setDueReminders(res.data) }
+    catch { setDueReminders([]) }
   }
 
   const markReminderDone = async (reminderId) => {
     const reminder = dueReminders.find((item) => item.id === reminderId)
     if (!reminder) return
-
     try {
       await updateCropReminder(reminder.cropId, reminderId, { completed: true })
       setDueReminders((prev) => prev.filter((item) => item.id !== reminderId))
-    } catch {
-      // Ignore to keep dashboard flow smooth when reminder update fails.
-    }
+    } catch {}
   }
 
-  // Summary totals
   const totalRevenue = profitData.reduce((s, d) => s + d.revenue, 0)
   const totalExpenses = profitData.reduce((s, d) => s + d.expenses, 0)
   const netProfit = totalRevenue - totalExpenses
-  const activeCrops = crops.filter(
-    (c) => c.status !== 'HARVESTED' && c.status !== 'FAILED'
-  ).length
+  const activeCrops = crops.filter(c => c.status !== 'HARVESTED' && c.status !== 'FAILED').length
 
   const weatherAlerts = []
-  if ((weatherCurrent?.temperatureC ?? 0) >= 34) {
-    weatherAlerts.push('High heat today. Check irrigation timing and mulch moisture retention.')
-  }
-  if ((weatherCurrent?.rainMm ?? 0) > 0) {
-    weatherAlerts.push('Rain has started. Avoid pesticide spraying until conditions clear.')
-  }
-  if (weatherForecast.some((f) => (f.rainChancePercent ?? 0) >= 60)) {
-    weatherAlerts.push('Strong rain chance in forecast. Plan drainage and postpone field spraying.')
-  }
+  if ((weatherCurrent?.temperatureC ?? 0) >= 34) weatherAlerts.push('High heat today. Check irrigation timing and mulch moisture retention.')
+  if ((weatherCurrent?.rainMm ?? 0) > 0) weatherAlerts.push('Rain has started. Avoid pesticide spraying until conditions clear.')
+  if (weatherForecast.some(f => (f.rainChancePercent ?? 0) >= 60)) weatherAlerts.push('Strong rain chance in forecast. Plan drainage and postpone field spraying.')
 
-  // Pie chart data — expense vs revenue
   const pieData = [
-    { name: 'Total Revenue', value: totalRevenue },
-    { name: 'Total Expenses', value: totalExpenses },
+    { name: 'Revenue', value: totalRevenue },
+    { name: 'Expenses', value: totalExpenses },
   ]
 
+  const cardStyle = {
+    background: 'var(--bg-card)',
+    border: '1px solid var(--border)',
+    borderRadius: '16px',
+    backdropFilter: 'blur(12px)',
+    padding: '24px',
+  }
+
   const renderInsightContent = (rawInsight) => {
-    const lines = rawInsight
-      .split('\n')
-      .map((line) => line.replace(/\*\*/g, '').trim())
-      .filter((line) => line.length > 0)
-
+    const lines = rawInsight.split('\n').map(l => l.replace(/\*\*/g, '').trim()).filter(l => l.length > 0)
     return lines.map((line, idx) => {
-      if (line.startsWith('* ')) {
-        return (
-          <div key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-            <span className="mt-1 text-green-600">•</span>
-            <p className="leading-7">{line.replace(/^\*\s+/, '')}</p>
-          </div>
-        )
-      }
-
-      if (/^\d+\./.test(line)) {
-        return (
-          <p key={idx} className="text-sm font-semibold text-gray-800 leading-7 mt-1">
-            {line}
-          </p>
-        )
-      }
-
-      return (
-        <p key={idx} className="text-sm text-gray-700 leading-7">
-          {line}
-        </p>
+      if (line.startsWith('* ')) return (
+        <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '4px' }}>
+          <span style={{ color: '#4ade80', marginTop: '2px' }}>•</span>
+          <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>{line.replace(/^\*\s+/, '')}</p>
+        </div>
       )
+      if (/^\d+\./.test(line)) return (
+        <p key={idx} style={{ fontFamily: 'Space Grotesk', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: '6px 0 2px' }}>{line}</p>
+      )
+      return <p key={idx} style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, margin: '2px 0' }}>{line}</p>
     })
   }
 
   if (loading) {
     return (
       <Layout>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-400 animate-pulse">Loading dashboard...</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ width: 40, height: 40, border: '3px solid rgba(74,222,128,0.2)', borderTopColor: '#4ade80', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <p style={{ fontFamily: 'Inter', color: 'var(--text-muted)', fontSize: '14px' }}>Loading dashboard…</p>
         </div>
       </Layout>
     )
@@ -285,265 +220,210 @@ export default function DashboardPage() {
 
   return (
     <Layout>
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-800">Dashboard</h1>
-        <p className="text-gray-500 mt-1">
-          Your farm performance at a glance
-        </p>
-      </div>
-
-      {/* Weather */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-gray-700">
-            Weather Overview
-          </h2>
-          <button
-            onClick={loadWeather}
-            className="text-sm text-green-700 hover:text-green-800 font-medium"
-          >
-            Refresh
-          </button>
-        </div>
-
-        {loadingWeather ? (
-          <p className="text-gray-400 text-sm animate-pulse">Loading weather...</p>
-        ) : weatherError ? (
-          <p className="text-red-500 text-sm">{weatherError}</p>
-        ) : weatherCurrent ? (
-          <>
-            <div className="flex flex-wrap items-center gap-4 mb-4">
-              {weatherCurrent.iconUrl && (
-                <img
-                  src={weatherCurrent.iconUrl}
-                  alt={weatherCurrent.description || 'weather icon'}
-                  className="w-14 h-14"
-                />
-              )}
-              <div>
-                <p className="text-lg font-semibold text-gray-800">
-                  {weatherCurrent.location || 'Current Location'}
-                </p>
-                <p className="text-sm text-gray-500 capitalize">
-                  {weatherCurrent.description || 'No description'}
-                </p>
-              </div>
-              <div className="ml-auto grid grid-cols-2 gap-3 text-sm">
-                <p><span className="text-gray-500">Temp:</span> {Math.round(weatherCurrent.temperatureC ?? 0)}°C</p>
-                <p><span className="text-gray-500">Feels:</span> {Math.round(weatherCurrent.feelsLikeC ?? 0)}°C</p>
-                <p><span className="text-gray-500">Humidity:</span> {weatherCurrent.humidity ?? 0}%</p>
-                <p><span className="text-gray-500">Wind:</span> {weatherCurrent.windSpeed ?? 0} m/s</p>
-              </div>
-            </div>
-
-            {weatherForecast.length > 0 && (
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-4">
-                {weatherForecast.map((item, idx) => (
-                  <div key={idx} className="bg-gray-50 rounded-lg p-3 text-center">
-                    <p className="text-xs text-gray-500 mb-1">{item.dateTime?.slice(5, 16) || '-'}</p>
-                    {item.iconUrl && (
-                      <img src={item.iconUrl} alt={item.description || 'forecast icon'} className="w-10 h-10 mx-auto" />
-                    )}
-                    <p className="text-sm font-medium text-gray-700">{Math.round(item.temperatureC ?? 0)}°C</p>
-                    <p className="text-xs text-blue-600">Rain {item.rainChancePercent ?? 0}%</p>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {weatherAlerts.length > 0 && (
-              <div className="space-y-2">
-                {weatherAlerts.map((alert, idx) => (
-                  <p key={idx} className="text-sm bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-3 py-2">
-                    {alert}
-                  </p>
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <p className="text-gray-400 text-sm">No weather data available.</p>
-        )}
-      </div>
-
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard
-          title="Total Revenue"
-          value={`Rs. ${totalRevenue.toLocaleString()}`}
-          sub="All crops"
-          color="green"
-        />
-        <StatCard
-          title="Total Expenses"
-          value={`Rs. ${totalExpenses.toLocaleString()}`}
-          sub="All crops"
-          color="red"
-        />
-        <StatCard
-          title="Net Profit"
-          value={`Rs. ${netProfit.toLocaleString()}`}
-          sub={netProfit >= 0 ? '✅ Profitable' : '❌ Loss'}
-          color={netProfit >= 0 ? 'green' : 'red'}
-        />
-        <StatCard
-          title="Active Crops"
-          value={activeCrops}
-          sub={`${crops.length} total`}
-          color="blue"
-        />
-      </div>
-
-      <div className="bg-white rounded-xl border border-gray-200 p-5 mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-gray-700">Today Reminders</h2>
-          <button
-            onClick={loadDueReminders}
-            className="text-xs text-green-700 hover:text-green-800 font-medium"
-          >
-            Refresh
-          </button>
-        </div>
-        {dueReminders.length === 0 ? (
-          <p className="text-sm text-gray-400">No due reminders right now.</p>
-        ) : (
-          <div className="space-y-2">
-            {dueReminders.map((item) => (
-              <div key={item.id} className="flex items-center justify-between gap-3 border border-gray-100 rounded-lg p-3">
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">{item.title}</p>
-                  <p className="text-xs text-gray-500">
-                    {item.type?.replaceAll('_', ' ')} • {item.reminderAt?.replace('T', ' ').slice(0, 16)}
-                  </p>
-                </div>
-                <button
-                  onClick={() => markReminderDone(item.id)}
-                  className="text-xs px-2 py-1 rounded bg-green-100 text-green-700 hover:bg-green-200"
-                >
-                  Done
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <StatCard title="Harvest Revenue" value={`Rs. ${totalRevenue.toLocaleString()}`} sub="All crops" color="green" icon="📦" />
+        <StatCard title="Total Expenses"  value={`Rs. ${totalExpenses.toLocaleString()}`} sub="All crops" color="red" icon="💸" />
+        <StatCard title="Net Profit"      value={`Rs. ${netProfit.toLocaleString()}`} sub={netProfit >= 0 ? 'Profitable ✓' : 'Loss'} color={netProfit >= 0 ? 'green' : 'red'} icon="📈" />
+        <StatCard title="Active Crops"    value={activeCrops} sub={`${crops.length} total`} color="blue" icon="🌾" />
       </div>
 
       {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '16px', marginBottom: '20px' }}>
 
-        {/* Bar chart — revenue vs expenses per crop */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-base font-semibold text-gray-700 mb-4">
-            Revenue vs Expenses by Crop
-          </h2>
+        {/* Bar chart */}
+        <div style={cardStyle}>
+          <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>Revenue vs Expenses</div>
+              <div style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>Per crop · Rs.</div>
+            </div>
+            <div style={{ display: 'flex', gap: '16px' }}>
+              {[{ label: 'Revenue', color: '#4ade80' }, { label: 'Expenses', color: '#f87171' }].map(l => (
+                <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '2px', background: l.color }} />
+                  <span style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)' }}>{l.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
           {profitData.length === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-10">
+            <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-faint)', textAlign: 'center', padding: '40px 0' }}>
               No crop data yet — add crops and expenses to see charts
             </p>
           ) : (
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={profitData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                <YAxis tick={{ fontSize: 12 }} />
-                <Tooltip
-                  formatter={(value) => `Rs. ${value.toLocaleString()}`}
-                />
-                <Legend />
-                <Bar dataKey="revenue" name="Revenue"
-                     fill="#16a34a" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="expenses" name="Expenses"
-                     fill="#dc2626" radius={[4, 4, 0, 0]} />
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(74,222,128,0.08)" />
+                <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'Inter' }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'Inter' }} axisLine={false} tickLine={false} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="revenue" name="Revenue" fill="#4ade80" radius={[4, 4, 0, 0]} opacity={0.85} />
+                <Bar dataKey="expenses" name="Expenses" fill="#f87171" radius={[4, 4, 0, 0]} opacity={0.75} />
               </BarChart>
             </ResponsiveContainer>
           )}
         </div>
 
-        {/* Pie chart — revenue vs expenses overall */}
-        <div className="bg-white rounded-xl border border-gray-200 p-5">
-          <h2 className="text-base font-semibold text-gray-700 mb-4">
-            Revenue vs Expenses Overview
-          </h2>
-          {totalRevenue === 0 && totalExpenses === 0 ? (
-            <p className="text-gray-400 text-sm text-center py-10">
-              No financial data yet
-            </p>
-          ) : (
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={4}
-                  dataKey="value"
-                  label={({ name, percent }) =>
-                    `${name} ${(percent * 100).toFixed(0)}%`
-                  }
-                >
-                  {pieData.map((_, index) => (
-                    <Cell key={index} fill={COLORS[index]} />
+        {/* Weather widget */}
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <div>
+              <div style={{ fontFamily: 'Space Grotesk', fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Weather</div>
+              <div style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-faint)' }}>{user?.city || 'Current Location'}</div>
+            </div>
+            {!loadingWeather && weatherCurrent && (
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontFamily: 'Space Grotesk', fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>
+                  {Math.round(weatherCurrent.temperatureC ?? 0)}°
+                </div>
+                <div style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-muted)' }}>{weatherCurrent.description || ''}</div>
+              </div>
+            )}
+            <button onClick={loadWeather} style={{ background: 'none', border: 'none', color: '#4ade80', cursor: 'pointer', fontFamily: 'Inter', fontSize: '12px' }}>Refresh</button>
+          </div>
+
+          {loadingWeather ? (
+            <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-faint)', padding: '20px 0' }}>Loading weather…</p>
+          ) : weatherError ? (
+            <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#f87171' }}>{weatherError}</p>
+          ) : weatherCurrent ? (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', padding: '12px', background: 'rgba(74,222,128,0.06)', borderRadius: '10px', border: '1px solid rgba(74,222,128,0.12)' }}>
+                {weatherCurrent.iconUrl && <img src={weatherCurrent.iconUrl} alt="" style={{ width: 40, height: 40 }} />}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px' }}>
+                  <span style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)' }}>Feels: {Math.round(weatherCurrent.feelsLikeC ?? 0)}°C</span>
+                  <span style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)' }}>Humidity: {weatherCurrent.humidity ?? 0}%</span>
+                  <span style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)' }}>Wind: {weatherCurrent.windSpeed ?? 0} m/s</span>
+                </div>
+              </div>
+
+              {weatherForecast.length > 0 && (
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(weatherForecast.length, 5)}, 1fr)`, gap: '6px', marginBottom: '12px' }}>
+                  {weatherForecast.slice(0, 5).map((item, idx) => (
+                    <div key={idx} style={{ textAlign: 'center', background: 'var(--bg-input)', borderRadius: '10px', padding: '8px 4px', border: '1px solid var(--border)' }}>
+                      <div style={{ fontFamily: 'Inter', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>{item.dateTime?.slice(5, 13) || '-'}</div>
+                      {item.iconUrl && <img src={item.iconUrl} alt="" style={{ width: 28, height: 28, margin: '0 auto 4px', display: 'block' }} />}
+                      <div style={{ fontFamily: 'Space Grotesk', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{Math.round(item.temperatureC ?? 0)}°</div>
+                      <div style={{ fontFamily: 'Inter', fontSize: '10px', color: '#60a5fa' }}>{item.rainChancePercent ?? 0}%</div>
+                    </div>
                   ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value) => `Rs. ${value.toLocaleString()}`}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+                </div>
+              )}
+
+              {weatherAlerts.map((alert, idx) => (
+                <div key={idx} style={{ marginTop: '8px', padding: '10px 12px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px' }}>
+                  <span style={{ fontFamily: 'Inter', fontSize: '12px', color: '#f59e0b' }}>⚠ {alert}</span>
+                </div>
+              ))}
+            </>
+          ) : (
+            <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-faint)' }}>No weather data available.</p>
           )}
         </div>
       </div>
 
-      {/* Crop profit/loss table */}
-      <div className="bg-white rounded-xl border border-gray-200 p-5">
-        <h2 className="text-base font-semibold text-gray-700 mb-4">
-          Crop Performance
-        </h2>
+      {/* Reminders + Pie chart row */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+
+        {/* Today's Reminders */}
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
+            <div style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>Today's Reminders</div>
+            <button onClick={loadDueReminders} style={{ background: 'none', border: 'none', color: '#4ade80', cursor: 'pointer', fontFamily: 'Inter', fontSize: '12px' }}>Refresh</button>
+          </div>
+          {dueReminders.length === 0 ? (
+            <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-faint)', padding: '16px 0' }}>No due reminders right now.</p>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              {dueReminders.map(item => (
+                <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px' }}>
+                  <div>
+                    <p style={{ fontFamily: 'Space Grotesk', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{item.title}</p>
+                    <p style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                      {item.type?.replaceAll('_', ' ')} · {item.reminderAt?.replace('T', ' ').slice(0, 16)}
+                    </p>
+                  </div>
+                  <button onClick={() => markReminderDone(item.id)} style={{
+                    background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.3)',
+                    borderRadius: '6px', padding: '4px 10px', color: '#4ade80',
+                    fontFamily: 'Inter', fontSize: '12px', cursor: 'pointer', flexShrink: 0,
+                  }}>Done ✓</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Pie chart */}
+        <div style={cardStyle}>
+          <div style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', marginBottom: '4px' }}>Revenue vs Expenses</div>
+          <div style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>Overall overview</div>
+          {totalRevenue === 0 && totalExpenses === 0 ? (
+            <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-faint)', textAlign: 'center', padding: '40px 0' }}>No financial data yet</p>
+          ) : (
+            <>
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={78} paddingAngle={4} dataKey="value">
+                    {pieData.map((_, index) => (
+                      <Cell key={index} fill={CHART_COLORS[index]} opacity={0.9} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => `Rs. ${value.toLocaleString()}`} contentStyle={CUSTOM_TOOLTIP_STYLE} />
+                </PieChart>
+              </ResponsiveContainer>
+              {/* Legend below chart */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                {pieData.map((entry, index) => {
+                  const total = totalRevenue + totalExpenses
+                  const pct = total > 0 ? ((entry.value / total) * 100).toFixed(0) : 0
+                  return (
+                    <div key={entry.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: CHART_COLORS[index], flexShrink: 0 }} />
+                        <span style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)' }}>{entry.name}</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-faint)' }}>{pct}%</span>
+                        <span style={{ fontFamily: 'Space Grotesk', fontSize: '13px', fontWeight: 700, color: CHART_COLORS[index] }}>Rs. {entry.value.toLocaleString()}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Crop performance table */}
+      <div style={{ ...cardStyle, marginBottom: '20px' }}>
+        <div style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', marginBottom: '18px' }}>Crop Performance</div>
         {profitData.length === 0 ? (
-          <p className="text-gray-400 text-sm text-center py-6">
-            No crops added yet
-          </p>
+          <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-faint)', textAlign: 'center', padding: '24px 0' }}>No crops added yet</p>
         ) : (
-          <table className="w-full text-sm">
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr className="text-left text-gray-500 border-b border-gray-100">
-                <th className="pb-2 font-medium">Crop</th>
-                <th className="pb-2 font-medium">Revenue</th>
-                <th className="pb-2 font-medium">Expenses</th>
-                <th className="pb-2 font-medium">Net Profit</th>
-                <th className="pb-2 font-medium">Result</th>
+              <tr style={{ borderBottom: '1px solid rgba(74,222,128,0.1)' }}>
+                {['Crop', 'Revenue', 'Expenses', 'Net Profit', 'Result'].map(h => (
+                  <th key={h} style={{ padding: '10px 14px', fontFamily: 'Inter', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {profitData.map((row, i) => (
                 <tr key={i}
-                    className="border-b border-gray-50 hover:bg-gray-50">
-                  <td className="py-3 font-medium text-gray-800">
-                    {row.name}
-                  </td>
-                  <td className="py-3 text-green-600">
-                    Rs. {row.revenue.toLocaleString()}
-                  </td>
-                  <td className="py-3 text-red-500">
-                    Rs. {row.expenses.toLocaleString()}
-                  </td>
-                  <td className="py-3 font-semibold">
-                    Rs. {row.profit.toLocaleString()}
-                  </td>
-                  <td className="py-3">
-                    <span className={`px-2 py-1 rounded-full text-xs
-                      font-medium ${
-                        row.result === 'PROFIT'
-                          ? 'bg-green-100 text-green-700'
-                          : row.result === 'LOSS'
-                          ? 'bg-red-100 text-red-700'
-                          : 'bg-gray-100 text-gray-500'
-                      }`}>
-                      {row.result}
-                    </span>
+                  style={{ borderBottom: i < profitData.length - 1 ? '1px solid rgba(74,222,128,0.06)' : 'none', transition: 'background 0.2s' }}
+                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(74,222,128,0.04)'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  <td style={{ padding: '12px 14px', fontFamily: 'Space Grotesk', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{row.name}</td>
+                  <td style={{ padding: '12px 14px', fontFamily: 'Space Grotesk', fontSize: '14px', color: '#4ade80' }}>Rs. {row.revenue.toLocaleString()}</td>
+                  <td style={{ padding: '12px 14px', fontFamily: 'Space Grotesk', fontSize: '14px', color: '#f87171' }}>Rs. {row.expenses.toLocaleString()}</td>
+                  <td style={{ padding: '12px 14px', fontFamily: 'Space Grotesk', fontSize: '14px', fontWeight: 700, color: row.profit >= 0 ? '#4ade80' : '#f87171' }}>Rs. {row.profit.toLocaleString()}</td>
+                  <td style={{ padding: '12px 14px' }}>
+                    <span className={row.result === 'PROFIT' ? 'badge-green' : row.result === 'LOSS' ? 'badge-red' : 'badge-gray'}>{row.result}</span>
                   </td>
                 </tr>
               ))}
@@ -551,114 +431,84 @@ export default function DashboardPage() {
           </table>
         )}
       </div>
+
       {/* AI Insights */}
-     {profitData.length > 0 && (
-        <div className="mt-6">
-          <div className="flex items-center gap-2 mb-4">
-            <h2 className="text-base font-semibold text-gray-700">
-              🤖 AI Insights
-            </h2>
-            <span className="text-xs bg-green-100 text-green-700
-                            px-2 py-1 rounded-full font-medium">
-              Powered by Groq
-            </span>
+      {profitData.length > 0 && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+            <div style={{
+              width: 32, height: 32, borderRadius: '8px',
+              background: 'linear-gradient(135deg, rgba(74,222,128,0.3), rgba(22,163,74,0.2))',
+              border: '1px solid rgba(74,222,128,0.4)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '16px', animation: 'pulse-glow 2s ease-in-out infinite',
+            }}>🤖</div>
+            <span style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>AI Insights</span>
+            <span style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: '100px', padding: '3px 10px', fontFamily: 'Inter', fontSize: '11px', color: '#4ade80' }}>Powered by Groq</span>
           </div>
 
           {loadingInsights ? (
-            <div className="bg-white rounded-xl border border-gray-200
-                            p-8 text-center">
-              <p className="text-gray-400 animate-pulse text-sm">
-                🤖 AI is analysing your crops...
-              </p>
+            <div style={{ ...cardStyle, textAlign: 'center', padding: '48px' }}>
+              <div style={{ width: 32, height: 32, border: '3px solid rgba(74,222,128,0.2)', borderTopColor: '#4ade80', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+              <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)' }}>🤖 AI is analysing your crops…</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div style={{ display: 'grid', gridTemplateColumns: profitData.length === 1 ? '1fr' : '1fr 1fr', gap: '16px' }}>
               {profitData.map((crop, i) => (
-                <div key={i}
-                    className={`bg-white rounded-xl border border-gray-200 p-5 ${
-                      profitData.length === 1 ? 'md:col-span-2' : ''
-                    }`}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <span className="text-lg">🌾</span>
-                    <h3 className="font-semibold text-gray-800">
-                      {crop.name}
-                    </h3>
-                    <span className={`ml-auto text-xs px-2 py-1
-                                    rounded-full font-medium ${
-                      crop.result === 'PROFIT'
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-red-100 text-red-700'
-                    }`}>
-                      {crop.result}
-                    </span>
+                <div key={i} style={cardStyle}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                    <span style={{ fontSize: '18px' }}>🌾</span>
+                    <span style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>{crop.name}</span>
+                    <span className={crop.result === 'PROFIT' ? 'badge-green' : 'badge-red'} style={{ marginLeft: 'auto' }}>{crop.result}</span>
                   </div>
 
-                  <div className="mb-3 bg-sky-50 border border-sky-100 rounded-lg p-3">
-                    <p className="text-xs text-sky-700 font-medium mb-1">Field Weather</p>
+                  {/* Field weather */}
+                  <div style={{ marginBottom: '12px', padding: '10px 12px', background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.15)', borderRadius: '10px' }}>
+                    <p style={{ fontFamily: 'Inter', fontSize: '11px', color: '#60a5fa', fontWeight: 600, marginBottom: '4px' }}>Field Weather</p>
                     {cropWeatherById[crop.cropId] ? (
-                      <div className="flex items-center gap-2 text-sm text-sky-900">
-                        {cropWeatherById[crop.cropId].iconUrl && (
-                          <img
-                            src={cropWeatherById[crop.cropId].iconUrl}
-                            alt={cropWeatherById[crop.cropId].description || 'weather icon'}
-                            className="w-8 h-8"
-                          />
-                        )}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {cropWeatherById[crop.cropId].iconUrl && <img src={cropWeatherById[crop.cropId].iconUrl} alt="" style={{ width: 28, height: 28 }} />}
                         <div>
-                          <p className="font-medium">
-                            {Math.round(cropWeatherById[crop.cropId].temperatureC ?? 0)}°C
-                            {' '}
-                            {cropWeatherById[crop.cropId].description || ''}
+                          <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-primary)', margin: 0 }}>
+                            {Math.round(cropWeatherById[crop.cropId].temperatureC ?? 0)}°C {cropWeatherById[crop.cropId].description || ''}
                           </p>
-                          <p className="text-xs text-sky-700">
+                          <p style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
                             {cropWeatherById[crop.cropId].location || crop.fieldLocation || 'Field location'}
                           </p>
                         </div>
                       </div>
                     ) : (
-                      <p className="text-xs text-sky-700">
+                      <p style={{ fontFamily: 'Inter', fontSize: '12px', color: 'rgba(96,165,250,0.6)' }}>
                         Weather not available for {crop.fieldLocation || 'this field location'}.
                       </p>
                     )}
                   </div>
 
+                  {/* Insight text */}
                   {insights[crop.name] && insights[crop.name] !== '__AI_OFF__' ? (
-                    <div className="rounded-lg border border-gray-100 bg-gray-50/70 p-3 space-y-2 wrap-break-word">
+                    <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px' }}>
                       {renderInsightContent(insights[crop.name])}
                     </div>
                   ) : insights[crop.name] === '__AI_OFF__' ? (
-                    <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                    <p style={{ fontFamily: 'Inter', fontSize: '13px', color: '#f59e0b', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '8px', padding: '10px 12px', margin: 0 }}>
                       AI off by farmer for this crop.
                     </p>
                   ) : (
-                    <p className="text-sm text-gray-400">
-                      No insights available
-                    </p>
+                    <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-faint)' }}>No insights available</p>
                   )}
 
-                  <div className="mt-4 pt-3 border-t border-gray-100
-                                  grid grid-cols-3 gap-2 text-center">
-                    <div>
-                      <p className="text-xs text-gray-400">Revenue</p>
-                      <p className="text-sm font-semibold text-green-600">
-                        Rs. {crop.revenue.toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400">Expenses</p>
-                      <p className="text-sm font-semibold text-red-500">
-                        Rs. {crop.expenses.toLocaleString()}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-gray-400">Profit</p>
-                      <p className={`text-sm font-semibold ${
-                        crop.profit >= 0
-                          ? 'text-green-700' : 'text-red-600'
-                      }`}>
-                        Rs. {crop.profit.toLocaleString()}
-                      </p>
-                    </div>
+                  {/* Mini financials */}
+                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(74,222,128,0.08)', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', textAlign: 'center' }}>
+                    {[
+                      { label: 'Revenue', value: `Rs. ${crop.revenue.toLocaleString()}`, color: '#4ade80' },
+                      { label: 'Expenses', value: `Rs. ${crop.expenses.toLocaleString()}`, color: '#f87171' },
+                      { label: 'Profit', value: `Rs. ${crop.profit.toLocaleString()}`, color: crop.profit >= 0 ? '#4ade80' : '#f87171' },
+                    ].map(s => (
+                      <div key={s.label}>
+                        <p style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 2px' }}>{s.label}</p>
+                        <p style={{ fontFamily: 'Space Grotesk', fontSize: '13px', fontWeight: 700, color: s.color, margin: 0 }}>{s.value}</p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}

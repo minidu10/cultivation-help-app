@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Layout from '../components/Layout'
 import { askAI } from '../api/crops'
 
@@ -11,40 +11,44 @@ const SUGGESTED_QUESTIONS = [
   'How much water does rice need per acre?',
 ]
 
+const cardStyle = {
+  background: 'var(--bg-card)',
+  border: '1px solid var(--border)',
+  borderRadius: '16px',
+  backdropFilter: 'blur(12px)',
+}
+
 export default function AIAdvisorPage() {
   const [messages, setMessages] = useState([
     {
       role: 'ai',
       text: `Hello! 👋 I'm your AI farming advisor. I can help you with crop cultivation, fertilizers, pest control, harvest timing, and farm finances. What would you like to know?`,
-    }
+    },
   ])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [cropContext, setCropContext] = useState('')
+  const bottomRef = useRef(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages, loading])
 
   const sendMessage = async (question) => {
     const q = question || input.trim()
     if (!q || loading) return
 
-    // Add user message
-    setMessages((prev) => [...prev, { role: 'user', text: q }])
+    setMessages(prev => [...prev, { role: 'user', text: q }])
     setInput('')
     setLoading(true)
 
     try {
       const res = await askAI(q, cropContext)
-      setMessages((prev) => [
+      setMessages(prev => [...prev, { role: 'ai', text: res.data.answer, mode: res.data.mode }])
+    } catch {
+      setMessages(prev => [
         ...prev,
-        { role: 'ai', text: res.data.answer, mode: res.data.mode }
-      ])
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'ai',
-          text: 'Sorry, I could not connect to the AI service. Make sure the AI server is running on port 8000.',
-          error: true,
-        }
+        { role: 'ai', text: 'Sorry, I could not connect to the AI service. Make sure the AI server is running on port 8000.', error: true },
       ])
     } finally {
       setLoading(false)
@@ -60,55 +64,55 @@ export default function AIAdvisorPage() {
 
   return (
     <Layout>
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">
-          🤖 AI Crop Advisor
-        </h1>
-        <p className="text-gray-500 mt-1">
-          Ask anything about farming — powered by Groq AI
-        </p>
-      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: '24px', height: 'calc(100vh - 140px)', minHeight: '500px' }}>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* ── Left sidebar ── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
 
-        {/* Sidebar — context + suggestions */}
-        <div className="lg:col-span-1 space-y-4">
+          {/* Status */}
+          <div style={{ ...cardStyle, padding: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+              <div style={{ width: 40, height: 40, borderRadius: '10px', background: 'rgba(74,222,128,0.1)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🤖</div>
+              <div>
+                <div style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>AI Advisor</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-lime)', boxShadow: '0 0 6px var(--accent-lime)' }} />
+                  <span style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--accent-lime)' }}>Online · Powered by Groq</span>
+                </div>
+              </div>
+            </div>
+            <p style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              Ask about cultivation, pests, fertilizers, and farm finances.
+            </p>
+          </div>
 
           {/* Crop context */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <h2 className="text-sm font-semibold text-gray-700 mb-2">
-              📍 Your crop context
-            </h2>
-            <p className="text-xs text-gray-400 mb-2">
-              Optional — helps AI give better advice
-            </p>
+          <div style={{ ...cardStyle, padding: '20px' }}>
+            <div style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '11px', color: 'var(--accent-lime)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px' }}>Farm Context</div>
+            <p style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>Help AI give better advice by describing your farm</p>
             <textarea
               value={cropContext}
-              onChange={(e) => setCropContext(e.target.value)}
+              onChange={e => setCropContext(e.target.value)}
               rows={3}
               placeholder="e.g. Growing Samba rice, 2.5 acres, North Field"
-              className="w-full border border-gray-300 rounded-lg
-                         px-3 py-2 text-xs focus:outline-none
-                         focus:ring-2 focus:ring-green-400 resize-none"
+              style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px', fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-primary)', outline: 'none', resize: 'none', transition: 'border-color 0.2s' }}
+              onFocus={e => e.target.style.borderColor = 'var(--border-hover)'}
+              onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
           </div>
 
           {/* Suggested questions */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <h2 className="text-sm font-semibold text-gray-700 mb-3">
-              💡 Try asking
-            </h2>
-            <div className="space-y-2">
+          <div style={{ ...cardStyle, padding: '20px' }}>
+            <div style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '11px', color: 'var(--accent-lime)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '12px' }}>Try Asking</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {SUGGESTED_QUESTIONS.map((q, i) => (
                 <button
                   key={i}
                   onClick={() => sendMessage(q)}
                   disabled={loading}
-                  className="w-full text-left text-xs text-green-700
-                             bg-green-50 hover:bg-green-100 border
-                             border-green-200 rounded-lg px-3 py-2
-                             transition-colors disabled:opacity-40"
+                  style={{ textAlign: 'left', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '8px', padding: '9px 12px', fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.2s', opacity: loading ? 0.4 : 1 }}
+                  onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = 'var(--border-hover)'; e.currentTarget.style.color = 'var(--text-primary)' } }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)' }}
                 >
                   {q}
                 </button>
@@ -117,124 +121,95 @@ export default function AIAdvisorPage() {
           </div>
         </div>
 
-        {/* Chat area */}
-        <div className="lg:col-span-3 flex flex-col bg-white
-                        rounded-xl border border-gray-200
-                        overflow-hidden" style={{ height: '600px' }}>
+        {/* ── Chat area ── */}
+        <div style={{ ...cardStyle, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+
+          {/* Header */}
+          <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', boxShadow: '0 0 12px rgba(74,222,128,0.3)', flexShrink: 0 }}>🌾</div>
+            <div>
+              <div style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>AgroMaster AI</div>
+              <div style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)' }}>Expert farming advisor for Sri Lanka</div>
+            </div>
+          </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-5 space-y-4">
+          <div style={{ flex: 1, overflowY: 'auto', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex ${
-                  msg.role === 'user' ? 'justify-end' : 'justify-start'
-                }`}
-              >
-                {/* AI avatar */}
+              <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-start', gap: '10px' }}>
                 {msg.role === 'ai' && (
-                  <div className="w-8 h-8 rounded-full bg-green-600
-                                  flex items-center justify-center
-                                  text-white text-sm flex-shrink-0
-                                  mr-3 mt-1">
-                    🌾
-                  </div>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', flexShrink: 0, boxShadow: '0 0 8px rgba(74,222,128,0.25)' }}>🌾</div>
                 )}
-
-                <div
-                  className={`max-w-lg rounded-2xl px-4 py-3 text-sm
-                    leading-relaxed ${
-                      msg.role === 'user'
-                        ? 'bg-green-600 text-white rounded-tr-sm'
-                        : msg.error
-                        ? 'bg-red-50 text-red-600 border border-red-200'
-                        : 'bg-gray-100 text-gray-800 rounded-tl-sm'
-                    }`}
-                >
-                  {/* Format AI response — preserve line breaks */}
+                <div style={{
+                  maxWidth: '70%',
+                  borderRadius: msg.role === 'user' ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                  padding: '12px 16px',
+                  background: msg.role === 'user'
+                    ? 'var(--accent-lime)'
+                    : msg.error
+                    ? 'rgba(248,113,113,0.1)'
+                    : 'var(--bg-input)',
+                  border: msg.role === 'user' ? 'none' : msg.error ? '1px solid rgba(248,113,113,0.3)' : '1px solid var(--border)',
+                  color: msg.role === 'user' ? '#0a1a0f' : msg.error ? 'var(--accent-red)' : 'var(--text-primary)',
+                  fontFamily: 'Inter',
+                  fontSize: '14px',
+                  lineHeight: 1.6,
+                }}>
                   {msg.text.split('\n').map((line, j) => (
-                    <span key={j}>
-                      {line}
-                      {j < msg.text.split('\n').length - 1 && <br />}
-                    </span>
+                    <span key={j}>{line}{j < msg.text.split('\n').length - 1 && <br />}</span>
                   ))}
-
-                  {/* Mode badge */}
                   {msg.mode && (
-                    <div className="mt-2 pt-2 border-t border-gray-200">
-                      <span className="text-xs text-gray-400">
-                        Powered by {msg.mode}
-                      </span>
+                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border)', fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-muted)' }}>
+                      Powered by {msg.mode}
                     </div>
                   )}
                 </div>
-
-                {/* User avatar */}
                 {msg.role === 'user' && (
-                  <div className="w-8 h-8 rounded-full bg-gray-300
-                                  flex items-center justify-center
-                                  text-gray-600 text-sm flex-shrink-0
-                                  ml-3 mt-1">
-                    👤
-                  </div>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(74,222,128,0.12)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', flexShrink: 0 }}>👤</div>
                 )}
               </div>
             ))}
 
             {/* Typing indicator */}
             {loading && (
-              <div className="flex justify-start">
-                <div className="w-8 h-8 rounded-full bg-green-600
-                                flex items-center justify-center
-                                text-white text-sm flex-shrink-0
-                                mr-3 mt-1">
-                  🌾
-                </div>
-                <div className="bg-gray-100 rounded-2xl rounded-tl-sm
-                                px-4 py-3">
-                  <div className="flex gap-1 items-center h-5">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full
-                                    animate-bounce"
-                         style={{ animationDelay: '0ms' }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full
-                                    animate-bounce"
-                         style={{ animationDelay: '150ms' }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full
-                                    animate-bounce"
-                         style={{ animationDelay: '300ms' }} />
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', flexShrink: 0 }}>🌾</div>
+                <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '18px 18px 18px 4px', padding: '14px 18px' }}>
+                  <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
+                    {[0, 150, 300].map(delay => (
+                      <div key={delay} style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent-lime)', animation: 'typing-bounce 1s ease infinite', animationDelay: `${delay}ms` }} />
+                    ))}
                   </div>
                 </div>
               </div>
             )}
+            <div ref={bottomRef} />
           </div>
 
-          {/* Input area */}
-          <div className="border-t border-gray-200 p-4">
-            <div className="flex gap-3">
+          {/* Input */}
+          <div style={{ padding: '16px 20px', borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end' }}>
               <textarea
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKey}
                 rows={2}
                 disabled={loading}
-                placeholder="Ask a farming question... (Enter to send)"
-                className="flex-1 border border-gray-300 rounded-xl
-                           px-4 py-2.5 text-sm focus:outline-none
-                           focus:ring-2 focus:ring-green-400 resize-none
-                           disabled:opacity-50"
+                placeholder="Ask a farming question… (Enter to send)"
+                style={{ flex: 1, background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', padding: '10px 14px', fontFamily: 'Inter', fontSize: '14px', color: 'var(--text-primary)', outline: 'none', resize: 'none', transition: 'border-color 0.2s', opacity: loading ? 0.5 : 1 }}
+                onFocus={e => e.target.style.borderColor = 'var(--border-hover)'}
+                onBlur={e => e.target.style.borderColor = 'var(--border)'}
               />
               <button
                 onClick={() => sendMessage()}
                 disabled={!input.trim() || loading}
-                className="bg-green-600 hover:bg-green-700 text-white
-                           px-5 rounded-xl font-medium text-sm
-                           disabled:opacity-40 transition-colors
-                           flex items-center gap-2"
+                className="agro-btn"
+                style={{ padding: '10px 20px', fontSize: '14px', flexShrink: 0 }}
               >
-                {loading ? '...' : 'Send →'}
+                {loading ? '…' : 'Send'}
               </button>
             </div>
-            <p className="text-xs text-gray-400 mt-2">
+            <p style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-faint)', marginTop: '8px' }}>
               Press Enter to send · Shift+Enter for new line
             </p>
           </div>

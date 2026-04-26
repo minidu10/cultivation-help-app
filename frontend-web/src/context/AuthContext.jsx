@@ -18,10 +18,11 @@ export function AuthProvider({ children }) {
         ? (media.matches ? 'DARK' : 'LIGHT')
         : manualTheme
 
-      document.documentElement.classList.remove('theme-light', 'theme-dark')
-      document.documentElement.classList.add(
-        resolvedTheme === 'DARK' ? 'theme-dark' : 'theme-light'
-      )
+      if (resolvedTheme === 'LIGHT') {
+        document.documentElement.setAttribute('data-theme', 'light')
+      } else {
+        document.documentElement.removeAttribute('data-theme')
+      }
       document.documentElement.style.colorScheme =
         resolvedTheme === 'DARK' ? 'dark' : 'light'
     }
