@@ -34,7 +34,7 @@ services:
     build: ./frontend-web
     container_name: cultivation_frontend
     ports:
-      - "3000:80"
+      - "80:80"
       - "443:443"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
