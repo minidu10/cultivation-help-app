@@ -53,7 +53,7 @@ ai-service/.env
 *.iml
 
 # Claude Code local files
-.claude/
+.claude
 
 # OS
 .DS_Store
