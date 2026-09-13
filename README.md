@@ -15,6 +15,7 @@ AgroMaster is an AI-powered farm management platform built for Sri Lankan farmer
 - **AI Advisor** — Personalized crop recommendations and cost optimizations powered by Groq AI
 - **Weather Integration** — Live weather data and 7-day forecasts tailored to your farm location in Sri Lanka
 - **Verified Accounts** — Registration and password reset are confirmed by a 6-digit code emailed to the address, so every account has a reachable inbox
+- **Google Sign-In** — One-tap account creation with a Google account; the address is already proven, so no code is needed
 - **Reminder Digests** — One email a day at 7:00 AM listing tasks due tomorrow and the day after, never one message per task. Farmers switch it off in Settings
 
 ---
@@ -188,6 +189,29 @@ MAIL_PASSWORD=<brevo smtp key>
 MAIL_FROM=AgroMaster <no-reply@yourdomain.com>
 ```
 
+### Google Sign-In setup
+
+Optional — the button hides itself until a client id is configured, and email/password signup works regardless.
+
+1. At [console.cloud.google.com](https://console.cloud.google.com) create a project, then **APIs & Services → OAuth consent screen**. External user type, fill in the app name and support email.
+2. **Credentials → Create credentials → OAuth client ID → Web application.**
+3. Add **Authorised JavaScript origins** — the page the button is shown on, not the API:
+
+   | Environment | Origin |
+   |---|---|
+   | Local | `http://localhost:5173` |
+   | Production | `https://yourdomain.com` |
+
+4. Copy the client id into `.env` and restart the backend:
+
+   ```env
+   GOOGLE_CLIENT_ID=1234567890-abcdefg.apps.googleusercontent.com
+   ```
+
+No client secret is needed. The browser obtains an ID token and the backend verifies its signature against Google's published keys, checking issuer, audience and expiry — an unverified token is rejected, so a forged one naming someone else's address cannot sign in.
+
+**Account linking.** Signing in with Google using an address that already has a password account links the two, and afterwards either method works. Linking only happens when Google reports the address as verified, so an unverified Google account cannot claim an existing user. A Google-only account has no password until one is set through **Forgot password**, at which point both methods work.
+
 ### Inspecting the database
 
 Connect any client (pgAdmin, DBeaver) to `localhost:5434`, database `cultivation`, user/password `postgres`. `scripts/analysis-queries.sql` has ready-made queries for profit per crop, spend by category, monthly burn and revenue per acre.
@@ -341,6 +365,7 @@ All configuration lives in the root `.env`. The frontend has no environment file
 | `MAIL_SMTP_AUTH` / `MAIL_STARTTLS` | Yes | `false` locally, `true` for a real relay |
 | `MAIL_USERNAME` / `MAIL_PASSWORD` | prod only | SMTP credentials |
 | `MAIL_FROM` | No | Sender shown on every email |
+| `GOOGLE_CLIENT_ID` | No | OAuth Web client id. Blank hides the Google button |
 | `REMINDER_LEAD_DAYS` | No | Days of advance notice, default `2,1` |
 | `REMINDER_CRON` | No | Digest schedule, default `0 0 7 * * *` (07:00 daily) |
 | `REMINDER_EMAIL_ENABLED` | No | `false` disables reminder emails for everyone |

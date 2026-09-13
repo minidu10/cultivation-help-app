@@ -35,6 +35,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/verify-code").permitAll()
                 .requestMatchers("/api/auth/forgot-password").permitAll()
                 .requestMatchers("/api/auth/reset-password").permitAll()
+                .requestMatchers("/api/auth/config").permitAll()
+                .requestMatchers("/api/auth/google").permitAll()
                 .requestMatchers(
                     "/swagger-ui/**",
                     "/swagger-ui.html",

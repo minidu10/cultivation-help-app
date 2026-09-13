@@ -15,6 +15,14 @@ export const register = (payload) =>
 export const login = (email, password) =>
   api.post('/auth/login', { email, password })
 
+// Google Sign-In. The client id is served by the backend so the frontend
+// needs no build-time configuration.
+export const getAuthConfig = () =>
+  api.get('/auth/config')
+
+export const googleSignIn = (credential) =>
+  api.post('/auth/google', { credential })
+
 // Password reset uses the same code mechanism.
 export const requestPasswordReset = (email) =>
   api.post('/auth/forgot-password', { email })

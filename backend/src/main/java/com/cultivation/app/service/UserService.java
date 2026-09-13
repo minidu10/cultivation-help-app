@@ -84,6 +84,14 @@ public class UserService {
         User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase())
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
 
+        // Google-only accounts have no password at all. Saying so plainly is
+        // fine here: the caller already proved they know a registered email,
+        // and the alternative is an NPE inside the encoder.
+        if (user.getPassword() == null) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED,
+                "This account uses Google Sign-In. Use the Google button, or reset your password to set one.");
+        }
+
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
         }

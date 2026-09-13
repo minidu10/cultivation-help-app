@@ -3,12 +3,15 @@ package com.cultivation.app.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cultivation.app.dto.AuthConfigResponse;
 import com.cultivation.app.dto.AuthResponse;
+import com.cultivation.app.dto.GoogleSignInRequest;
 import com.cultivation.app.dto.LoginRequest;
 import com.cultivation.app.dto.MessageResponse;
 import com.cultivation.app.dto.RegisterRequest;
@@ -18,6 +21,7 @@ import com.cultivation.app.dto.VerifyCodeRequest;
 import com.cultivation.app.entity.EmailVerification.Purpose;
 import com.cultivation.app.exception.ApiException;
 import com.cultivation.app.repository.UserRepository;
+import com.cultivation.app.service.GoogleAuthService;
 import com.cultivation.app.service.UserService;
 import com.cultivation.app.service.VerificationService;
 
@@ -34,14 +38,29 @@ public class AuthController {
 
     private final UserService userService;
     private final VerificationService verificationService;
+    private final GoogleAuthService googleAuthService;
     private final UserRepository userRepository;
 
     public AuthController(UserService userService,
                           VerificationService verificationService,
+                          GoogleAuthService googleAuthService,
                           UserRepository userRepository) {
         this.userService = userService;
         this.verificationService = verificationService;
+        this.googleAuthService = googleAuthService;
         this.userRepository = userRepository;
+    }
+
+    @GetMapping("/config")
+    @Operation(summary = "Public auth options the sign-in pages need")
+    public ResponseEntity<AuthConfigResponse> config() {
+        return ResponseEntity.ok(new AuthConfigResponse(googleAuthService.getClientId()));
+    }
+
+    @PostMapping("/google")
+    @Operation(summary = "Sign in or register with a Google ID token")
+    public ResponseEntity<AuthResponse> google(@Valid @RequestBody GoogleSignInRequest request) {
+        return ResponseEntity.ok(googleAuthService.signIn(request.getCredential()));
     }
 
     // ------------------------------------------------------------ registration

@@ -7,6 +7,7 @@ import { validatePassword, apiError } from '../utils/password'
 import {
   AuthShell, StepDots, StyledInput, PasswordField, CodeInput, Alert, ResendTimer,
 } from '../components/AuthUI'
+import GoogleSignIn from '../components/GoogleSignIn'
 
 const RESEND_COOLDOWN = 60   // matches app.verification.resend-cooldown-seconds
 
@@ -139,6 +140,10 @@ export default function RegisterPage() {
           <button type="submit" disabled={loading || !email.trim()} className="agro-btn" style={{ width: '100%', marginTop: '18px' }}>
             {loading ? 'Sending code…' : 'Send verification code'}
           </button>
+
+          {/* Google has already verified the address, so signing up this way
+              skips the code entirely. Offered on step 1 only. */}
+          <GoogleSignIn onError={setError} text="signup_with" />
         </form>
       )}
 

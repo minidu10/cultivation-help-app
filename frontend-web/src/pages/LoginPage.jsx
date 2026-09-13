@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
+import GoogleSignIn from '../components/GoogleSignIn'
 
 function StyledInput({ label, type = 'text', value, onChange, placeholder, name, required }) {
   const [focused, setFocused] = useState(false)
@@ -165,6 +166,8 @@ export default function LoginPage() {
                 {loading ? 'Signing in…' : 'Sign In'}
               </button>
             </form>
+
+            <GoogleSignIn onError={setError} text="signin_with" />
           </div>
 
           <div style={{ marginTop: '20px', textAlign: 'center', fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)' }}>

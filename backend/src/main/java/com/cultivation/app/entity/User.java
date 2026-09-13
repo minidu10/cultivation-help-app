@@ -24,7 +24,8 @@ public class User {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
-    @Column(nullable = false)
+    /** Null for accounts created through Google that never set a password. */
+    @Column
     private String password;
 
     @Column(length = 20)
@@ -38,6 +39,14 @@ public class User {
 
     @Column(name = "desktop_mode", nullable = false)
     private Boolean desktopMode = false;
+
+    /** LOCAL or GOOGLE - how the account was first created. */
+    @Column(name = "auth_provider", nullable = false, length = 20)
+    private String authProvider = "LOCAL";
+
+    /** Google's stable subject claim. Null for email/password accounts. */
+    @Column(name = "google_id", length = 64)
+    private String googleId;
 
     /** Opt-out for the daily reminder digest, controlled from Settings. */
     @Column(name = "reminder_emails_enabled", nullable = false)
@@ -75,6 +84,12 @@ public class User {
 
     public Boolean getDesktopMode() { return desktopMode; }
     public void setDesktopMode(Boolean desktopMode) { this.desktopMode = desktopMode; }
+
+    public String getAuthProvider() { return authProvider; }
+    public void setAuthProvider(String authProvider) { this.authProvider = authProvider; }
+
+    public String getGoogleId() { return googleId; }
+    public void setGoogleId(String googleId) { this.googleId = googleId; }
 
     public Boolean getReminderEmailsEnabled() { return reminderEmailsEnabled; }
     public void setReminderEmailsEnabled(Boolean reminderEmailsEnabled) { this.reminderEmailsEnabled = reminderEmailsEnabled; }
