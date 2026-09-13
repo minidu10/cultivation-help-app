@@ -6,6 +6,12 @@ AgroMaster is an AI-powered farm management platform built for Sri Lankan farmer
 
 ---
 
+## Documentation
+
+Full requirements, architecture and design rationale: [docs/SRS.md](docs/SRS.md)
+
+---
+
 ## Features
 
 - **Crop Management** — Track every crop from seed to harvest with status monitoring and growth milestones
@@ -77,6 +83,8 @@ cultivation-help-app/
 │   ├── routers/
 │   ├── services/
 │   └── Dockerfile
+├── docs/
+│   └── SRS.md            # software requirements specification
 ├── scripts/
 │   ├── seed-local.sql        # demo data for local analysis
 │   └── analysis-queries.sql  # starter queries for pgAdmin
