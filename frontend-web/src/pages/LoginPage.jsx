@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
 
@@ -38,6 +38,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const notice = location.state?.message
 
   const handleLogin = async (e) => {
     e.preventDefault()
@@ -133,6 +135,16 @@ export default function LoginPage() {
             padding: '32px',
             backdropFilter: 'blur(16px)',
           }}>
+            {notice && !error && (
+              <div style={{
+                background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.25)',
+                borderRadius: '10px', padding: '11px 14px',
+                fontFamily: 'Inter', fontSize: '13px', color: 'var(--accent-lime)',
+                marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px',
+              }}>
+                <span>✓</span> {notice}
+              </div>
+            )}
             {error && (
               <div style={{
                 background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.25)',
@@ -147,7 +159,7 @@ export default function LoginPage() {
               <StyledInput label="Email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="farmer@example.com" required />
               <StyledInput label="Password" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
               <div style={{ textAlign: 'right', marginTop: '-8px', marginBottom: '20px' }}>
-                <a href="#" style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--accent-lime)', textDecoration: 'none' }}>Forgot password?</a>
+                <Link to="/forgot-password" style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--accent-lime)', textDecoration: 'none' }}>Forgot password?</Link>
               </div>
               <button type="submit" disabled={loading} className="agro-btn" style={{ width: '100%' }}>
                 {loading ? 'Signing in…' : 'Sign In'}

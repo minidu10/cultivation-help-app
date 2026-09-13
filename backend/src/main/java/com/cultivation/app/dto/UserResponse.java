@@ -11,6 +11,7 @@ public class UserResponse {
     private String city;
     private String themePreference;
     private Boolean desktopMode;
+    private Boolean reminderEmailsEnabled;
     private LocalDateTime createdAt;
 
     // Constructor
@@ -19,6 +20,7 @@ public class UserResponse {
                         String city,
                         String themePreference,
                         Boolean desktopMode,
+                        Boolean reminderEmailsEnabled,
                         LocalDateTime createdAt) {
         this.id = id;
         this.fullName = fullName;
@@ -27,6 +29,7 @@ public class UserResponse {
         this.city = city;
         this.themePreference = themePreference;
         this.desktopMode = desktopMode;
+        this.reminderEmailsEnabled = reminderEmailsEnabled;
         this.createdAt = createdAt;
     }
 
@@ -38,5 +41,6 @@ public class UserResponse {
     public String getCity() { return city; }
     public String getThemePreference() { return themePreference; }
     public Boolean getDesktopMode() { return desktopMode; }
+    public Boolean getReminderEmailsEnabled() { return reminderEmailsEnabled; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

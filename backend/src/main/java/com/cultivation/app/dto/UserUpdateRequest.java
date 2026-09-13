@@ -7,6 +7,7 @@ public class UserUpdateRequest {
     private String city;
     private String themePreference;
     private Boolean desktopMode;
+    private Boolean reminderEmailsEnabled;
 
     public String getFullName() { return fullName; }
     public void setFullName(String fullName) { this.fullName = fullName; }
@@ -22,4 +23,6 @@ public class UserUpdateRequest {
 
     public Boolean getDesktopMode() { return desktopMode; }
     public void setDesktopMode(Boolean desktopMode) { this.desktopMode = desktopMode; }
+    public Boolean getReminderEmailsEnabled() { return reminderEmailsEnabled; }
+    public void setReminderEmailsEnabled(Boolean reminderEmailsEnabled) { this.reminderEmailsEnabled = reminderEmailsEnabled; }
 }

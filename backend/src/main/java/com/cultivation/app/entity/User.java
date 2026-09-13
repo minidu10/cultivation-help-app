@@ -39,6 +39,10 @@ public class User {
     @Column(name = "desktop_mode", nullable = false)
     private Boolean desktopMode = false;
 
+    /** Opt-out for the daily reminder digest, controlled from Settings. */
+    @Column(name = "reminder_emails_enabled", nullable = false)
+    private Boolean reminderEmailsEnabled = true;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -71,6 +75,9 @@ public class User {
 
     public Boolean getDesktopMode() { return desktopMode; }
     public void setDesktopMode(Boolean desktopMode) { this.desktopMode = desktopMode; }
+
+    public Boolean getReminderEmailsEnabled() { return reminderEmailsEnabled; }
+    public void setReminderEmailsEnabled(Boolean reminderEmailsEnabled) { this.reminderEmailsEnabled = reminderEmailsEnabled; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
 }

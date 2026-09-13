@@ -6,6 +6,8 @@ import java.util.Map;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.server.ResponseStatusException;
@@ -27,6 +29,20 @@ public class GlobalExceptionHandler {
             ? "Request failed"
             : ex.getReason();
         return buildError(status, message, request.getRequestURI());
+    }
+
+    /**
+     * Without this, a @Valid failure falls through to the catch-all below and
+     * the caller gets "Unexpected server error" instead of the field message.
+     */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException ex,
+                                                                HttpServletRequest request) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+            .map(FieldError::getDefaultMessage)
+            .findFirst()
+            .orElse("Invalid request");
+        return buildError(HttpStatus.BAD_REQUEST, message, request.getRequestURI());
     }
 
     @ExceptionHandler(Exception.class)

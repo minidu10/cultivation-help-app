@@ -49,6 +49,7 @@ export default function SettingsPage() {
   const [city, setCity] = useState(user?.city || '')
   const [themePreference, setThemePreference] = useState(user?.themePreference || 'LIGHT')
   const [desktopMode, setDesktopMode] = useState(!!user?.desktopMode)
+  const [reminderEmails, setReminderEmails] = useState(user?.reminderEmailsEnabled !== false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
@@ -66,6 +67,7 @@ export default function SettingsPage() {
         setCity(data.city || '')
         setThemePreference(data.themePreference || 'LIGHT')
         setDesktopMode(!!data.desktopMode)
+        setReminderEmails(data.reminderEmailsEnabled !== false)
       } catch {
         if (!user) setError('Failed to load settings.')
       } finally {
@@ -93,12 +95,16 @@ export default function SettingsPage() {
     setMessage('')
     setError('')
     try {
-      const res = await updateMyProfile({ fullName, phone, city, themePreference, desktopMode })
+      const res = await updateMyProfile({
+        fullName, phone, city, themePreference, desktopMode,
+        reminderEmailsEnabled: reminderEmails,
+      })
       const updated = res.data
       updateUser({
         fullName: updated.fullName, email: updated.email,
         phone: updated.phone, city: updated.city,
         themePreference: updated.themePreference, desktopMode: updated.desktopMode,
+        reminderEmailsEnabled: updated.reminderEmailsEnabled,
       })
       setMessage('Settings saved successfully.')
       setTimeout(() => setMessage(''), 3000)
@@ -183,6 +189,67 @@ export default function SettingsPage() {
               <InputField label="City" value={city} onChange={e => setCity(e.target.value)} placeholder="e.g. Colombo" />
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* ── Notifications ── */}
+      <div style={{ marginBottom: '28px' }}>
+        <div style={sectionTitle}>Notifications</div>
+        <div style={{ ...cardStyle, padding: '24px' }}>
+          <div
+            onClick={() => setReminderEmails(!reminderEmails)}
+            style={{
+              display: 'flex', alignItems: 'flex-start', gap: '16px',
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ fontSize: '26px', lineHeight: 1, flexShrink: 0 }}>📬</div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', marginBottom: '5px' }}>
+                Reminder emails
+              </div>
+              <div style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+                One summary email a day at 7:00 AM covering tasks due tomorrow
+                and the day after. Never more than one message per day, and
+                each task is only mentioned once per notice.
+              </div>
+              <div style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-faint)', marginTop: '8px' }}>
+                Sent to {email || 'your email address'}
+              </div>
+            </div>
+
+            {/* Switch */}
+            <div
+              role="switch"
+              aria-checked={reminderEmails}
+              style={{
+                width: 46, height: 26, borderRadius: '99px', flexShrink: 0,
+                background: reminderEmails ? 'linear-gradient(135deg, #4ade80, #16a34a)' : 'var(--bg-input)',
+                border: `1px solid ${reminderEmails ? 'transparent' : 'var(--border)'}`,
+                position: 'relative', transition: 'all 0.2s',
+                boxShadow: reminderEmails ? '0 0 16px rgba(74,222,128,0.3)' : 'none',
+              }}
+            >
+              <div style={{
+                position: 'absolute', top: 2, left: reminderEmails ? 22 : 2,
+                width: 20, height: 20, borderRadius: '50%',
+                background: reminderEmails ? '#06210f' : 'var(--text-faint)',
+                transition: 'left 0.2s',
+              }} />
+            </div>
+          </div>
+
+          {!reminderEmails && (
+            <div style={{
+              marginTop: '16px', padding: '10px 14px',
+              background: 'rgba(245,158,11,0.07)',
+              border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px',
+              fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6,
+            }}>
+              Reminder emails are off. Your reminders still appear on the
+              dashboard — you just will not be emailed about them.
+            </div>
+          )}
         </div>
       </div>
 

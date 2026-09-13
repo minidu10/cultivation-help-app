@@ -8,6 +8,7 @@ import CropManagementPage from './pages/CropManagementPage'
 import ExpensesPage from './pages/ExpensesPage'
 import HarvestsPage from './pages/HarvestsPage'
 import RegisterPage from './pages/RegisterPage'
+import ForgotPasswordPage from './pages/ForgotPasswordPage'
 import AIAdvisorPage from './pages/AIAdvisorPage'
 import SettingsPage from './pages/SettingsPage'
 import ProfilePage from './pages/ProfilePage'
@@ -24,6 +25,7 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/dashboard" element={
         <PrivateRoute><DashboardPage /></PrivateRoute>
       }/>

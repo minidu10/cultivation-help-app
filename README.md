@@ -14,6 +14,8 @@ AgroMaster is an AI-powered farm management platform built for Sri Lankan farmer
 - **Profit Analytics** — Real-time P&L charts with seasonal breakdowns and per-crop profitability scores
 - **AI Advisor** — Personalized crop recommendations and cost optimizations powered by Groq AI
 - **Weather Integration** — Live weather data and 7-day forecasts tailored to your farm location in Sri Lanka
+- **Verified Accounts** — Registration and password reset are confirmed by a 6-digit code emailed to the address, so every account has a reachable inbox
+- **Reminder Digests** — One email a day at 7:00 AM listing tasks due tomorrow and the day after, never one message per task. Farmers switch it off in Settings
 
 ---
 
@@ -74,10 +76,30 @@ cultivation-help-app/
 │   ├── routers/
 │   ├── services/
 │   └── Dockerfile
-├── docker-compose.yml
+├── scripts/
+│   ├── seed-local.sql        # demo data for local analysis
+│   └── analysis-queries.sql  # starter queries for pgAdmin
+├── docker-compose.yml    # one file, local + prod via COMPOSE_PROFILES
 ├── .env.example
 └── README.md
 ```
+
+---
+
+## Environments
+
+There is **one** `docker-compose.yml`. Which services start is decided by `COMPOSE_PROFILES` in `.env`, so the command is identical everywhere:
+
+```bash
+docker compose up -d --build
+```
+
+| Service | `COMPOSE_PROFILES=local` | `COMPOSE_PROFILES=prod` |
+|---|---|---|
+| `db` (Postgres container) | starts | not started — `DB_URL` points at managed Postgres |
+| `backend` | starts | starts |
+| `ai-service` | starts | starts |
+| `frontend` (nginx + SSL) | not started — use the Vite dev server | starts |
 
 ---
 
@@ -85,53 +107,92 @@ cultivation-help-app/
 
 ### Prerequisites
 - Docker and Docker Compose
+- Node.js 20+ (for the frontend dev server)
 
-### 1. Clone the repository
+### 1. Clone and configure
 ```bash
 git clone https://github.com/minidu10/cultivation-help-app.git
 cd cultivation-help-app
-```
-
-### 2. Set up environment variables
-```bash
 cp .env.example .env
 ```
 
-Edit `.env` with your credentials:
-```env
-DB_URL=jdbc:postgresql://your-rds-endpoint:5432/postgres?sslmode=require&preferQueryMode=simple&connectTimeout=30&socketTimeout=120&tcpKeepAlive=true
-DB_USERNAME=postgres
-DB_PASSWORD=your_password
-SPRING_JPA_HIBERNATE_DDL_AUTO=none
-SPRING_FLYWAY_ENABLED=true
-JWT_SECRET=your_long_random_secret_min_32_chars
-GROQ_API_KEY=your_groq_api_key
-OPENWEATHER_API_KEY=your_openweather_api_key
-OPENWEATHER_BASE_URL=https://api.openweathermap.org
-```
+The defaults in `.env.example` run entirely locally — no cloud database needed. Set `JWT_SECRET` to any 32+ character string. `GROQ_API_KEY` and `OPENWEATHER_API_KEY` are optional; without them the AI Advisor and weather widgets fail while everything else works.
 
-```bash
-cp frontend-web/.env.example frontend-web/.env
-```
-
-Edit `frontend-web/.env`:
-```env
-VITE_API_URL=http://localhost:8080/api
-VITE_AI_URL=http://localhost:8000
-VITE_WEATHER_API_KEY=your_openweather_api_key
-```
-
-### 3. Run with Docker Compose
+### 2. Start the backend services
 ```bash
 docker compose up -d --build
 ```
 
+Starts Postgres, the Spring Boot API and the AI service. The first Maven build takes ~3–5 minutes. Flyway creates the schema automatically on first boot.
+
+### 3. Start the frontend
+```bash
+cd frontend-web
+npm install
+npm run dev
+```
+
 | Service | URL |
 |---------|-----|
-| Frontend | http://localhost:3000 |
+| **Frontend (dev server)** | **http://localhost:5173** |
 | Backend API | http://localhost:8080 |
 | Swagger UI | http://localhost:8080/swagger-ui.html |
 | AI Service | http://localhost:8000 |
+| Postgres | localhost:**5434** |
+
+The Vite dev server proxies `/api` and `/ai` to the containers, mirroring what nginx does in production — so the app uses relative paths everywhere and the frontend needs no environment file at all.
+
+> Postgres is published on **5434**, not 5432, because a locally installed PostgreSQL usually occupies 5432/5433. Change `DB_PORT` in `.env` if you need a different one. Containers always reach it internally on 5432.
+
+### 4. Load demo data (optional)
+
+Register an account at http://localhost:5173, then:
+
+```bash
+docker compose exec -T db psql -U postgres -d cultivation < scripts/seed-local.sql
+```
+
+Adds 4 crops across a season — one profitable, one marginal, one failed, one still growing — with ~35 expenses, 5 harvests and 5 reminders, so the dashboards and profit analytics have real shape.
+
+### Reading the emails the app sends
+
+Locally, no mail leaves your machine. Mailpit accepts everything and shows it at **http://localhost:8025** — verification codes, password resets, welcome messages and reminder digests all land there.
+
+| Email | When |
+|---|---|
+| Verification code | Registration, step 1 |
+| Password reset code | Forgot password |
+| Welcome | Account created |
+| Reminder digest | Daily at 07:00, for tasks 2 days and 1 day out |
+
+The digest is deliberately **one message per farmer per day**, not one per reminder — a week with ten tasks produces a handful of emails, not ten. Each task is announced at most twice (two days ahead, then the day before), enforced by a unique constraint on `reminder_notifications (reminder_id, lead_days)` rather than by job logic, so a restart or a second instance cannot double-send.
+
+To watch it work without waiting for 07:00, drop the interval temporarily:
+
+```bash
+REMINDER_CRON="*/15 * * * * *" docker compose up -d backend   # every 15 seconds
+docker compose up -d backend                                   # back to daily
+```
+
+Tune the lead times with `REMINDER_LEAD_DAYS` (default `2,1`; add `0` to also mail on the day itself), or turn the job off entirely with `REMINDER_EMAIL_ENABLED=false`.
+
+**Production** swaps Mailpit for any SMTP relay. Brevo's free tier is 300 emails/day forever:
+
+```env
+MAIL_HOST=smtp-relay.brevo.com
+MAIL_PORT=587
+MAIL_SMTP_AUTH=true
+MAIL_STARTTLS=true
+MAIL_USERNAME=<brevo smtp login>
+MAIL_PASSWORD=<brevo smtp key>
+MAIL_FROM=AgroMaster <no-reply@yourdomain.com>
+```
+
+### Inspecting the database
+
+Connect any client (pgAdmin, DBeaver) to `localhost:5434`, database `cultivation`, user/password `postgres`. `scripts/analysis-queries.sql` has ready-made queries for profit per crop, spend by category, monthly burn and revenue per acre.
+
+Data lives in the `pgdata` volume and survives `docker compose down`. To wipe and start fresh: `docker compose down -v`.
 
 ---
 
@@ -170,22 +231,19 @@ git clone https://github.com/minidu10/cultivation-help-app.git
 cd cultivation-help-app
 ```
 
-Create root `.env`:
-```bash
-cp .env.example .env
-# Fill in your RDS credentials and API keys
+Create root `.env` from the **production** block in `.env.example`:
+
+```env
+COMPOSE_PROFILES=prod
+DB_URL=jdbc:postgresql://<managed-postgres-host>/<database>?sslmode=require
+DB_USERNAME=<user>
+DB_PASSWORD=<password>
+JWT_SECRET=<long random secret>
+GROQ_API_KEY=<key>
+OPENWEATHER_API_KEY=<key>
 ```
 
-Create `frontend-web/.env` for production:
-```bash
-cat > frontend-web/.env << 'EOF'
-VITE_API_URL=/api
-VITE_AI_URL=/ai
-VITE_WEATHER_API_KEY=your_openweather_api_key
-EOF
-```
-
-> **Important:** Use `/api` and `/ai` (not `localhost`) for production — nginx proxies these internally.
+`COMPOSE_PROFILES=prod` starts the nginx frontend and skips the local database container. The frontend needs no environment file — it uses relative `/api` and `/ai` paths that nginx proxies internally.
 
 ### 4. Deploy
 ```bash
@@ -212,6 +270,8 @@ Every push to the `main` branch automatically deploys to production via GitHub A
 ```
 push to main → SSH into EC2 → git pull → docker compose down → docker compose up --build
 ```
+
+> The workflow runs the same `docker compose up -d --build` as local development. The server's `.env` must contain `COMPOSE_PROFILES=prod`, otherwise the nginx frontend will not start.
 
 **Required GitHub Secrets** (Settings → Secrets → Actions):
 
@@ -262,22 +322,28 @@ sudo crontab -e
 
 ## Environment Variables Reference
 
-### Root `.env`
+All configuration lives in the root `.env`. The frontend has no environment file.
+
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DB_URL` | Yes | PostgreSQL JDBC connection URL |
+| `COMPOSE_PROFILES` | Yes | `local` or `prod` — decides which services start |
+| `DB_URL` | Yes | PostgreSQL JDBC URL. Local: `jdbc:postgresql://db:5432/cultivation` |
 | `DB_USERNAME` | Yes | Database username |
 | `DB_PASSWORD` | Yes | Database password |
-| `JWT_SECRET` | Yes | Secret key for JWT signing (min 32 chars) |
-| `GROQ_API_KEY` | Yes | Groq API key for AI advisor |
-| `OPENWEATHER_API_KEY` | Yes | OpenWeather API key |
-
-### `frontend-web/.env`
-| Variable | Local | Production |
-|----------|-------|------------|
-| `VITE_API_URL` | `http://localhost:8080/api` | `/api` |
-| `VITE_AI_URL` | `http://localhost:8000` | `/ai` |
-| `VITE_WEATHER_API_KEY` | your key | your key |
+| `POSTGRES_DB` | local only | Database the container creates (default `cultivation`) |
+| `DB_PORT` | local only | Host port for the Postgres container (default `5434`) |
+| `JWT_SECRET` | Yes | Secret for JWT signing (min 32 chars) |
+| `GROQ_API_KEY` | No | Groq key for the AI Advisor; without it those endpoints return 500 |
+| `OPENWEATHER_API_KEY` | No | OpenWeather key; without it weather endpoints fail |
+| `OPENWEATHER_BASE_URL` | No | Defaults to `https://api.openweathermap.org` |
+| `TZ` | Yes | Container timezone. Must match the farm's — reminders are stored without a zone, so a UTC container fires a 07:00 task at 01:30 |
+| `MAIL_HOST` / `MAIL_PORT` | Yes | `mailpit` / `1025` locally; your SMTP relay in production |
+| `MAIL_SMTP_AUTH` / `MAIL_STARTTLS` | Yes | `false` locally, `true` for a real relay |
+| `MAIL_USERNAME` / `MAIL_PASSWORD` | prod only | SMTP credentials |
+| `MAIL_FROM` | No | Sender shown on every email |
+| `REMINDER_LEAD_DAYS` | No | Days of advance notice, default `2,1` |
+| `REMINDER_CRON` | No | Digest schedule, default `0 0 7 * * *` (07:00 daily) |
+| `REMINDER_EMAIL_ENABLED` | No | `false` disables reminder emails for everyone |
 
 ---
 

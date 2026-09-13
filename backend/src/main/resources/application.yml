@@ -32,6 +32,22 @@ spring:
       hibernate:
         format_sql: true
 
+  mail:
+    default-encoding: UTF-8
+    host: ${MAIL_HOST:mailpit}
+    port: ${MAIL_PORT:1025}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${MAIL_STARTTLS:false}
+          connectiontimeout: 10000
+          timeout: 10000
+          writetimeout: 10000
+
 server:
   port: 8080
 
@@ -43,6 +59,24 @@ app:
   jwt:
     secret: ${APP_JWT_SECRET:${JWT_SECRET:change_me_with_a_long_random_secret}}
     expiration: 86400000
+  mail:
+    from: ${MAIL_FROM:AgroMaster <no-reply@agromaster.local>}
+  verification:
+    # A 6-digit code is only a million guesses, so it has to be short-lived,
+    # attempt-limited and single-use.
+    code-ttl-minutes: ${VERIFICATION_CODE_TTL_MINUTES:10}
+    max-attempts: ${VERIFICATION_MAX_ATTEMPTS:5}
+    resend-cooldown-seconds: ${VERIFICATION_RESEND_COOLDOWN_SECONDS:60}
+    # How long after confirming a code the user has to finish registering
+    # or complete the password reset.
+    completion-window-minutes: ${VERIFICATION_COMPLETION_WINDOW_MINUTES:30}
+  reminders:
+    email-enabled: ${REMINDER_EMAIL_ENABLED:true}
+    # How many days ahead to warn. 2,1 = a notice two days before and again
+    # the day before. Add 0 to also mail on the day itself.
+    lead-days: ${REMINDER_LEAD_DAYS:2,1}
+    # Once a day at 07:00, so a farmer can receive at most one digest per day.
+    cron: ${REMINDER_CRON:0 0 7 * * *}
 
 weather:
   openweather:

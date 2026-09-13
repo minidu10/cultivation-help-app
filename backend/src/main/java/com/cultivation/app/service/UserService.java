@@ -1,14 +1,18 @@
 package com.cultivation.app.service;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.cultivation.app.dto.AuthResponse;
 import com.cultivation.app.dto.LoginRequest;
 import com.cultivation.app.dto.RegisterRequest;
 import com.cultivation.app.dto.UserResponse;
 import com.cultivation.app.dto.UserUpdateRequest;
+import com.cultivation.app.entity.EmailVerification.Purpose;
 import com.cultivation.app.entity.User;
+import com.cultivation.app.exception.ApiException;
 import com.cultivation.app.repository.UserRepository;
 import com.cultivation.app.security.JwtUtil;
 
@@ -20,23 +24,39 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
+    private final VerificationService verificationService;
+    private final MailService mailService;
     private final BCryptPasswordEncoder passwordEncoder;
 
-    public UserService(UserRepository userRepository, JwtUtil jwtUtil) {
+    public UserService(UserRepository userRepository,
+                       JwtUtil jwtUtil,
+                       VerificationService verificationService,
+                       MailService mailService) {
         this.userRepository = userRepository;
         this.jwtUtil = jwtUtil;
+        this.verificationService = verificationService;
+        this.mailService = mailService;
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
+    @Transactional
     public AuthResponse register(RegisterRequest request) {
 
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already registered");
+        String email = request.getEmail().trim().toLowerCase();
+
+        if (userRepository.existsByEmail(email)) {
+            throw new ApiException(HttpStatus.CONFLICT, "Email already registered");
         }
+
+        // The frontend enforces the step order, but anyone can POST straight
+        // here, so the confirmed code is re-checked and then spent.
+        verificationService.consume(email, Purpose.REGISTRATION);
+
+        PasswordPolicy.validate(request.getPassword());
 
         User user = new User();
         user.setFullName(request.getFullName());
-        user.setEmail(request.getEmail());
+        user.setEmail(email);
         user.setPassword(passwordEncoder.encode(request.getPassword())); // hashed!
         user.setPhone(request.getPhone());
         user.setCity(request.getCity());
@@ -44,6 +64,7 @@ public class UserService {
         user.setDesktopMode(false);
 
         userRepository.save(user);
+        mailService.sendWelcome(user.getEmail(), user.getFullName());
 
         String token = jwtUtil.generateToken(user.getEmail());
         return new AuthResponse(
@@ -58,11 +79,13 @@ public class UserService {
 
     public AuthResponse login(LoginRequest request) {
 
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        // One message for both cases: separate errors would tell an attacker
+        // which email addresses have accounts.
+        User user = userRepository.findByEmail(request.getEmail().trim().toLowerCase())
+                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Wrong password");
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
         }
 
         String token = jwtUtil.generateToken(user.getEmail());
@@ -74,6 +97,20 @@ public class UserService {
             user.getThemePreference(),
             user.getDesktopMode()
         );
+    }
+
+    @Transactional
+    public void resetPassword(String rawEmail, String newPassword) {
+        String email = rawEmail.trim().toLowerCase();
+
+        verificationService.consume(email, Purpose.PASSWORD_RESET);
+        PasswordPolicy.validate(newPassword);
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Invalid reset request"));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
     }
 
     public UserResponse getMe(User currentUser) {
@@ -101,6 +138,9 @@ public class UserService {
         if (request.getDesktopMode() != null) {
             user.setDesktopMode(request.getDesktopMode());
         }
+        if (request.getReminderEmailsEnabled() != null) {
+            user.setReminderEmailsEnabled(request.getReminderEmailsEnabled());
+        }
 
         User saved = userRepository.save(user);
         return mapToUserResponse(saved);
@@ -120,6 +160,7 @@ public class UserService {
             user.getCity(),
             user.getThemePreference(),
             user.getDesktopMode(),
+            user.getReminderEmailsEnabled(),
             user.getCreatedAt()
         );
     }
