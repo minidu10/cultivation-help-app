@@ -12,7 +12,7 @@ AgroMaster is an AI-powered farm management platform built for Sri Lankan farmer
 - **Expense Tracking** — Log seeds, fertilizer, labor and equipment costs by category
 - **Harvest Records** — Record yield quantities and revenue with historical comparisons
 - **Profit Analytics** — Real-time P&L charts with seasonal breakdowns and per-crop profitability scores
-- **AI Advisor** — Personalized crop recommendations and cost optimizations powered by Groq AI
+- **AI Advisor** — Personalized crop recommendations and cost optimizations, backed by any OpenAI-compatible model
 - **Weather Integration** — Live weather data and 7-day forecasts tailored to your farm location in Sri Lanka
 - **Verified Accounts** — Registration and password reset are confirmed by a 6-digit code emailed to the address, so every account has a reachable inbox
 - **Google Sign-In** — One-tap account creation with a Google account; the address is already proven, so no code is needed
@@ -26,7 +26,7 @@ AgroMaster is an AI-powered farm management platform built for Sri Lankan farmer
 |-------|-----------|
 | Frontend | React 19, Vite, React Router, Recharts, Nginx |
 | Backend | Spring Boot 4, Spring Security, Flyway, JWT, Java 17 |
-| AI Service | FastAPI, Python 3.12, Groq API |
+| AI Service | FastAPI, Python 3.12, OpenAI-compatible API |
 | Database | PostgreSQL (AWS RDS) |
 | Deployment | Docker Compose, AWS EC2, Let's Encrypt SSL |
 
@@ -117,7 +117,7 @@ cd cultivation-help-app
 cp .env.example .env
 ```
 
-The defaults in `.env.example` run entirely locally — no cloud database needed. Set `JWT_SECRET` to any 32+ character string. `GROQ_API_KEY` and `OPENWEATHER_API_KEY` are optional; without them the AI Advisor and weather widgets fail while everything else works.
+The defaults in `.env.example` run entirely locally — no cloud database needed. Set `JWT_SECRET` to any 32+ character string. `AI_API_KEY` and `OPENWEATHER_API_KEY` are optional; without them the AI Advisor and weather widgets fail while everything else works.
 
 ### 2. Start the backend services
 ```bash
@@ -263,7 +263,7 @@ DB_URL=jdbc:postgresql://<managed-postgres-host>/<database>?sslmode=require
 DB_USERNAME=<user>
 DB_PASSWORD=<password>
 JWT_SECRET=<long random secret>
-GROQ_API_KEY=<key>
+AI_API_KEY=<key>
 OPENWEATHER_API_KEY=<key>
 ```
 
@@ -357,7 +357,9 @@ All configuration lives in the root `.env`. The frontend has no environment file
 | `POSTGRES_DB` | local only | Database the container creates (default `cultivation`) |
 | `DB_PORT` | local only | Host port for the Postgres container (default `5434`) |
 | `JWT_SECRET` | Yes | Secret for JWT signing (min 32 chars) |
-| `GROQ_API_KEY` | No | Groq key for the AI Advisor; without it those endpoints return 500 |
+| `AI_API_KEY` | No | Key for the AI Advisor; without it those endpoints return 503 |
+| `AI_BASE_URL` | No | Any OpenAI-compatible endpoint. Defaults to Gemini's |
+| `AI_MODEL` | No | Model name for that endpoint |
 | `OPENWEATHER_API_KEY` | No | OpenWeather key; without it weather endpoints fail |
 | `OPENWEATHER_BASE_URL` | No | Defaults to `https://api.openweathermap.org` |
 | `TZ` | Yes | Container timezone. Must match the farm's — reminders are stored without a zone, so a UTC container fires a 07:00 task at 01:30 |

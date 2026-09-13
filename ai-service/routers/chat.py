@@ -1,19 +1,20 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from services.groq_service import ask_groq
-from services.ollama import ask_ollama
-import os
+
+from services import advisor
 
 router = APIRouter()
+
 
 class ChatRequest(BaseModel):
     question: str
     crop_context: str = ""
-    mode: str = "groq"  # "groq" or "ollama"
+
 
 class ChatResponse(BaseModel):
     answer: str
-    mode: str
+    model: str
+
 
 class InsightRequest(BaseModel):
     crop_name: str
@@ -22,31 +23,19 @@ class InsightRequest(BaseModel):
     net_profit: float
     status: str
 
+
 @router.post("/ask", response_model=ChatResponse)
 async def ask_advisor(request: ChatRequest):
     if not request.question.strip():
-        raise HTTPException(
-            status_code=400,
-            detail="Question cannot be empty"
-        )
-
-    mode = os.getenv("AI_MODE", "groq")
+        raise HTTPException(status_code=400, detail="Question cannot be empty")
 
     try:
-        if mode == "groq":
-            answer = ask_groq(request.question, request.crop_context)
-        elif mode == "ollama":
-            answer = ask_ollama(request.question, request.crop_context)
-        else:
-            answer = ask_groq(request.question, request.crop_context)
+        answer = advisor.ask(request.question, request.crop_context)
+        return ChatResponse(answer=answer, model=advisor.model())
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
 
-        return ChatResponse(answer=answer, mode=mode)
 
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"AI service error: {str(e)}"
-        )
 @router.post("/insights")
 async def get_crop_insights(request: InsightRequest):
     question = f"""
@@ -65,14 +54,18 @@ async def get_crop_insights(request: InsightRequest):
     """
 
     try:
-        answer = ask_groq(question)
-        return {"insights": answer, "crop": request.crop_name}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        return {"insights": advisor.ask(question), "crop": request.crop_name}
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
+
 @router.get("/health")
 async def health():
     return {
         "status": "UP",
         "service": "AI Advisor",
-        "mode": os.getenv("AI_MODE", "groq")
+        "model": advisor.model() or None,
+        # Surfaces missing configuration here rather than only on the first
+        # real question a farmer asks.
+        "configured": advisor.is_configured(),
     }

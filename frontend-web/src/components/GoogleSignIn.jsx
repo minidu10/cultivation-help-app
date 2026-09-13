@@ -34,67 +34,83 @@ function loadGsi() {
  *
  * The client id comes from GET /api/auth/config rather than a build-time
  * variable, so the frontend needs no environment file and the id can change
- * without rebuilding. When it is not configured the component renders nothing,
- * which is what keeps the page working before Google is set up.
+ * without rebuilding. Nothing renders until the backend reports it configured,
+ * which is what keeps these pages working before Google is set up.
  */
 export default function GoogleSignIn({ onError, text = 'signin_with' }) {
   const buttonRef = useRef(null)
-  const [enabled, setEnabled] = useState(false)
+  const [clientId, setClientId] = useState('')
   const navigate = useNavigate()
   const { login } = useAuth()
 
+  // Keep the latest callbacks without making them re-run the effects below:
+  // re-initialising Google would tear down and redraw the button.
+  const handlers = useRef({ onError, login, navigate, text })
+  useEffect(() => {
+    handlers.current = { onError, login, navigate, text }
+  })
+
+  // Step 1: find out whether Google is configured, and load their script.
   useEffect(() => {
     let cancelled = false
 
-    const setup = async () => {
-      try {
-        const { data } = await getAuthConfig()
-        if (cancelled || !data.googleEnabled) return
-
-        await loadGsi()
-        if (cancelled || !buttonRef.current) return
-
-        window.google.accounts.id.initialize({
-          client_id: data.googleClientId,
-          callback: async (response) => {
-            try {
-              const { data: auth } = await googleSignIn(response.credential)
-              login({
-                fullName: auth.fullName, email: auth.email, city: auth.city,
-                themePreference: auth.themePreference, desktopMode: auth.desktopMode,
-              }, auth.token)
-              navigate('/dashboard')
-            } catch (err) {
-              onError?.(apiError(err, 'Google sign-in failed. Please try again.'))
-            }
-          },
+    getAuthConfig()
+      .then(({ data }) => {
+        if (cancelled || !data.googleEnabled) return null
+        return loadGsi().then(() => {
+          if (!cancelled) setClientId(data.googleClientId)
         })
+      })
+      .catch(() => {
+        // Google unreachable or not configured. Email and password still work,
+        // so this stays silent rather than showing an error the user cannot act on.
+      })
 
-        window.google.accounts.id.renderButton(buttonRef.current, {
-          theme: 'outline',
-          size: 'large',
-          shape: 'pill',
-          text,
-          width: buttonRef.current.offsetWidth || 360,
-        })
-        setEnabled(true)
-      } catch {
-        // Google unreachable or not configured: the page still works with
-        // email and password, so this stays silent.
-        if (!cancelled) setEnabled(false)
-      }
-    }
-
-    setup()
     return () => { cancelled = true }
   }, [])
 
+  // Step 2: draw the button, once the container is actually visible.
+  // Google measures the element, so rendering into a display:none parent
+  // produces a zero-width button.
+  useEffect(() => {
+    if (!clientId || !buttonRef.current) return
+
+    window.google.accounts.id.initialize({
+      client_id: clientId,
+      callback: async (response) => {
+        const { onError: onErr, login: doLogin, navigate: go } = handlers.current
+        try {
+          const { data: auth } = await googleSignIn(response.credential)
+          doLogin({
+            fullName: auth.fullName, email: auth.email, city: auth.city,
+            themePreference: auth.themePreference, desktopMode: auth.desktopMode,
+          }, auth.token)
+          go('/dashboard')
+        } catch (err) {
+          onErr?.(apiError(err, 'Google sign-in failed. Please try again.'))
+        }
+      },
+    })
+
+    // Google only accepts 200-400px.
+    const measured = buttonRef.current.offsetWidth || 360
+    const width = Math.min(400, Math.max(200, measured))
+
+    window.google.accounts.id.renderButton(buttonRef.current, {
+      theme: 'outline',
+      size: 'large',
+      shape: 'pill',
+      text: handlers.current.text,
+      logo_alignment: 'center',
+      width,
+    })
+  }, [clientId])
+
+  if (!clientId) return null
+
   return (
-    <div style={{ display: enabled ? 'block' : 'none' }}>
-      <div style={{
-        display: 'flex', alignItems: 'center', gap: '12px',
-        margin: '20px 0',
-      }}>
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0' }}>
         <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
         <span style={{
           fontFamily: 'Inter', fontSize: '11px', fontWeight: 600,
@@ -102,7 +118,7 @@ export default function GoogleSignIn({ onError, text = 'signin_with' }) {
         }}>or</span>
         <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
       </div>
-      <div ref={buttonRef} style={{ display: 'flex', justifyContent: 'center', minHeight: '40px' }} />
+      <div ref={buttonRef} style={{ display: 'flex', justifyContent: 'center', minHeight: '44px' }} />
     </div>
   )
 }
