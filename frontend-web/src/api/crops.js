@@ -40,8 +40,6 @@ export const deleteCropReminder = (cropId, reminderId) =>
 
 export const getDueReminders = () => api.get('/reminders/due')
 
-const AI_URL = import.meta.env.VITE_AI_URL || 'http://localhost:8000'
-
 export const askAI = (question, cropContext = '') =>
   axios.post('/ai/ask', {
     question,

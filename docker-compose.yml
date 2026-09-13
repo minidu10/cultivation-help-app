@@ -1,8 +1,48 @@
-
+# One compose file for both environments.
+# Which services start is decided by COMPOSE_PROFILES in .env:
+#   COMPOSE_PROFILES=local  ->  db + backend + ai-service   (frontend runs via `npm run dev`)
+#   COMPOSE_PROFILES=prod   ->  backend + ai-service + frontend (db is a managed service)
+# The command is the same in both cases:  docker compose up -d --build
 
 services:
 
- 
+  # Local-only database. Not started under the prod profile, where DB_URL
+  # points at a managed Postgres instead.
+  db:
+    image: postgres:16-alpine
+    container_name: cultivation_db
+    profiles: ["local"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-cultivation}
+      POSTGRES_USER: ${DB_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+    ports:
+      # Host port 5434 by default: 5432 and 5433 are commonly taken by a
+      # locally installed PostgreSQL. Containers still reach it on 5432.
+      - "${DB_PORT:-5434}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${POSTGRES_DB:-cultivation}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  # Catches every email the app sends and shows it at http://localhost:8025
+  # instead of delivering it. Local only - production uses a real SMTP relay.
+  mailpit:
+    image: axllent/mailpit
+    container_name: cultivation_mailpit
+    profiles: ["local"]
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_UI_PORT:-8025}:8025"   # web inbox
+      - "1025:1025"                       # SMTP
+
+  # No depends_on the db: a no-profile service depending on a profiled one
+  # behaves inconsistently across Compose versions, and the backend already
+  # waits one out via flyway connect-retries + hikari initialization-fail-timeout.
   backend:
     build: ./backend
     container_name: cultivation_backend
@@ -20,19 +60,37 @@ services:
       APP_JWT_SECRET: ${JWT_SECRET:-change_me_with_a_long_random_secret}
       OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
       OPENWEATHER_BASE_URL: ${OPENWEATHER_BASE_URL:-https://api.openweathermap.org}
+      # Containers default to UTC. Reminders are written as plain LocalDateTime,
+      # so without this a 07:00 reminder would fire at 01:30 Sri Lanka time.
+      TZ: ${TZ:-Asia/Colombo}
+      MAIL_HOST: ${MAIL_HOST:-mailpit}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
+      MAIL_STARTTLS: ${MAIL_STARTTLS:-false}
+      MAIL_FROM: ${MAIL_FROM:-AgroMaster <no-reply@agromaster.local>}
+      REMINDER_CRON: ${REMINDER_CRON:-0 0 7 * * *}
+      REMINDER_LEAD_DAYS: ${REMINDER_LEAD_DAYS:-2,1}
+      REMINDER_EMAIL_ENABLED: ${REMINDER_EMAIL_ENABLED:-true}
 
   ai-service:
     build: ./ai-service
     container_name: cultivation_ai
+    restart: unless-stopped
     ports:
       - "8000:8000"
     environment:
       GROQ_API_KEY: ${GROQ_API_KEY}
-      AI_MODE: groq
+      AI_MODE: ${AI_MODE:-groq}
 
+  # Production only. nginx.conf terminates SSL with Let's Encrypt certs,
+  # so this cannot start locally; use the Vite dev server instead.
   frontend:
     build: ./frontend-web
     container_name: cultivation_frontend
+    profiles: ["prod"]
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
@@ -41,3 +99,6 @@ services:
     depends_on:
       - backend
       - ai-service
+
+volumes:
+  pgdata:
