@@ -56,13 +56,18 @@ const TESTIMONIALS = [
 ]
 
 // ── Hero background (always dark) ─────────────────────────────
+// Fixed decoration with no inputs, so it is built once at module load.
+// Generating it inside the component re-randomised the whole field on every
+// render and made the hero visibly flicker.
+const STARS = Array.from({ length: 30 }, (_, i) => ({
+  top: `${3 + Math.random() * 45}%`,
+  left: `${Math.random() * 100}%`,
+  size: i % 5 === 0 ? 3 : 2,
+  opacity: 0.15 + Math.random() * 0.4,
+}))
+
 function HeroBackground() {
-  const stars = Array.from({ length: 30 }, (_, i) => ({
-    top: `${3 + Math.random() * 45}%`,
-    left: `${Math.random() * 100}%`,
-    size: i % 5 === 0 ? 3 : 2,
-    opacity: 0.15 + Math.random() * 0.4,
-  }))
+  const stars = STARS
 
   return (
     <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0 }}>

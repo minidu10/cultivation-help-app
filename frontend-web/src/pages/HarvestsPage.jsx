@@ -157,7 +157,7 @@ export default function HarvestsPage() {
           <div style={{ position: 'relative', paddingLeft: '28px' }}>
             <div style={{ position: 'absolute', left: '10px', top: 0, bottom: 0, width: '2px', background: 'linear-gradient(#4ade80, rgba(74,222,128,0.1))' }} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {harvests.map((h, i) => {
+              {harvests.map((h) => {
                 const revenue = Number(h.quantity) * Number(h.pricePerUnit)
                 return (
                   <div key={h.id} style={{ position: 'relative' }}>

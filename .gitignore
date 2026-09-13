@@ -25,20 +25,11 @@ replay_pid*
 
 # Java / Spring Boot
 backend/target/
-*.class
-*.jar
-*.war
-*.env
 
 # Node / React
 frontend-web/node_modules/
 frontend-web/dist/
 frontend-web/.env
-
-# Flutter
-mobile/.dart_tool/
-mobile/build/
-mobile/.flutter-plugins
 
 # Python / AI service
 ai-service/__pycache__/
@@ -59,8 +50,7 @@ ai-service/.env
 .DS_Store
 Thumbs.db
 
-# Environment secrets — NEVER commit these
+# Environment secrets - NEVER commit these.
+# *.env matches .env, .env.local and .env.production.
 *.env
-.env.local
-.env.production
 application-prod.yml

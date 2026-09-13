@@ -59,6 +59,9 @@ export function AuthProvider({ children }) {
   )
 }
 
+// Kept alongside the provider deliberately; splitting it into its own module
+// for fast-refresh's sake would fragment the context for no runtime gain.
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   return useContext(AuthContext)
 }

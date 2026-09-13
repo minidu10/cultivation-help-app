@@ -1,9 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import chat
-from dotenv import load_dotenv
-
-load_dotenv()
 
 app = FastAPI(
     title="Cultivation Help AI Service",

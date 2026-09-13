@@ -63,10 +63,6 @@ public class EmailVerification {
         return LocalDateTime.now().isAfter(expiresAt);
     }
 
-    public boolean isVerified() {
-        return verifiedAt != null;
-    }
-
     public boolean isConsumed() {
         return consumedAt != null;
     }

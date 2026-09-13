@@ -42,9 +42,6 @@ export default function Layout({ children }) {
     return () => window.removeEventListener('resize', handler)
   }, [])
 
-  // Close sidebar on route change (mobile)
-  useEffect(() => { if (isMobile) setOpen(false) }, [location.pathname, isMobile])
-
   const currentLabel = PAGE_LABELS[location.pathname] || 'Dashboard'
   const initials = (user?.fullName || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
 

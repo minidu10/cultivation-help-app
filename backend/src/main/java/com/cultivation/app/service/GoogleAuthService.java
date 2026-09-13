@@ -55,10 +55,6 @@ public class GoogleAuthService {
             .build();
     }
 
-    public boolean isConfigured() {
-        return verifier != null;
-    }
-
     public String getClientId() {
         return clientId;
     }

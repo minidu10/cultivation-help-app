@@ -32,7 +32,7 @@ export function StyledInput({ label, type = 'text', value, onChange, placeholder
   )
 }
 
-export function PasswordStrengthBar({ password }) {
+function PasswordStrengthBar({ password }) {
   const { score, label, color } = getPasswordStrength(password)
   if (!password) return null
   const pct = Math.round((score / 6) * 100)

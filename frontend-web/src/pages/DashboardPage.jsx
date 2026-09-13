@@ -167,7 +167,9 @@ export default function DashboardPage() {
     try {
       await updateCropReminder(reminder.cropId, reminderId, { completed: true })
       setDueReminders((prev) => prev.filter((item) => item.id !== reminderId))
-    } catch {}
+    } catch {
+      // Leave the reminder in place so the user can retry.
+    }
   }
 
   const totalRevenue = profitData.reduce((s, d) => s + d.revenue, 0)
