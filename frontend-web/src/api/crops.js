@@ -1,5 +1,4 @@
 import api from './axios'
-import axios from 'axios'
 
 export const getCrops = () => api.get('/crops')
 
@@ -40,11 +39,10 @@ export const deleteCropReminder = (cropId, reminderId) =>
 
 export const getDueReminders = () => api.get('/reminders/due')
 
+// Goes through the backend so the request is authenticated. The AI service is
+// not reachable from the browser at all.
 export const askAI = (question, cropContext = '') =>
-  axios.post('/ai/ask', {
-    question,
-    crop_context: cropContext,
-  })
+  api.post('/ai/ask', { question, cropContext })
 
 // Goes through the backend rather than straight to the AI service, so the
 // result can be cached and only regenerated when the crop's figures change.
@@ -53,4 +51,4 @@ export const getCropInsight = (cropId, { refresh = false } = {}) =>
 
 // Reports whether the AI service is reachable and which model it is using,
 // so the advisor page can show the real state instead of a fixed label.
-export const getAIHealth = () => axios.get('/ai/health')
+export const getAIHealth = () => api.get('/ai/health')

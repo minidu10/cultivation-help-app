@@ -1,6 +1,8 @@
 package com.cultivation.app.security;
 
 import java.io.IOException;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -50,6 +52,18 @@ public class JwtFilter extends OncePerRequestFilter {
 
             // 5. Load user and set in security context
             userRepository.findByEmail(email).ifPresent(user -> {
+                // A token minted before the current password is stale: resetting
+                // the password is how a user evicts someone who stole their token.
+                if (user.getPasswordChangedAt() != null) {
+                    Instant changedAt = user.getPasswordChangedAt()
+                        .atZone(ZoneId.systemDefault()).toInstant();
+                    // JWT iat has second precision, so allow a second of slack
+                    // rather than logging out the user who just reset.
+                    if (jwtUtil.extractIssuedAt(token).isBefore(changedAt.minusSeconds(1))) {
+                        return;
+                    }
+                }
+
                 UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(
                         user, null, new ArrayList<>()

@@ -59,8 +59,12 @@ logging:
     com.cultivation: ${LOG_LEVEL:INFO}
 
 app:
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
   jwt:
-    secret: ${APP_JWT_SECRET:${JWT_SECRET:change_me_with_a_long_random_secret}}
+    # No fallback on purpose: a deployment that forgets this must fail to
+    # start rather than boot with a publicly known signing key.
+    secret: ${APP_JWT_SECRET:${JWT_SECRET:}}
     expiration: 86400000
   mail:
     from: ${MAIL_FROM:AgroMaster <agromaster2026@gmail.com>}
@@ -95,9 +99,13 @@ weather:
     api-key: ${OPENWEATHER_API_KEY:}
 
 springdoc:
+  # Off by default. An open Swagger UI hands an attacker the full API map,
+  # so it is enabled explicitly for local development only.
   api-docs:
+    enabled: ${SWAGGER_ENABLED:false}
     path: /v3/api-docs
   swagger-ui:
+    enabled: ${SWAGGER_ENABLED:false}
     path: /swagger-ui.html
   info:
     title: Cultivation Help App API

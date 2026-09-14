@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routers import chat
@@ -8,13 +10,15 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Allow requests from React and Spring Boot
+# Only the backend calls this service, server to server, and that path does
+# not use CORS at all. A wildcard here previously let any website in a user's
+# browser spend this project's API key.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[o for o in os.getenv("AI_ALLOWED_ORIGINS", "").split(",") if o],
     allow_credentials=False,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["POST", "GET"],
+    allow_headers=["Content-Type"],
 )
 
 app.include_router(

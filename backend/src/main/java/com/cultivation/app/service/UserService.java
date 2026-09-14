@@ -118,6 +118,8 @@ public class UserService {
                 .orElseThrow(() -> new ApiException(HttpStatus.BAD_REQUEST, "Invalid reset request"));
 
         user.setPassword(passwordEncoder.encode(newPassword));
+        // Evicts any token issued before now - including one an attacker holds.
+        user.setPasswordChangedAt(java.time.LocalDateTime.now());
         userRepository.save(user);
     }
 

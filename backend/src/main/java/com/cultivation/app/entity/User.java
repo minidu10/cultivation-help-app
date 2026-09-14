@@ -40,6 +40,10 @@ public class User {
     @Column(name = "desktop_mode", nullable = false)
     private Boolean desktopMode = false;
 
+    /** Set on every password change; tokens older than this are refused. */
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
+
     /** LOCAL or GOOGLE - how the account was first created. */
     @Column(name = "auth_provider", nullable = false, length = 20)
     private String authProvider = "LOCAL";
@@ -84,6 +88,9 @@ public class User {
 
     public Boolean getDesktopMode() { return desktopMode; }
     public void setDesktopMode(Boolean desktopMode) { this.desktopMode = desktopMode; }
+
+    public LocalDateTime getPasswordChangedAt() { return passwordChangedAt; }
+    public void setPasswordChangedAt(LocalDateTime passwordChangedAt) { this.passwordChangedAt = passwordChangedAt; }
 
     public String getAuthProvider() { return authProvider; }
     public void setAuthProvider(String authProvider) { this.authProvider = authProvider; }
