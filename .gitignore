@@ -32,10 +32,10 @@ frontend-web/dist/
 frontend-web/.env
 
 # Python / AI service
-ai-service/__pycache__/
+__pycache__/
+*.pyc
 ai-service/.venv/
 ai-service/venv/
-ai-service/*.pyc
 ai-service/.env
 
 # IDE
