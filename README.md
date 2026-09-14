@@ -9,16 +9,7 @@ AgroMaster is an AI-powered farm management platform built for Sri Lankan farmer
 ## Documentation
 
 Full requirements, architecture and design rationale:
-
-- **[docs/AgroMaster-SRS.pdf](docs/AgroMaster-SRS.pdf)** - 19-page specification, print ready
-- [docs/SRS.md](docs/SRS.md) - same document in markdown
-
-Regenerate the PDF after editing the markdown:
-
-```bash
-pip install markdown
-python scripts/build-srs-pdf.py
-```
+**[docs/AgroMaster-SRS.pdf](docs/AgroMaster-SRS.pdf)** - 19-page specification.
 
 ---
 
@@ -94,12 +85,10 @@ cultivation-help-app/
 │   ├── services/
 │   └── Dockerfile
 ├── docs/
-│   ├── SRS.md                # software requirements specification
-│   └── AgroMaster-SRS.pdf    # the same, print ready
+│   └── AgroMaster-SRS.pdf    # software requirements specification
 ├── scripts/
 │   ├── seed-local.sql        # demo data for local analysis
-│   ├── analysis-queries.sql  # starter queries for pgAdmin
-│   └── build-srs-pdf.py      # renders the SRS to PDF
+│   └── analysis-queries.sql  # starter queries for pgAdmin
 ├── docker-compose.yml    # one file, local + prod via COMPOSE_PROFILES
 ├── .env.example
 └── README.md
