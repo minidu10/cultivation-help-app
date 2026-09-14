@@ -63,6 +63,8 @@ services:
       # Containers default to UTC. Reminders are written as plain LocalDateTime,
       # so without this a 07:00 reminder would fire at 01:30 Sri Lanka time.
       TZ: ${TZ:-Asia/Colombo}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SHOW_SQL: ${SHOW_SQL:-false}
       MAIL_HOST: ${MAIL_HOST:-mailpit}
       MAIL_PORT: ${MAIL_PORT:-1025}
       MAIL_USERNAME: ${MAIL_USERNAME:-}

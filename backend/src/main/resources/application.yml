@@ -27,10 +27,13 @@ spring:
     open-in-view: false
     hibernate:
       ddl-auto: ${SPRING_JPA_HIBERNATE_DDL_AUTO:none}
-    show-sql: true
+    # Off by default: pretty-printing every statement to stdout is real CPU
+    # and I/O on a small host, and buries the useful log lines.
+    # Set SHOW_SQL=true locally when debugging a query.
+    show-sql: ${SHOW_SQL:false}
     properties:
       hibernate:
-        format_sql: true
+        format_sql: ${SHOW_SQL:false}
 
   mail:
     default-encoding: UTF-8
@@ -53,7 +56,7 @@ server:
 
 logging:
   level:
-    com.cultivation: DEBUG
+    com.cultivation: ${LOG_LEVEL:INFO}
 
 app:
   jwt:
