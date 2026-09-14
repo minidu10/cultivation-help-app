@@ -63,6 +63,7 @@ services:
       # Containers default to UTC. Reminders are written as plain LocalDateTime,
       # so without this a 07:00 reminder would fire at 01:30 Sri Lanka time.
       TZ: ${TZ:-Asia/Colombo}
+      AI_SERVICE_URL: ${AI_SERVICE_URL:-http://ai-service:8000}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       SHOW_SQL: ${SHOW_SQL:-false}
       MAIL_HOST: ${MAIL_HOST:-mailpit}

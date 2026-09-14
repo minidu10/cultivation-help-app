@@ -64,6 +64,10 @@ app:
     expiration: 86400000
   mail:
     from: ${MAIL_FROM:AgroMaster <agromaster2026@gmail.com>}
+  ai:
+    # Insights are generated backend-side so they can be cached; the browser
+    # never calls the AI service for them.
+    service-url: ${AI_SERVICE_URL:http://ai-service:8000}
   google:
     # OAuth 2.0 Web client ID from Google Cloud Console.
     # Blank disables Google Sign-In; the button hides itself.

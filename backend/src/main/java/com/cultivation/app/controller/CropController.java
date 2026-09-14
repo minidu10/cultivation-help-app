@@ -10,12 +10,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cultivation.app.dto.CropInsightResponse;
 import com.cultivation.app.dto.CropRequest;
 import com.cultivation.app.dto.CropResponse;
 import com.cultivation.app.entity.User;
+import com.cultivation.app.service.CropInsightService;
 import com.cultivation.app.service.CropService;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -27,8 +30,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 public class CropController {
 
     private final CropService cropService;
+    private final CropInsightService cropInsightService;
 
-    public CropController(CropService cropService) {
+    public CropController(CropService cropService, CropInsightService cropInsightService) {
+        this.cropInsightService = cropInsightService;
         this.cropService = cropService;
     }
 
@@ -71,5 +76,14 @@ public class CropController {
             @AuthenticationPrincipal User currentUser) {
         cropService.deleteCrop(id, currentUser);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}/insights")
+    @Operation(summary = "AI insight for a crop, regenerated only when its figures change")
+    public ResponseEntity<CropInsightResponse> insights(
+            @PathVariable Long id,
+            @RequestParam(name = "refresh", defaultValue = "false") boolean refresh,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(cropInsightService.getInsight(id, currentUser, refresh));
     }
 }

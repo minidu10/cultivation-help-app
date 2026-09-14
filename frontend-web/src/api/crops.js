@@ -46,8 +46,10 @@ export const askAI = (question, cropContext = '') =>
     crop_context: cropContext,
   })
 
-export const getCropInsights = (data) =>
-  axios.post('/ai/insights', data)
+// Goes through the backend rather than straight to the AI service, so the
+// result can be cached and only regenerated when the crop's figures change.
+export const getCropInsight = (cropId, { refresh = false } = {}) =>
+  api.get(`/crops/${cropId}/insights`, { params: refresh ? { refresh: true } : {} })
 
 // Reports whether the AI service is reachable and which model it is using,
 // so the advisor page can show the real state instead of a fixed label.

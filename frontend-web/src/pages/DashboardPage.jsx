@@ -7,7 +7,7 @@ import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
 import { useAuth } from '../context/AuthContext'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { getCrops, getDueReminders, getProfitLoss, updateCropReminder, getCropInsights } from '../api/crops'
+import { getCrops, getDueReminders, getProfitLoss, updateCropReminder, getCropInsight } from '../api/crops'
 import {
   getCurrentWeather, getCurrentWeatherByLocation,
   getWeatherForecast, getWeatherForecastByLocation,
@@ -140,19 +140,29 @@ export default function DashboardPage() {
     setCropWeatherById(Object.fromEntries(weatherEntries))
   }
 
+  // The backend caches each insight against a fingerprint of the crop's
+  // figures, so this is normally a plain database read. Only a crop whose
+  // expenses, harvests or status actually changed costs any tokens.
   const loadInsights = async (plData, cropList) => {
     setLoadingInsights(true)
-    const results = {}
     const cropMapByName = Object.fromEntries(cropList.map((c) => [c.name, c]))
-    for (const crop of plData) {
-      const cropMeta = cropMapByName[crop.name]
-      if (cropMeta && cropMeta.aiInsightsEnabled === false) { results[crop.name] = '__AI_OFF__'; continue }
+
+    // Fetched together rather than one after another: the old sequential loop
+    // made the dashboard wait for every crop in turn.
+    const entries = await Promise.all(plData.map(async (crop) => {
+      const meta = cropMapByName[crop.name]
+      if (meta && meta.aiInsightsEnabled === false) return [crop.name, '__AI_OFF__']
+      const cropId = meta?.id ?? crop.cropId
+      if (!cropId) return [crop.name, null]
       try {
-        const res = await getCropInsights({ crop_name: crop.name, total_expenses: crop.expenses, total_revenue: crop.revenue, net_profit: crop.profit, status: crop.result })
-        results[crop.name] = res.data.insights
-      } catch { results[crop.name] = null }
-    }
-    setInsights(results)
+        const res = await getCropInsight(cropId)
+        return [crop.name, res.data.insights]
+      } catch {
+        return [crop.name, null]
+      }
+    }))
+
+    setInsights(Object.fromEntries(entries))
     setLoadingInsights(false)
   }
 
