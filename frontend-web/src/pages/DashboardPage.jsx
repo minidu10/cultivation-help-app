@@ -450,7 +450,6 @@ export default function DashboardPage() {
               fontSize: '16px', animation: 'pulse-glow 2s ease-in-out infinite',
             }}>🤖</div>
             <span style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>AI Insights</span>
-            <span style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: '100px', padding: '3px 10px', fontFamily: 'Inter', fontSize: '11px', color: '#4ade80' }}>Powered by Groq</span>
           </div>
 
           {loadingInsights ? (

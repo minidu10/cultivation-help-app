@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import Layout from '../components/Layout'
-import { askAI } from '../api/crops'
+import { askAI, getAIHealth } from '../api/crops'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 const SUGGESTED_QUESTIONS = [
@@ -30,7 +30,21 @@ export default function AIAdvisorPage() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [cropContext, setCropContext] = useState('')
+  // null while the first health check is in flight.
+  const [health, setHealth] = useState(null)
   const bottomRef = useRef(null)
+
+  useEffect(() => {
+    let cancelled = false
+    getAIHealth()
+      .then(({ data }) => {
+        if (!cancelled) setHealth({ up: data.status === 'UP', configured: data.configured, model: data.model })
+      })
+      .catch(() => {
+        if (!cancelled) setHealth({ up: false, configured: false, model: null })
+      })
+    return () => { cancelled = true }
+  }, [])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -46,7 +60,7 @@ export default function AIAdvisorPage() {
 
     try {
       const res = await askAI(q, cropContext)
-      setMessages(prev => [...prev, { role: 'ai', text: res.data.answer, mode: res.data.mode }])
+      setMessages(prev => [...prev, { role: 'ai', text: res.data.answer, model: res.data.model }])
     } catch {
       setMessages(prev => [
         ...prev,
@@ -64,6 +78,16 @@ export default function AIAdvisorPage() {
     }
   }
 
+  // A fixed "Online" badge is worse than none: it keeps claiming the advisor
+  // works while the service is down, and farmers keep typing into a dead box.
+  const status = health === null
+    ? { color: 'var(--text-faint)', label: 'Checking…' }
+    : !health.up
+      ? { color: 'var(--accent-red)', label: 'Offline' }
+      : !health.configured
+        ? { color: '#f59e0b', label: 'Not configured' }
+        : { color: 'var(--accent-lime)', label: `Online · ${health.model}` }
+
   return (
     <Layout>
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '280px 1fr', gap: '24px', height: isMobile ? 'auto' : 'calc(100vh - 140px)', minHeight: '500px' }}>
@@ -78,8 +102,11 @@ export default function AIAdvisorPage() {
               <div>
                 <div style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>AI Advisor</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
-                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-lime)', boxShadow: '0 0 6px var(--accent-lime)' }} />
-                  <span style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--accent-lime)' }}>Online · Powered by Groq</span>
+                  <div style={{
+                    width: 6, height: 6, borderRadius: '50%',
+                    background: status.color, boxShadow: `0 0 6px ${status.color}`,
+                  }} />
+                  <span style={{ fontFamily: 'Inter', fontSize: '11px', color: status.color }}>{status.label}</span>
                 </div>
               </div>
             </div>
@@ -160,9 +187,9 @@ export default function AIAdvisorPage() {
                   {msg.text.split('\n').map((line, j) => (
                     <span key={j}>{line}{j < msg.text.split('\n').length - 1 && <br />}</span>
                   ))}
-                  {msg.mode && (
+                  {msg.model && (
                     <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border)', fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-muted)' }}>
-                      Powered by {msg.mode}
+                      Answered by {msg.model}
                     </div>
                   )}
                 </div>

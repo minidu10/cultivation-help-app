@@ -48,3 +48,7 @@ export const askAI = (question, cropContext = '') =>
 
 export const getCropInsights = (data) =>
   axios.post('/ai/insights', data)
+
+// Reports whether the AI service is reachable and which model it is using,
+// so the advisor page can show the real state instead of a fixed label.
+export const getAIHealth = () => axios.get('/ai/health')
