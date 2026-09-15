@@ -77,7 +77,8 @@ cultivation-help-app/
 │   │   ├── components/
 │   │   ├── context/
 │   │   └── api/
-│   ├── nginx.conf
+│   ├── nginx.conf.template   # ${DOMAIN} rendered at container start
+│   ├── security-headers.conf
 │   └── Dockerfile
 ├── ai-service/           # FastAPI AI microservice
 │   ├── main.py
@@ -287,8 +288,16 @@ Backend Maven build takes ~3–5 minutes on first run.
 
 ### 5. Verify
 ```bash
-docker compose ps   # all 3 containers should show "Up"
+docker compose ps   # all containers should show "Up (healthy)"
 ```
+
+> **Add swap first.** `docker compose up --build` compiles the backend with
+> Maven on the server, and on a 1 GB instance that build is often OOM-killed:
+> ```bash
+> sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
+> sudo mkswap /swapfile && sudo swapon /swapfile
+> echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+> ```
 
 Open `https://yourdomain.com` in the browser.
 
@@ -377,6 +386,10 @@ All configuration lives in the root `.env`. The frontend has no environment file
 | `MAIL_USERNAME` / `MAIL_PASSWORD` | prod only | SMTP credentials |
 | `MAIL_FROM` | No | Sender shown on every email |
 | `GOOGLE_CLIENT_ID` | No | OAuth Web client id. Blank hides the Google button |
+| `DOMAIN` | prod | Domain nginx serves and finds TLS certificates under |
+| `HOST_BIND` | No | `0.0.0.0` locally; `127.0.0.1` in production so only nginx is public |
+| `SWAGGER_ENABLED` | No | `false` in production - it publishes the whole API map |
+| `RATE_LIMIT_ENABLED` | No | Per-IP limits on `/api/auth/**`. Leave on |
 | `REMINDER_LEAD_DAYS` | No | Days of advance notice, default `2,1` |
 | `REMINDER_CRON` | No | Digest schedule, default `0 0 7 * * *` (07:00 daily) |
 | `REMINDER_EMAIL_ENABLED` | No | `false` disables reminder emails for everyone |
