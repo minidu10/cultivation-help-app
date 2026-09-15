@@ -17,7 +17,11 @@ services:
   # Local-only database. Not started under the prod profile, where DB_URL
   # points at a managed Postgres instead.
   db:
-    image: postgres:16-alpine
+    # Keep this matched to the major version the managed database runs, so
+    # local development is never a version behind production. Changing it
+    # requires recreating the pgdata volume: Postgres refuses to start on a
+    # data directory written by a different major version.
+    image: postgres:${POSTGRES_VERSION:-16}-alpine
     container_name: cultivation_db
     profiles: ["local"]
     restart: unless-stopped

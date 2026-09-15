@@ -34,7 +34,7 @@ Full requirements, architecture and design rationale:
 | Frontend | React 19, Vite, React Router, Recharts, Nginx |
 | Backend | Spring Boot 4, Spring Security, Flyway, JWT, Java 17 |
 | AI Service | FastAPI, Python 3.12, OpenAI-compatible API |
-| Database | PostgreSQL (AWS RDS) |
+| Database | PostgreSQL (Neon) |
 | Deployment | Docker Compose, AWS EC2, Let's Encrypt SSL |
 
 ---
@@ -369,7 +369,7 @@ All configuration lives in the root `.env`. The frontend has no environment file
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `COMPOSE_PROFILES` | Yes | `local` or `prod` — decides which services start |
-| `DB_URL` | Yes | PostgreSQL JDBC URL. Local: `jdbc:postgresql://db:5432/cultivation` |
+| `DB_URL` | Yes | PostgreSQL JDBC URL, without credentials. Local: `jdbc:postgresql://db:5432/cultivation` |
 | `DB_USERNAME` | Yes | Database username |
 | `DB_PASSWORD` | Yes | Database password |
 | `POSTGRES_DB` | local only | Database the container creates (default `cultivation`) |
