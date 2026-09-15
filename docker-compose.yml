@@ -4,6 +4,14 @@
 #   COMPOSE_PROFILES=prod   ->  backend + ai-service + frontend (db is a managed service)
 # The command is the same in both cases:  docker compose up -d --build
 
+# Docker's default json-file driver has no size cap, so container logs grow
+# until the root volume is full. Every service inherits this.
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+
 services:
 
   # Local-only database. Not started under the prod profile, where DB_URL
@@ -13,6 +21,7 @@ services:
     container_name: cultivation_db
     profiles: ["local"]
     restart: unless-stopped
+    logging: *default-logging
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-cultivation}
       POSTGRES_USER: ${DB_USERNAME:-postgres}
@@ -36,6 +45,8 @@ services:
     container_name: cultivation_mailpit
     profiles: ["local"]
     restart: unless-stopped
+    logging: *default-logging
+    mem_limit: 128m
     ports:
       - "${MAILPIT_UI_PORT:-8025}:8025"   # web inbox
       - "1025:1025"                       # SMTP
@@ -47,6 +58,15 @@ services:
     build: ./backend
     container_name: cultivation_backend
     restart: unless-stopped
+    logging: *default-logging
+    # Sized for a 1 GB free-tier VM with Postgres hosted off-box.
+    mem_limit: 640m
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 90s
     ports:
       # HOST_BIND is 127.0.0.1 in production, so the API is reachable only
       # through nginx - never directly over plain HTTP from the internet.
@@ -59,7 +79,8 @@ services:
       SPRING_FLYWAY_ENABLED: ${SPRING_FLYWAY_ENABLED:-true}
       FLYWAY_CONNECT_RETRIES: ${FLYWAY_CONNECT_RETRIES:-10}
       FLYWAY_CONNECT_RETRIES_INTERVAL: ${FLYWAY_CONNECT_RETRIES_INTERVAL:-5s}
-      APP_JWT_SECRET: ${JWT_SECRET:-change_me_with_a_long_random_secret}
+      # Deliberately no default - a missing secret must fail loudly.
+      APP_JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
       OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
       OPENWEATHER_BASE_URL: ${OPENWEATHER_BASE_URL:-https://api.openweathermap.org}
       # Containers default to UTC. Reminders are written as plain LocalDateTime,
@@ -86,6 +107,14 @@ services:
     build: ./ai-service
     container_name: cultivation_ai
     restart: unless-stopped
+    logging: *default-logging
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/ai/health',timeout=5).status==200 else 1)"]
+      interval: 30s
+      timeout: 8s
+      retries: 3
+      start_period: 20s
     ports:
       # Local debugging only. The backend reaches this over the compose
       # network, so in production it binds to loopback and nothing else.
@@ -105,14 +134,32 @@ services:
     container_name: cultivation_frontend
     profiles: ["prod"]
     restart: unless-stopped
+    logging: *default-logging
+    mem_limit: 96m
+    environment:
+      # Substituted into nginx.conf.template at container start. A forgotten
+      # DOMAIN is caught immediately: nginx looks for a certificate under
+      # /etc/letsencrypt/live/localhost/ and refuses to start without one.
+      DOMAIN: ${DOMAIN:-localhost}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt:ro
+      # Webroot for Let's Encrypt HTTP-01 renewal.
+      - certbot-webroot:/var/www/certbot
     depends_on:
-      - backend
-      - ai-service
+      backend:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
 
 volumes:
   pgdata:
+  certbot-webroot:

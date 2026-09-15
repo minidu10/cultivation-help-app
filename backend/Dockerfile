@@ -19,4 +19,7 @@ FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+# MaxRAMPercentage keeps the heap inside the container's mem_limit rather than
+# sizing off the host's total RAM. SerialGC suits one small single-CPU
+# container better than the default parallel collector and frees a few MB.
+ENTRYPOINT ["java",   "-XX:MaxRAMPercentage=70",   "-XX:+UseSerialGC",   "-XX:+ExitOnOutOfMemoryError",   "-jar", "app.jar"]
