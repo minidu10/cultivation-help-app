@@ -101,7 +101,7 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
       MAIL_STARTTLS: ${MAIL_STARTTLS:-false}
-      MAIL_FROM: ${MAIL_FROM:-AgroMaster <agromaster2026@gmail.com>}
+      MAIL_FROM: ${MAIL_FROM:-AgroMaster <agromaster026@gmail.com>}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       REMINDER_CRON: ${REMINDER_CRON:-0 0 7 * * *}
       REMINDER_LEAD_DAYS: ${REMINDER_LEAD_DAYS:-2,1}

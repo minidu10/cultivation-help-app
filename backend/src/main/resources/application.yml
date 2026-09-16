@@ -67,7 +67,7 @@ app:
     secret: ${APP_JWT_SECRET:${JWT_SECRET:}}
     expiration: 86400000
   mail:
-    from: ${MAIL_FROM:AgroMaster <agromaster2026@gmail.com>}
+    from: ${MAIL_FROM:AgroMaster <agromaster026@gmail.com>}
   ai:
     # Insights are generated backend-side so they can be cached; the browser
     # never calls the AI service for them.
