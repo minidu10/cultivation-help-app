@@ -56,13 +56,23 @@ cd cultivation-help-app
 bash deploy/bootstrap.sh
 ```
 
-It creates swap, installs Docker, asks for your credentials, writes `.env`,
-issues the certificate, builds the images and installs the boot service.
-Ten to fifteen minutes, mostly the Maven build. Re-running it is safe.
+It installs Docker, asks for your credentials, writes `.env`, issues the TLS
+certificate, pulls the images CI published and installs the boot service.
+Two to three minutes. Re-running it is safe.
 
-> Swap is created **first** and deliberately. The Maven build needs more memory
-> than a 1 GB instance has, and without swap it is OOM-killed partway through
-> with an error that never mentions memory.
+### What actually gets installed
+
+Only three things, because **nothing is compiled here**:
+
+| | |
+|---|---|
+| Docker + compose plugin | runs the containers |
+| certbot | issues and renews the TLS certificate |
+| ca-certificates, curl, gnupg | needed to add Docker's apt repository |
+
+No Java, no Maven, no Node, no JDK. GitHub Actions builds the images and
+publishes them to ghcr.io; this machine only pulls. You can confirm it
+afterwards — `which java mvn node` finds nothing.
 
 ### 4. Google sign-in
 

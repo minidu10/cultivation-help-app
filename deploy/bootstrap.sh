@@ -20,8 +20,9 @@ die()  { printf '\033[1;31m X\033[0m %s\n' "$*" >&2; exit 1; }
 [ "$(id -u)" -ne 0 ] || die "Run as the ubuntu user, not root. Sudo is used where needed."
 
 # ---------------------------------------------------------------- swap
-# The Maven build needs more memory than a 1 GB instance has. Without swap it
-# is killed partway through with an error that does not mention memory.
+# Not strictly required now that images are built in CI rather than here, but
+# 2 GB of disk is cheap insurance against a 1 GB instance running out of memory
+# under load.
 say "Swap"
 if swapon --show | grep -q /swapfile; then
     echo "    already active"
@@ -149,8 +150,10 @@ else
 fi
 
 # ---------------------------------------------------------------- images
-say "Building images (slowest step, only happens here)"
-sg docker -c "docker compose build" || docker compose build
+say "Pulling images published by CI"
+# Nothing is compiled on this server. GitHub Actions builds the images and
+# pushes them to ghcr.io; this only downloads them.
+sg docker -c "docker compose pull" || docker compose pull
 
 # ---------------------------------------------------------------- boot service
 say "Boot automation"
