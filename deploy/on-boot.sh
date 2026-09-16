@@ -3,8 +3,7 @@
 # Runs on every boot. Order matters:
 #
 #   1. DNS first  - the IP has just changed, so nothing else will resolve
-#   2. Start app  - NO --build; images were built during bootstrap, and
-#                   recompiling here would take minutes and may be OOM-killed
+#   2. Start app  - pull the images CI published; nothing is ever built here
 #   3. Renew TLS  - only now, because the HTTP-01 challenge needs nginx running
 #                   to serve /.well-known/acme-challenge/
 #
@@ -22,6 +21,9 @@ echo "--- agromaster boot $(date -Is) ---"
 bash deploy/update-dns.sh || echo "boot: DNS update failed, continuing"
 
 # 2 -----------------------------------------------------------------
+# Pull first: CI deploys on push, but this covers a push that landed while the
+# instance was stopped, so the running version cannot drift behind main.
+docker compose pull --quiet || echo "boot: pull failed, starting existing images"
 docker compose up -d --remove-orphans
 
 # 3 -----------------------------------------------------------------

@@ -1,4 +1,7 @@
 # One compose file for both environments.
+#
+# Images are built by CI and published to ghcr.io; `docker compose up -d` pulls
+# them and the server never compiles. Add --build to build locally instead.
 # Which services start is decided by COMPOSE_PROFILES in .env:
 #   COMPOSE_PROFILES=local  ->  db + backend + ai-service   (frontend runs via `npm run dev`)
 #   COMPOSE_PROFILES=prod   ->  backend + ai-service + frontend (db is a managed service)
@@ -64,6 +67,7 @@ services:
   # waits one out via flyway connect-retries + hikari initialization-fail-timeout.
   backend:
     build: ./backend
+    image: ghcr.io/minidu10/agromaster-backend:${IMAGE_TAG:-latest}
     container_name: cultivation_backend
     restart: unless-stopped
     logging: *default-logging
@@ -113,6 +117,7 @@ services:
 
   ai-service:
     build: ./ai-service
+    image: ghcr.io/minidu10/agromaster-ai:${IMAGE_TAG:-latest}
     container_name: cultivation_ai
     restart: unless-stopped
     logging: *default-logging
@@ -139,6 +144,7 @@ services:
   # so this cannot start locally; use the Vite dev server instead.
   frontend:
     build: ./frontend-web
+    image: ghcr.io/minidu10/agromaster-frontend:${IMAGE_TAG:-latest}
     container_name: cultivation_frontend
     profiles: ["prod"]
     restart: unless-stopped
