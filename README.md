@@ -1,15 +1,35 @@
 # AgroMaster — Smart Farm Management Platform
 
-AgroMaster is an AI-powered farm management platform built for Sri Lankan farmers. It combines crop tracking, expense management, harvest records, profit analytics, and an AI advisor — all in one dashboard.
+[![CI/CD](https://github.com/minidu10/cultivation-help-app/actions/workflows/ci.yml/badge.svg)](https://github.com/minidu10/cultivation-help-app/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Deployed on a free-tier EC2 instance, powered on for demos. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+AgroMaster is an AI-powered farm management platform for small-scale Sri Lankan
+farmers. It tracks every crop from planting to harvest, records the costs against
+it and the revenue it produced, and answers the question that matters: **did this
+crop actually make money?**
+
+**Live demo:** https://agromaster.duckdns.org
+
+> Hosted on a free-tier EC2 instance that is powered off between demos. If the
+> link does not respond, the server is asleep — ask and it will be started.
+
+**Documentation:** [Software Requirements Specification](docs/AgroMaster-SRS.pdf)
+(19 pages) · [Deployment runbook](docs/DEPLOYMENT.md)
 
 ---
 
-## Documentation
+## Engineering notes
 
-Full requirements, architecture and design rationale:
-**[docs/AgroMaster-SRS.pdf](docs/AgroMaster-SRS.pdf)** - 19-page specification.
+The parts of this build that were not obvious, and why they were done that way:
+
+| Decision | Reasoning |
+|---|---|
+| **Images built in CI, never on the server** | The 1 GB instance cannot reliably compile Java. GitHub Actions publishes to ghcr.io and the server only pulls — deploys went from 3–5 minutes with OOM risk to about 30 seconds |
+| **AI reached only through the backend** | The AI service was briefly a public, unauthenticated LLM endpoint billed to this project's API key. It is now on the internal network with the backend in front of it |
+| **AI insights cached on a fingerprint** | The dashboard asked the model for an insight per crop on every load. The result is stored against a hash of the figures behind it, so an unchanged crop costs nothing |
+| **One daily reminder digest, not one email per task** | Per-reminder mail floods the inbox on a busy week and trains people to ignore it. A unique constraint on `(reminder_id, lead_days)` makes duplicate sends impossible at the database level |
+| **One compose file for both environments** | `COMPOSE_PROFILES` decides which services start, so the deploy command is identical locally and in production and the two cannot drift |
+| **6-digit codes, attempt-limited** | A million possibilities is brute-forceable, so codes expire in 10 minutes, die after 5 wrong guesses and are single-use — enforced in the database, not in job logic |
 
 ---
 
@@ -42,17 +62,25 @@ Full requirements, architecture and design rationale:
 ## Architecture
 
 ```
-Browser
-  │
-  ▼
-Nginx (80 → redirect to HTTPS / 443 → TLS)
-  ├── /        → React SPA (static files, gzipped, cached)
-  └── /api     → Spring Boot (internal :8080)
-                        │
-                        ├──→ FastAPI AI service (internal :8000, not public)
-                        │
-                        ▼
-                  PostgreSQL (Neon, off-instance)
+                         Browser
+                            │  HTTPS
+                            ▼
+           ┌─────────────────────────────────┐
+           │  Nginx   80 → redirect, 443 TLS │   the only public port
+           │  gzip · cache · security headers│
+           └─────────────────────────────────┘
+               │                        │
+               │ /                      │ /api
+               ▼                        ▼
+        React SPA (static)      Spring Boot  127.0.0.1:8080
+                                     │
+                        ┌────────────┼────────────┐
+                        ▼            ▼            ▼
+                  FastAPI AI    PostgreSQL     SMTP
+                127.0.0.1:8000    (Neon)      (Gmail)
+
+  Neither the backend nor the AI service is reachable from the internet;
+  both bind to loopback and are reached only through Nginx.
 ```
 
 ---
@@ -263,23 +291,29 @@ steps. The database is on Neon, so nothing is lost while the server is off.
 
 ## CI/CD
 
-Every push to the `main` branch automatically deploys to production via GitHub Actions.
-
-**Workflow:** `.github/workflows/deploy.yml`
+Every push to `main` runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
 
 ```
-push to main → SSH into EC2 → git pull → docker compose down → docker compose up --build
+backend  → mvnw verify                          ┐ every push
+frontend → npm ci, eslint, build                ┘ and pull request
+
+images   → build 3 images, push to ghcr.io      ┐ main only
+deploy   → ssh to EC2, pull, restart            ┘
 ```
 
-> The workflow runs the same `docker compose up -d --build` as local development. The server's `.env` must contain `COMPOSE_PROFILES=prod`, otherwise the nginx frontend will not start.
+Images are built **in CI, never on the server** — the instance has no JDK,
+Maven or Node. Each image is tagged `:latest` and `:<commit-sha>`, so rolling
+back is `IMAGE_TAG=<sha>` and a restart.
 
-**Required GitHub Secrets** (Settings → Secrets → Actions):
+**Required GitHub Secrets** (Settings → Secrets and variables → Actions):
 
-| Secret | Description |
-|--------|-------------|
-| `EC2_HOST` | EC2 public IP address |
-| `EC2_USER` | SSH username (`ubuntu`) |
-| `EC2_SSH_KEY` | Contents of your `.pem` private key file |
+| Secret | Value |
+|---|---|
+| `EC2_HOST` | The DuckDNS hostname — **not an IP**, which changes on every restart |
+| `EC2_SSH_KEY` | Full contents of the `.pem`, including the BEGIN and END lines |
+
+Publishing needs no secret: the workflow's built-in `GITHUB_TOKEN` has
+`packages: write`.
 
 ---
 
@@ -310,13 +344,20 @@ docker system prune -af --volumes
 
 ---
 
-## Auto-renew SSL
+## TLS renewal
 
-```bash
-sudo crontab -e
-# Add this line:
-0 3 * * * certbot renew --quiet && cd /home/ubuntu/cultivation-help-app && docker compose restart frontend
-```
+Handled by the boot service, not cron — a nightly cron job never fires on an
+instance that is powered off between demos.
+
+[`deploy/on-boot.sh`](deploy/on-boot.sh) runs on every start, in this order:
+
+1. Update DuckDNS with the new public IP
+2. Start the containers
+3. Attempt `certbot renew`, then reload nginx if the certificate changed
+
+Renewal comes last because the HTTP-01 challenge needs nginx already serving
+port 80. An expired certificate does not stop nginx from starting, so even after
+months powered off the instance comes up and then repairs its own certificate.
 
 ---
 
