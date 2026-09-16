@@ -2,7 +2,7 @@
 
 AgroMaster is an AI-powered farm management platform built for Sri Lankan farmers. It combines crop tracking, expense management, harvest records, profit analytics, and an AI advisor — all in one dashboard.
 
-**Live:** https://agromaster.live
+Deployed on a free-tier EC2 instance, powered on for demos. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ---
 
@@ -35,7 +35,7 @@ Full requirements, architecture and design rationale:
 | Backend | Spring Boot 4, Spring Security, Flyway, JWT, Java 17 |
 | AI Service | FastAPI, Python 3.12, OpenAI-compatible API |
 | Database | PostgreSQL (Neon) |
-| Deployment | Docker Compose, AWS EC2, Let's Encrypt SSL |
+| Deployment | Docker Compose, AWS EC2, Let's Encrypt, DuckDNS |
 
 ---
 
@@ -45,13 +45,14 @@ Full requirements, architecture and design rationale:
 Browser
   │
   ▼
-Nginx (port 80 → redirect HTTPS / port 443 → SSL)
-  ├── /        → React SPA (static files)
-  ├── /api     → Spring Boot backend (internal port 8080)
-  └── /ai      → FastAPI AI service (internal port 8000)
+Nginx (80 → redirect to HTTPS / 443 → TLS)
+  ├── /        → React SPA (static files, gzipped, cached)
+  └── /api     → Spring Boot (internal :8080)
+                        │
+                        ├──→ FastAPI AI service (internal :8000, not public)
                         │
                         ▼
-                  AWS RDS PostgreSQL
+                  PostgreSQL (Neon, off-instance)
 ```
 
 ---
@@ -85,8 +86,10 @@ cultivation-help-app/
 │   ├── routers/
 │   ├── services/
 │   └── Dockerfile
+├── deploy/                   # server bootstrap and boot automation
 ├── docs/
-│   └── AgroMaster-SRS.pdf    # software requirements specification
+│   ├── AgroMaster-SRS.pdf    # software requirements specification
+│   └── DEPLOYMENT.md         # production runbook
 ├── scripts/
 │   ├── seed-local.sql        # demo data for local analysis
 │   └── analysis-queries.sql  # starter queries for pgAdmin
@@ -230,76 +233,31 @@ Data lives in the `pgdata` volume and survives `docker compose down`. To wipe an
 
 ---
 
-## Production Deployment (AWS EC2)
+## Production Deployment
 
-### Prerequisites
-- Ubuntu EC2 instance with inbound ports **22, 80, 443** open
-- Domain A record pointing to the EC2 public IP
-- AWS RDS PostgreSQL instance running
+Full runbook: **[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**
 
-### 1. Install Docker
-```bash
-sudo apt-get update
-sudo apt-get install -y ca-certificates curl gnupg
-sudo install -m 0755 -d /etc/apt/keyrings
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-sudo chmod a+r /etc/apt/keyrings/docker.gpg
-echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-sudo apt-get update
-sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
-sudo usermod -aG docker ubuntu && newgrp docker
-```
+One command on a fresh Ubuntu instance:
 
-### 2. Get SSL certificate
-```bash
-sudo snap install --classic certbot
-sudo ln -s /snap/bin/certbot /usr/bin/certbot
-sudo certbot certonly --standalone \
-  -d yourdomain.com -d www.yourdomain.com \
-  --email your@email.com --agree-tos --non-interactive
-```
-
-### 3. Clone and configure
 ```bash
 git clone https://github.com/minidu10/cultivation-help-app.git
-cd cultivation-help-app
+cd cultivation-help-app && bash deploy/bootstrap.sh
 ```
 
-Create root `.env` from the **production** block in `.env.example`:
+It creates swap, installs Docker, writes `.env`, issues a TLS certificate,
+builds the images and installs a boot service.
 
-```env
-COMPOSE_PROFILES=prod
-DB_URL=jdbc:postgresql://<managed-postgres-host>/<database>?sslmode=require
-DB_USERNAME=<user>
-DB_PASSWORD=<password>
-JWT_SECRET=<long random secret>
-AI_API_KEY=<key>
-OPENWEATHER_API_KEY=<key>
-```
+The instance is designed to be **stopped between uses**. On each start the boot
+service updates DNS to the new public IP, starts the containers from prebuilt
+images, and renews the certificate if it is due — roughly 90 seconds, no manual
+steps. The database is on Neon, so nothing is lost while the server is off.
 
-`COMPOSE_PROFILES=prod` starts the nginx frontend and skips the local database container. The frontend needs no environment file — it uses relative `/api` and `/ai` paths that nginx proxies internally.
-
-### 4. Deploy
-```bash
-docker compose up -d --build
-```
-
-Backend Maven build takes ~3–5 minutes on first run.
-
-### 5. Verify
-```bash
-docker compose ps   # all containers should show "Up (healthy)"
-```
-
-> **Add swap first.** `docker compose up --build` compiles the backend with
-> Maven on the server, and on a 1 GB instance that build is often OOM-killed:
-> ```bash
-> sudo fallocate -l 2G /swapfile && sudo chmod 600 /swapfile
-> sudo mkswap /swapfile && sudo swapon /swapfile
-> echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
-> ```
-
-Open `https://yourdomain.com` in the browser.
+| Script | |
+|---|---|
+| `deploy/bootstrap.sh` | one-time server setup |
+| `deploy/on-boot.sh` | runs on every boot |
+| `deploy/update-dns.sh` | points DuckDNS at the current IP |
+| `deploy/agromaster.service` | systemd unit tying it together |
 
 ---
 

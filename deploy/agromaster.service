@@ -1,0 +1,20 @@
+[Unit]
+Description=AgroMaster (DNS update, app start, TLS renewal)
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+User=__USER__
+WorkingDirectory=__APP_DIR__
+Environment=APP_DIR=__APP_DIR__
+# The public IP is assigned during boot; a few seconds avoids racing it.
+ExecStartPre=/bin/sleep 5
+ExecStart=/bin/bash __APP_DIR__/deploy/on-boot.sh
+ExecStop=/usr/bin/docker compose -f __APP_DIR__/docker-compose.yml down
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target
