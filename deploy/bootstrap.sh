@@ -123,6 +123,9 @@ DUCKDNS_SUBDOMAIN=${DUCK_SUB}
 DUCKDNS_TOKEN=${DUCK_TOKEN}
 DUCKDNS_DOMAIN=${DUCK_SUB}.duckdns.org
 DUCKEOF
+    # Owned by the app user, not root: the boot service runs unprivileged and
+    # has to source this file.
+    sudo chown "$(id -un):$(id -gn)" /etc/duckdns.conf
     sudo chmod 600 /etc/duckdns.conf
     echo "    .env written (JWT secret generated), DuckDNS credentials stored"
 fi

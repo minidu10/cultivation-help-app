@@ -29,12 +29,14 @@ docker compose up -d --remove-orphans
 # 3 -----------------------------------------------------------------
 DOMAIN=$(grep -E '^DOMAIN=' .env | cut -d= -f2-)
 WEBROOT="${CERTBOT_WEBROOT:-/var/www/certbot}"
-mkdir -p "$WEBROOT"
+sudo mkdir -p "$WEBROOT"
 
 # Give nginx a moment to bind 80 before the challenge arrives.
 sleep 10
 
-if certbot renew --webroot -w "$WEBROOT" --quiet --deploy-hook \
+# certbot owns /etc/letsencrypt and /var/log/letsencrypt as root, while this
+# service runs as the unprivileged app user - so the renewal needs sudo.
+if sudo certbot renew --webroot -w "$WEBROOT" --quiet --deploy-hook \
       "docker compose -f $APP_DIR/docker-compose.yml exec -T frontend nginx -s reload"; then
     echo "boot: certificate check complete"
 else
