@@ -1,15 +1,35 @@
 # AgroMaster — Smart Farm Management Platform
 
-AgroMaster is an AI-powered farm management platform built for Sri Lankan farmers. It combines crop tracking, expense management, harvest records, profit analytics, and an AI advisor — all in one dashboard.
+[![CI/CD](https://github.com/minidu10/cultivation-help-app/actions/workflows/ci.yml/badge.svg)](https://github.com/minidu10/cultivation-help-app/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
-Deployed on a free-tier EC2 instance, powered on for demos. See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+AgroMaster is an AI-powered farm management platform for small-scale Sri Lankan
+farmers. It tracks every crop from planting to harvest, records the costs against
+it and the revenue it produced, and answers the question that matters: **did this
+crop actually make money?**
+
+**Live demo:** https://agromaster.duckdns.org
+
+> Hosted on a free-tier EC2 instance that is powered off between demos. If the
+> link does not respond, the server is asleep — ask and it will be started.
+
+**Documentation:** [Software Requirements Specification](docs/AgroMaster-SRS.pdf)
+(19 pages) · [Deployment runbook](docs/DEPLOYMENT.md)
 
 ---
 
-## Documentation
+## Engineering notes
 
-Full requirements, architecture and design rationale:
-**[docs/AgroMaster-SRS.pdf](docs/AgroMaster-SRS.pdf)** - 19-page specification.
+The parts of this build that were not obvious, and why they were done that way:
+
+| Decision | Reasoning |
+|---|---|
+| **Images built in CI, never on the server** | The 1 GB instance cannot reliably compile Java. GitHub Actions publishes to ghcr.io and the server only pulls — deploys went from 3–5 minutes with OOM risk to about 30 seconds |
+| **AI reached only through the backend** | The AI service was briefly a public, unauthenticated LLM endpoint billed to this project's API key. It is now on the internal network with the backend in front of it |
+| **AI insights cached on a fingerprint** | The dashboard asked the model for an insight per crop on every load. The result is stored against a hash of the figures behind it, so an unchanged crop costs nothing |
+| **One daily reminder digest, not one email per task** | Per-reminder mail floods the inbox on a busy week and trains people to ignore it. A unique constraint on `(reminder_id, lead_days)` makes duplicate sends impossible at the database level |
+| **One compose file for both environments** | `COMPOSE_PROFILES` decides which services start, so the deploy command is identical locally and in production and the two cannot drift |
+| **6-digit codes, attempt-limited** | A million possibilities is brute-forceable, so codes expire in 10 minutes, die after 5 wrong guesses and are single-use — enforced in the database, not in job logic |
 
 ---
 
@@ -42,17 +62,25 @@ Full requirements, architecture and design rationale:
 ## Architecture
 
 ```
-Browser
-  │
-  ▼
-Nginx (80 → redirect to HTTPS / 443 → TLS)
-  ├── /        → React SPA (static files, gzipped, cached)
-  └── /api     → Spring Boot (internal :8080)
-                        │
-                        ├──→ FastAPI AI service (internal :8000, not public)
-                        │
-                        ▼
-                  PostgreSQL (Neon, off-instance)
+                         Browser
+                            │  HTTPS
+                            ▼
+           ┌─────────────────────────────────┐
+           │  Nginx   80 → redirect, 443 TLS │   the only public port
+           │  gzip · cache · security headers│
+           └─────────────────────────────────┘
+               │                        │
+               │ /                      │ /api
+               ▼                        ▼
+        React SPA (static)      Spring Boot  127.0.0.1:8080
+                                     │
+                        ┌────────────┼────────────┐
+                        ▼            ▼            ▼
+                  FastAPI AI    PostgreSQL     SMTP
+                127.0.0.1:8000    (Neon)      (Gmail)
+
+  Neither the backend nor the AI service is reachable from the internet;
+  both bind to loopback and are reached only through Nginx.
 ```
 
 ---
