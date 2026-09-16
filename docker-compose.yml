@@ -27,9 +27,13 @@ services:
     restart: unless-stopped
     logging: *default-logging
     environment:
+      # Deliberately NOT tied to DB_USERNAME/DB_PASSWORD. Those describe where
+      # the application connects, which may be a managed database; reusing them
+      # here made this container chase a role it never had the moment DB_URL
+      # pointed at Neon.
       POSTGRES_DB: ${POSTGRES_DB:-cultivation}
-      POSTGRES_USER: ${DB_USERNAME:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
       # Host port 5434 by default: 5432 and 5433 are commonly taken by a
       # locally installed PostgreSQL. Containers still reach it on 5432.
@@ -37,7 +41,7 @@ services:
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-postgres} -d ${POSTGRES_DB:-cultivation}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-cultivation}"]
       interval: 5s
       timeout: 5s
       retries: 12
