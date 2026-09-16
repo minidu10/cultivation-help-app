@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+#
+# Runs on every boot. Order matters:
+#
+#   1. DNS first  - the IP has just changed, so nothing else will resolve
+#   2. Start app  - NO --build; images were built during bootstrap, and
+#                   recompiling here would take minutes and may be OOM-killed
+#   3. Renew TLS  - only now, because the HTTP-01 challenge needs nginx running
+#                   to serve /.well-known/acme-challenge/
+#
+# An expired certificate does not stop nginx from starting; it just serves an
+# invalid one. So even after months powered off, the box comes up and then
+# repairs its own certificate.
+set -uo pipefail
+
+APP_DIR="${APP_DIR:-__APP_DIR__}"
+cd "$APP_DIR" || exit 1
+
+echo "--- agromaster boot $(date -Is) ---"
+
+# 1 -----------------------------------------------------------------
+bash deploy/update-dns.sh || echo "boot: DNS update failed, continuing"
+
+# 2 -----------------------------------------------------------------
+docker compose up -d --remove-orphans
+
+# 3 -----------------------------------------------------------------
+DOMAIN=$(grep -E '^DOMAIN=' .env | cut -d= -f2-)
+WEBROOT="${CERTBOT_WEBROOT:-/var/www/certbot}"
+mkdir -p "$WEBROOT"
+
+# Give nginx a moment to bind 80 before the challenge arrives.
+sleep 10
+
+if certbot renew --webroot -w "$WEBROOT" --quiet --deploy-hook \
+      "docker compose -f $APP_DIR/docker-compose.yml exec -T frontend nginx -s reload"; then
+    echo "boot: certificate check complete"
+else
+    echo "boot: certbot renew reported a problem (site still serves its existing cert)"
+fi
+
+echo "boot: ready at https://${DOMAIN}"
