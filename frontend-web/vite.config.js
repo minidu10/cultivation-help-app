@@ -8,15 +8,12 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
-    // Mirrors what nginx does in production, so the app uses relative
-    // paths (/api, /ai) everywhere and needs no environment variables.
+    // Mirrors what nginx does in production, so the app uses relative paths
+    // and needs no environment variables. AI calls go through /api/ai now,
+    // so the AI service needs no proxy of its own.
     proxy: {
       '/api': {
         target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-      '/ai': {
-        target: 'http://localhost:8000',
         changeOrigin: true,
       },
     },
