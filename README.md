@@ -291,23 +291,29 @@ steps. The database is on Neon, so nothing is lost while the server is off.
 
 ## CI/CD
 
-Every push to the `main` branch automatically deploys to production via GitHub Actions.
-
-**Workflow:** `.github/workflows/deploy.yml`
+Every push to `main` runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
 
 ```
-push to main → SSH into EC2 → git pull → docker compose down → docker compose up --build
+backend  → mvnw verify                          ┐ every push
+frontend → npm ci, eslint, build                ┘ and pull request
+
+images   → build 3 images, push to ghcr.io      ┐ main only
+deploy   → ssh to EC2, pull, restart            ┘
 ```
 
-> The workflow runs the same `docker compose up -d --build` as local development. The server's `.env` must contain `COMPOSE_PROFILES=prod`, otherwise the nginx frontend will not start.
+Images are built **in CI, never on the server** — the instance has no JDK,
+Maven or Node. Each image is tagged `:latest` and `:<commit-sha>`, so rolling
+back is `IMAGE_TAG=<sha>` and a restart.
 
-**Required GitHub Secrets** (Settings → Secrets → Actions):
+**Required GitHub Secrets** (Settings → Secrets and variables → Actions):
 
-| Secret | Description |
-|--------|-------------|
-| `EC2_HOST` | EC2 public IP address |
-| `EC2_USER` | SSH username (`ubuntu`) |
-| `EC2_SSH_KEY` | Contents of your `.pem` private key file |
+| Secret | Value |
+|---|---|
+| `EC2_HOST` | The DuckDNS hostname — **not an IP**, which changes on every restart |
+| `EC2_SSH_KEY` | Full contents of the `.pem`, including the BEGIN and END lines |
+
+Publishing needs no secret: the workflow's built-in `GITHUB_TOKEN` has
+`packages: write`.
 
 ---
 
@@ -338,13 +344,20 @@ docker system prune -af --volumes
 
 ---
 
-## Auto-renew SSL
+## TLS renewal
 
-```bash
-sudo crontab -e
-# Add this line:
-0 3 * * * certbot renew --quiet && cd /home/ubuntu/cultivation-help-app && docker compose restart frontend
-```
+Handled by the boot service, not cron — a nightly cron job never fires on an
+instance that is powered off between demos.
+
+[`deploy/on-boot.sh`](deploy/on-boot.sh) runs on every start, in this order:
+
+1. Update DuckDNS with the new public IP
+2. Start the containers
+3. Attempt `certbot renew`, then reload nginx if the certificate changed
+
+Renewal comes last because the HTTP-01 challenge needs nginx already serving
+port 80. An expired certificate does not stop nginx from starting, so even after
+months powered off the instance comes up and then repairs its own certificate.
 
 ---
 
