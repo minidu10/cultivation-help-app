@@ -13,7 +13,8 @@ crop actually make money?**
 > Hosted on a free-tier EC2 instance that is powered off between demos. If the
 > link does not respond, the server is asleep — ask and it will be started.
 
-**Documentation:** [Software Requirements Specification](docs/AgroMaster-SRS.pdf)
+**Documentation:** [Technical Overview](docs/AgroMaster-Technical-Overview.pdf)
+(12 pages — how it works and why) · [Software Requirements Specification](docs/AgroMaster-SRS.pdf)
 (19 pages) · [Deployment runbook](docs/DEPLOYMENT.md)
 
 ---
@@ -116,8 +117,9 @@ cultivation-help-app/
 │   └── Dockerfile
 ├── deploy/                   # server bootstrap and boot automation
 ├── docs/
-│   ├── AgroMaster-SRS.pdf    # software requirements specification
-│   └── DEPLOYMENT.md         # production runbook
+│   ├── AgroMaster-Technical-Overview.pdf  # architecture and design rationale
+│   ├── AgroMaster-SRS.pdf                 # requirements specification
+│   └── DEPLOYMENT.md                      # production runbook
 ├── scripts/
 │   ├── seed-local.sql        # demo data for local analysis
 │   └── analysis-queries.sql  # starter queries for pgAdmin
