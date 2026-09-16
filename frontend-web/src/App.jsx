@@ -42,7 +42,7 @@ function RouteFallback() {
         borderTopColor: 'var(--accent-lime)',
         animation: 'agro-spin 0.7s linear infinite',
       }} />
-      <span style={{ fontFamily: 'Inter', fontSize: '14px', color: 'var(--text-muted)' }}>
+      <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '14px', color: 'var(--text-muted)' }}>
         Loading…
       </span>
       <style>{'@keyframes agro-spin { to { transform: rotate(360deg) } }'}</style>

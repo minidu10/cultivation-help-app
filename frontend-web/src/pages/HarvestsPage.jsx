@@ -7,7 +7,7 @@ const UNITS = ['KG', 'TONNE', 'BUSHEL', 'POUND', 'LITER']
 
 const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', backdropFilter: 'blur(12px)', padding: '24px' }
 const inputStyle = { width: '100%', boxSizing: 'border-box', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 14px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }
-const labelStyle = { display: 'block', fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 500 }
+const labelStyle = { display: 'block', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 500 }
 
 export default function HarvestsPage() {
   const isMobile = useIsMobile()
@@ -51,19 +51,19 @@ export default function HarvestsPage() {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 14px' }}>
-            <span style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Select Crop:</span>
+            <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Select Crop:</span>
             {crops.length === 0 ? (
-              <span style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-faint)' }}>No crops yet</span>
+              <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)' }}>No crops yet</span>
             ) : (
-              <select value={selectedCrop} onChange={e => setSelectedCrop(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontFamily: 'Inter', fontSize: '14px', fontWeight: 600, outline: 'none', cursor: 'pointer' }}>
+              <select value={selectedCrop} onChange={e => setSelectedCrop(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '14px', fontWeight: 600, outline: 'none', cursor: 'pointer' }}>
                 {crops.map(crop => <option key={crop.id} value={crop.id}>{crop.name}{crop.variety ? ` (${crop.variety})` : ''}</option>)}
               </select>
             )}
           </div>
           {harvests.length > 0 && (
             <div style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '10px', padding: '8px 14px' }}>
-              <div style={{ fontFamily: 'Inter', fontSize: '11px', color: 'rgba(74,222,128,0.7)' }}>Total Revenue</div>
-              <div style={{ fontFamily: 'Space Grotesk', fontSize: '16px', fontWeight: 700, color: '#4ade80' }}>Rs. {totalRevenue.toLocaleString()}</div>
+              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'rgba(74,222,128,0.7)' }}>Total Revenue</div>
+              <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '16px', fontWeight: 700, color: '#4ade80' }}>Rs. {totalRevenue.toLocaleString()}</div>
             </div>
           )}
         </div>
@@ -73,14 +73,14 @@ export default function HarvestsPage() {
       </div>
 
       {/* Error */}
-      {error && <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'Inter', fontSize: '13px', color: '#f87171', marginBottom: '16px' }}>{error}</div>}
+      {error && <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: '#f87171', marginBottom: '16px' }}>{error}</div>}
 
       {/* Add harvest modal */}
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <div className="modal-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-hover)', borderRadius: '20px', padding: '36px', width: '520px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', backdropFilter: 'blur(20px)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '20px', color: 'var(--text-primary)', margin: 0 }}>Record Harvest</h2>
+              <h2 style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '20px', color: 'var(--text-primary)', margin: 0 }}>Record Harvest</h2>
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '22px' }}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
@@ -113,14 +113,14 @@ export default function HarvestsPage() {
                 </div>
                 {estimatedRevenue > 0 && (
                   <div style={{ gridColumn: '1 / -1', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '10px', padding: '12px 16px' }}>
-                    <span style={{ fontFamily: 'Inter', fontSize: '13px', color: '#4ade80' }}>
+                    <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: '#4ade80' }}>
                       💰 Estimated revenue: <strong>Rs. {estimatedRevenue.toLocaleString()}</strong>
                     </span>
                   </div>
                 )}
               </div>
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '20px' }}>
-                <button type="button" onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'Inter', fontSize: '14px', padding: '8px 16px' }}>Cancel</button>
+                <button type="button" onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '14px', padding: '8px 16px' }}>Cancel</button>
                 <button type="submit" disabled={submitting} className="agro-btn">{submitting ? 'Saving…' : 'Save Harvest'}</button>
               </div>
             </form>
@@ -132,8 +132,8 @@ export default function HarvestsPage() {
       {harvests.length === 0 ? (
         <div style={{ ...cardStyle, textAlign: 'center', padding: '80px' }}>
           <p style={{ fontSize: '48px', marginBottom: '12px' }}>📦</p>
-          <p style={{ fontFamily: 'Space Grotesk', fontWeight: 600, fontSize: '18px', color: 'var(--text-muted)', marginBottom: '6px' }}>No harvests yet</p>
-          <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-faint)' }}>Record your first harvest above</p>
+          <p style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 600, fontSize: '18px', color: 'var(--text-muted)', marginBottom: '6px' }}>No harvests yet</p>
+          <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)' }}>Record your first harvest above</p>
         </div>
       ) : (
         <>
@@ -146,8 +146,8 @@ export default function HarvestsPage() {
             ].map(s => (
               <div key={s.label} style={{ ...cardStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div>
-                  <div style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>{s.label}</div>
-                  <div style={{ fontFamily: 'Space Grotesk', fontSize: '24px', fontWeight: 800, color: s.color, letterSpacing: '-0.5px' }}>{s.value}</div>
+                  <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>{s.label}</div>
+                  <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '24px', fontWeight: 800, color: s.color, letterSpacing: '-0.5px' }}>{s.value}</div>
                 </div>
               </div>
             ))}
@@ -167,23 +167,23 @@ export default function HarvestsPage() {
                       onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none' }}
                     >
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                        <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', marginBottom: '4px' }}>
                           {Number(h.quantity).toLocaleString()} {h.unit}
                         </div>
-                        <div style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)' }}>
+                        <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)' }}>
                           {h.harvestDate}
                           {h.buyerName && ` · ${h.buyerName}`}
                           {h.notes && ` · ${h.notes}`}
                         </div>
-                        <div style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-faint)', marginTop: '2px' }}>
+                        <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-faint)', marginTop: '2px' }}>
                           Rs. {Number(h.pricePerUnit).toLocaleString()} / {h.unit}
                         </div>
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '20px' }}>
-                        <div style={{ fontFamily: 'Space Grotesk', fontSize: '20px', fontWeight: 800, color: '#4ade80', letterSpacing: '-0.5px' }}>
+                        <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '20px', fontWeight: 800, color: '#4ade80', letterSpacing: '-0.5px' }}>
                           Rs. {revenue.toLocaleString()}
                         </div>
-                        <div style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-faint)', marginTop: '2px' }}>Revenue</div>
+                        <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--text-faint)', marginTop: '2px' }}>Revenue</div>
                       </div>
                     </div>
                   </div>

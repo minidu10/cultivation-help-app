@@ -27,7 +27,7 @@ export default function StatCard({ title, value, sub, color = 'green', icon }) {
       }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-        <span style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>
+        <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>
           {title}
         </span>
         <span style={{ fontSize: '20px' }}>{displayIcon}</span>
@@ -38,7 +38,7 @@ export default function StatCard({ title, value, sub, color = 'green', icon }) {
         color: accent, letterSpacing: '-1px', marginBottom: '8px',
       }}>{value}</div>
       {sub && (
-        <div style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-faint)' }}>{sub}</div>
+        <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-faint)' }}>{sub}</div>
       )}
     </div>
   )

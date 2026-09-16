@@ -113,7 +113,7 @@ export default function GoogleSignIn({ onError, text = 'signin_with' }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', margin: '20px 0' }}>
         <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />
         <span style={{
-          fontFamily: 'Inter', fontSize: '11px', fontWeight: 600,
+          fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', fontWeight: 600,
           color: 'var(--text-faint)', textTransform: 'uppercase', letterSpacing: '0.5px',
         }}>or</span>
         <div style={{ flex: 1, height: 1, background: 'var(--border)' }} />

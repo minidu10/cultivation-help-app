@@ -22,7 +22,7 @@ const inputStyle = {
 }
 
 const labelStyle = {
-  display: 'block', fontFamily: 'Inter', fontSize: '12px',
+  display: 'block', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px',
   color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 500,
 }
 
@@ -95,7 +95,7 @@ export default function CropsPage() {
                 background: isActive ? (sc ? sc.bg : 'rgba(74,222,128,0.15)') : 'var(--bg-input)',
                 border: `1px solid ${isActive ? (sc ? sc.border : 'rgba(74,222,128,0.5)') : 'var(--border)'}`,
                 borderRadius: '100px', padding: '6px 14px',
-                fontFamily: 'Inter', fontSize: '13px',
+                fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px',
                 color: isActive ? (sc ? sc.text : '#4ade80') : 'var(--text-muted)',
                 cursor: 'pointer', transition: 'all 0.2s',
               }}>
@@ -111,7 +111,7 @@ export default function CropsPage() {
 
       {/* Error */}
       {error && (
-        <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'Inter', fontSize: '13px', color: '#f87171', marginBottom: '16px' }}>
+        <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: '#f87171', marginBottom: '16px' }}>
           {error}
         </div>
       )}
@@ -121,7 +121,7 @@ export default function CropsPage() {
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <div className="modal-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-hover)', borderRadius: '20px', padding: '36px', width: '560px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', backdropFilter: 'blur(20px)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '28px' }}>
-              <h2 style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '20px', color: 'var(--text-primary)', margin: 0 }}>Add New Crop</h2>
+              <h2 style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '20px', color: 'var(--text-primary)', margin: 0 }}>Add New Crop</h2>
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '22px' }}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
@@ -148,7 +148,7 @@ export default function CropsPage() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '20px' }}>
-                <button type="button" onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'Inter', fontSize: '14px', padding: '8px 16px' }}>Cancel</button>
+                <button type="button" onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '14px', padding: '8px 16px' }}>Cancel</button>
                 <button type="submit" disabled={submitting} className="agro-btn">{submitting ? 'Saving…' : 'Save Crop'}</button>
               </div>
             </form>
@@ -160,15 +160,15 @@ export default function CropsPage() {
       {loading ? (
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '40px 0' }}>
           <div style={{ width: 28, height: 28, border: '3px solid rgba(74,222,128,0.2)', borderTopColor: '#4ade80', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          <p style={{ fontFamily: 'Inter', color: 'var(--text-muted)', fontSize: '14px' }}>Loading crops…</p>
+          <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', color: 'var(--text-muted)', fontSize: '14px' }}>Loading crops…</p>
         </div>
       ) : visible.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '80px 0' }}>
           <p style={{ fontSize: '48px', marginBottom: '12px' }}>🌱</p>
-          <p style={{ fontFamily: 'Space Grotesk', fontWeight: 600, fontSize: '18px', color: 'var(--text-muted)', marginBottom: '6px' }}>
+          <p style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 600, fontSize: '18px', color: 'var(--text-muted)', marginBottom: '6px' }}>
             {filterStatus === 'All' ? 'No crops yet' : `No ${STATUS_STYLE[filterStatus]?.label || filterStatus} crops`}
           </p>
-          <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-faint)' }}>
+          <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)' }}>
             {filterStatus === 'All' ? 'Click "+ Add Crop" to get started' : 'Try a different filter'}
           </p>
         </div>
@@ -195,28 +195,28 @@ export default function CropsPage() {
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
                   <div>
-                    <h3 style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', margin: 0 }}>{crop.name}</h3>
-                    {crop.variety && <p style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{crop.variety}</p>}
+                    <h3 style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', margin: 0 }}>{crop.name}</h3>
+                    {crop.variety && <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>{crop.variety}</p>}
                   </div>
-                  <span style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: '100px', padding: '3px 10px', fontFamily: 'Inter', fontSize: '11px', fontWeight: 600, color: sc.text, flexShrink: 0, marginLeft: '8px' }}>
+                  <span style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: '100px', padding: '3px 10px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', fontWeight: 600, color: sc.text, flexShrink: 0, marginLeft: '8px' }}>
                     {sc.label}
                   </span>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-                  {crop.fieldLocation && <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)' }}>📍 {crop.fieldLocation}</p>}
-                  {crop.fieldSizeAcres && <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)' }}>📐 {crop.fieldSizeAcres} acres</p>}
-                  <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)' }}>🌱 Planted: {crop.plantingDate}</p>
-                  {crop.expectedHarvestDate && <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)' }}>📅 Harvest by: {crop.expectedHarvestDate}</p>}
+                  {crop.fieldLocation && <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)' }}>📍 {crop.fieldLocation}</p>}
+                  {crop.fieldSizeAcres && <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)' }}>📐 {crop.fieldSizeAcres} acres</p>}
+                  <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)' }}>🌱 Planted: {crop.plantingDate}</p>
+                  {crop.expectedHarvestDate && <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)' }}>📅 Harvest by: {crop.expectedHarvestDate}</p>}
                 </div>
 
                 <div style={{ display: 'flex', gap: '8px', paddingTop: '12px', borderTop: '1px solid rgba(74,222,128,0.08)' }}>
-                  <button style={{ flex: 1, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '8px', padding: '6px', fontFamily: 'Inter', fontSize: '12px', color: '#4ade80', cursor: 'pointer' }}
+                  <button style={{ flex: 1, background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', borderRadius: '8px', padding: '6px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: '#4ade80', cursor: 'pointer' }}
                     onClick={e => { e.stopPropagation(); navigate(`/crops/${crop.id}`) }}>
                     View Details
                   </button>
                   <button onClick={(e) => { e.stopPropagation(); handleDelete(crop.id) }}
-                    style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '8px', padding: '6px 10px', fontFamily: 'Inter', fontSize: '12px', color: '#f87171', cursor: 'pointer' }}>
+                    style={{ background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '8px', padding: '6px 10px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: '#f87171', cursor: 'pointer' }}>
                     ×
                   </button>
                 </div>

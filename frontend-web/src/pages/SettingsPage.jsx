@@ -13,13 +13,13 @@ const cardStyle = {
   borderRadius: '16px', backdropFilter: 'blur(12px)', marginBottom: '24px', overflow: 'hidden',
 }
 const labelStyle = {
-  display: 'block', fontFamily: 'Inter', fontSize: '12px',
+  display: 'block', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px',
   color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 500,
 }
 const inputStyle = {
   width: '100%', boxSizing: 'border-box', background: 'var(--bg-input)',
   border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 14px',
-  fontFamily: 'Inter', fontSize: '14px', color: 'var(--text-primary)',
+  fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '14px', color: 'var(--text-primary)',
   outline: 'none', transition: 'border-color 0.2s, box-shadow 0.2s',
 }
 
@@ -119,7 +119,7 @@ export default function SettingsPage() {
     return (
       <Layout>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '200px' }}>
-          <div style={{ fontFamily: 'Inter', fontSize: '14px', color: 'var(--text-muted)' }}>Loading settings…</div>
+          <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '14px', color: 'var(--text-muted)' }}>Loading settings…</div>
         </div>
       </Layout>
     )
@@ -134,7 +134,7 @@ export default function SettingsPage() {
   return (
     <Layout>
       {error && (
-        <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'Inter', fontSize: '13px', color: '#f87171', marginBottom: '20px' }}>
+        <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: '#f87171', marginBottom: '20px' }}>
           {error}
         </div>
       )}
@@ -161,12 +161,12 @@ export default function SettingsPage() {
                 onMouseLeave={e => { if (!active) e.currentTarget.style.borderColor = 'var(--border)' }}
               >
                 <div style={{ fontSize: '30px', marginBottom: '12px' }}>{t.icon}</div>
-                <div style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', marginBottom: '5px' }}>{t.label}</div>
-                <div style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{t.desc}</div>
+                <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', marginBottom: '5px' }}>{t.label}</div>
+                <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{t.desc}</div>
                 {active && (
                   <div style={{ marginTop: '14px', display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: '100px', padding: '3px 10px' }}>
                     <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-lime)' }} />
-                    <span style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--accent-lime)', fontWeight: 600 }}>Active</span>
+                    <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--accent-lime)', fontWeight: 600 }}>Active</span>
                   </div>
                 )}
               </div>
@@ -205,15 +205,15 @@ export default function SettingsPage() {
           >
             <div style={{ fontSize: '26px', lineHeight: 1, flexShrink: 0 }}>📬</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', marginBottom: '5px' }}>
+              <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', marginBottom: '5px' }}>
                 Reminder emails
               </div>
-              <div style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
                 One summary email a day at 7:00 AM covering tasks due tomorrow
                 and the day after. Never more than one message per day, and
                 each task is only mentioned once per notice.
               </div>
-              <div style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-faint)', marginTop: '8px' }}>
+              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-faint)', marginTop: '8px' }}>
                 Sent to {email || 'your email address'}
               </div>
             </div>
@@ -244,7 +244,7 @@ export default function SettingsPage() {
               marginTop: '16px', padding: '10px 14px',
               background: 'rgba(245,158,11,0.07)',
               border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px',
-              fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6,
+              fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6,
             }}>
               Reminder emails are off. Your reminders still appear on the
               dashboard — you just will not be emailed about them.
@@ -259,7 +259,7 @@ export default function SettingsPage() {
           {saving ? 'Saving…' : 'Save Changes'}
         </button>
         {message && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'Inter', fontSize: '14px', color: 'var(--accent-lime)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '14px', color: 'var(--accent-lime)' }}>
             <span>✓</span> {message}
           </div>
         )}

@@ -346,7 +346,7 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <FadeUp>
             <div style={{ textAlign: 'center', marginBottom: 72 }}>
-              <div style={{ fontFamily: 'Inter', fontSize: 12, letterSpacing: '3px', textTransform: 'uppercase', color: '#4ade80', marginBottom: 16 }}>Everything you need</div>
+              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: 12, letterSpacing: '3px', textTransform: 'uppercase', color: '#4ade80', marginBottom: 16 }}>Everything you need</div>
               <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 'clamp(32px,5vw,56px)', fontWeight: 800, color: '#e8f5e2', letterSpacing: '-2px', margin: 0 }}>Built for the field.</h2>
             </div>
           </FadeUp>
@@ -372,7 +372,7 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1100, margin: '0 auto' }}>
           <FadeUp>
             <div style={{ textAlign: 'center', marginBottom: 80 }}>
-              <div style={{ fontFamily: 'Inter', fontSize: 12, letterSpacing: '3px', textTransform: 'uppercase', color: '#f59e0b', marginBottom: 16 }}>Simple process</div>
+              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: 12, letterSpacing: '3px', textTransform: 'uppercase', color: '#f59e0b', marginBottom: 16 }}>Simple process</div>
               <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 'clamp(32px,5vw,56px)', fontWeight: 800, color: '#e8f5e2', letterSpacing: '-2px', margin: 0 }}>How It Works</h2>
             </div>
           </FadeUp>
@@ -396,7 +396,7 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <FadeUp>
             <div style={{ textAlign: 'center', marginBottom: 72 }}>
-              <div style={{ fontFamily: 'Inter', fontSize: 12, letterSpacing: '3px', textTransform: 'uppercase', color: '#4ade80', marginBottom: 16 }}>Farmer stories</div>
+              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: 12, letterSpacing: '3px', textTransform: 'uppercase', color: '#4ade80', marginBottom: 16 }}>Farmer stories</div>
               <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 'clamp(32px,5vw,56px)', fontWeight: 800, color: '#e8f5e2', letterSpacing: '-2px', margin: 0 }}>Trusted across Sri Lanka</h2>
             </div>
           </FadeUp>
@@ -407,7 +407,7 @@ export default function LandingPage() {
                   <div style={{ fontSize: 32, color: '#4ade80', fontFamily: 'Georgia, serif', marginBottom: 16, opacity: 0.6 }}>"</div>
                   <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 15, lineHeight: 1.8, color: 'rgba(232,245,226,0.75)', margin: '0 0 24px', fontStyle: 'italic' }}>{t.quote}</p>
                   <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#0a1a0f', fontFamily: 'Space Grotesk', flexShrink: 0 }}>{t.name[0]}</div>
+                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#0a1a0f', fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', flexShrink: 0 }}>{t.name[0]}</div>
                     <div>
                       <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 14, color: '#e8f5e2' }}>{t.name}</div>
                       <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: 'rgba(232,245,226,0.4)' }}>{t.location} · {t.crop}</div>
@@ -437,12 +437,12 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1200, margin: '0 auto' }} className="lp-footer-inner">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🌿</div>
-            <span style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: 16, color: '#e8f5e2' }}>AgroMaster</span>
+            <span style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: 16, color: '#e8f5e2' }}>AgroMaster</span>
           </div>
-          <div style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(232,245,226,0.3)' }}>© 2026 AgroMaster · Built for Sri Lankan Farmers 🌿</div>
+          <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: 13, color: 'rgba(232,245,226,0.3)' }}>© 2026 AgroMaster · Built for Sri Lankan Farmers 🌿</div>
           <div style={{ display: 'flex', gap: 24 }}>
             {['Privacy', 'Terms', 'Contact'].map(l => (
-              <a key={l} href="#" style={{ fontFamily: 'Inter', fontSize: 13, color: 'rgba(232,245,226,0.4)', textDecoration: 'none' }}>{l}</a>
+              <a key={l} href="#" style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: 13, color: 'rgba(232,245,226,0.4)', textDecoration: 'none' }}>{l}</a>
             ))}
           </div>
         </div>

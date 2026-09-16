@@ -114,7 +114,7 @@ export default function ForgotPasswordPage() {
               onClick={() => { setStep(1); setCode(''); setError(''); setNotice('') }}
               style={{
                 background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)',
+                fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)',
               }}
             >
               ← Change email

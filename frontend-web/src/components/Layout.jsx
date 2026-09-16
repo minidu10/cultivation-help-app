@@ -139,7 +139,7 @@ export default function Layout({ children }) {
               display: 'flex', alignItems: 'center', gap: '8px',
               background: 'transparent', border: 'none',
               cursor: 'pointer', color: 'var(--text-faint)',
-              fontFamily: 'Inter', fontSize: '13px',
+              fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px',
               padding: '6px 0', borderRadius: '6px',
               transition: 'all 0.2s', whiteSpace: 'nowrap',
             }}
@@ -180,9 +180,9 @@ export default function Layout({ children }) {
           </button>
 
           <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: isMobile ? '16px' : '20px', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentLabel}</h1>
+            <h1 style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: isMobile ? '16px' : '20px', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentLabel}</h1>
             {!isMobile && (
-              <div style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-faint)', marginTop: '1px' }}>
+              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--text-faint)', marginTop: '1px' }}>
                 {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </div>
             )}
@@ -190,11 +190,11 @@ export default function Layout({ children }) {
 
           {/* User badge */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: isMobile ? '6px 8px' : '6px 12px', flexShrink: 0 }}>
-            <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#0a1a0f', fontFamily: 'Space Grotesk', flexShrink: 0 }}>{initials}</div>
+            <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#0a1a0f', fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', flexShrink: 0 }}>{initials}</div>
             {!isMobile && (
               <div>
-                <div style={{ fontFamily: 'Space Grotesk', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{user?.fullName || 'User'}</div>
-                <div style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-muted)' }}>{user?.city || 'Agromaster Farm'}</div>
+                <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{user?.fullName || 'User'}</div>
+                <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--text-muted)' }}>{user?.city || 'Agromaster Farm'}</div>
               </div>
             )}
           </div>

@@ -7,7 +7,7 @@ export function StyledInput({ label, type = 'text', value, onChange, placeholder
   return (
     <div style={{ gridColumn: half ? 'span 1' : '1 / -1' }}>
       <label style={{
-        display: 'block', fontFamily: 'Inter',
+        display: 'block', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif',
         fontSize: '12px', fontWeight: 600,
         color: 'var(--text-muted)', marginBottom: '6px',
         textTransform: 'uppercase', letterSpacing: '0.5px',
@@ -22,7 +22,7 @@ export function StyledInput({ label, type = 'text', value, onChange, placeholder
           background: 'var(--bg-input)',
           border: `1.5px solid ${focused ? 'var(--accent-lime)' : 'var(--border)'}`,
           borderRadius: '10px', padding: '11px 14px',
-          fontFamily: 'Inter', fontSize: '14px',
+          fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '14px',
           color: 'var(--text-primary)', outline: 'none', transition: 'all 0.2s',
           opacity: disabled ? 0.6 : 1,
           boxShadow: focused ? '0 0 0 3px rgba(74,222,128,0.1)' : 'none',
@@ -46,8 +46,8 @@ function PasswordStrengthBar({ password }) {
         }} />
       </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '5px' }}>
-        <span style={{ fontFamily: 'Inter', fontSize: '11px', color: 'var(--text-faint)' }}>Password strength</span>
-        <span style={{ fontFamily: 'Inter', fontSize: '11px', fontWeight: 600, color }}>{label}</span>
+        <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--text-faint)' }}>Password strength</span>
+        <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', fontWeight: 600, color }}>{label}</span>
       </div>
     </div>
   )
@@ -58,7 +58,7 @@ export function PasswordField({ label = 'Password *', name, value, onChange, err
   return (
     <div style={{ gridColumn: full ? '1 / -1' : 'span 1' }}>
       <label style={{
-        display: 'block', fontFamily: 'Inter', fontSize: '12px', fontWeight: 600,
+        display: 'block', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', fontWeight: 600,
         color: 'var(--text-muted)', marginBottom: '6px',
         textTransform: 'uppercase', letterSpacing: '0.5px',
       }}>{label}</label>
@@ -70,7 +70,7 @@ export function PasswordField({ label = 'Password *', name, value, onChange, err
           background: 'var(--bg-input)',
           border: `1.5px solid ${value && errors.length === 0 ? '#4ade80' : value ? '#f87171' : 'var(--border)'}`,
           borderRadius: '10px', padding: '11px 14px',
-          fontFamily: 'Inter', fontSize: '14px',
+          fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '14px',
           color: 'var(--text-primary)', outline: 'none', transition: 'all 0.2s',
         }}
       />
@@ -78,7 +78,7 @@ export function PasswordField({ label = 'Password *', name, value, onChange, err
       {value && errors.length > 0 && (
         <ul style={{ margin: '6px 0 0', paddingLeft: '16px', listStyle: 'disc' }}>
           {errors.map(e => (
-            <li key={e} style={{ fontFamily: 'Inter', fontSize: '11px', color: '#f87171', lineHeight: 1.6 }}>{e}</li>
+            <li key={e} style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: '#f87171', lineHeight: 1.6 }}>{e}</li>
           ))}
         </ul>
       )}
@@ -118,7 +118,7 @@ export function Alert({ kind = 'error', children }) {
       background: error ? 'rgba(248,113,113,0.08)' : 'rgba(74,222,128,0.08)',
       border: `1px solid ${error ? 'rgba(248,113,113,0.25)' : 'rgba(74,222,128,0.25)'}`,
       borderRadius: '10px', padding: '11px 14px',
-      fontFamily: 'Inter', fontSize: '13px',
+      fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px',
       color: error ? 'var(--accent-red)' : 'var(--accent-lime)',
       marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px',
     }}>
@@ -146,7 +146,7 @@ export function ResendTimer({ seconds, onResend, disabled }) {
 
   if (left > 0) {
     return (
-      <span style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-faint)' }}>
+      <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-faint)' }}>
         Resend code in {left}s
       </span>
     )
@@ -156,7 +156,7 @@ export function ResendTimer({ seconds, onResend, disabled }) {
       type="button" onClick={onResend} disabled={disabled}
       style={{
         background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-        fontFamily: 'Inter', fontSize: '12px', fontWeight: 600,
+        fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', fontWeight: 600,
         color: 'var(--accent-lime)',
       }}
     >
@@ -182,14 +182,14 @@ export function AuthShell({ title, subtitle, children, footer, maxWidth = '440px
             fontSize: '22px', boxShadow: '0 0 24px rgba(74,222,128,0.4)',
           }}>🌿</div>
           <div>
-            <div style={{ fontFamily: 'Space Grotesk', fontWeight: 800, fontSize: '22px', color: 'var(--text-primary)', letterSpacing: '-0.5px', lineHeight: 1 }}>Agromaster</div>
-            <div style={{ fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-faint)', marginTop: '3px' }}>Farm Management Platform</div>
+            <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 800, fontSize: '22px', color: 'var(--text-primary)', letterSpacing: '-0.5px', lineHeight: 1 }}>Agromaster</div>
+            <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-faint)', marginTop: '3px' }}>Farm Management Platform</div>
           </div>
         </div>
 
         <div style={{ marginBottom: '24px' }}>
-          <h1 style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '26px', color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.5px' }}>{title}</h1>
-          {subtitle && <p style={{ fontFamily: 'Inter', fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>{subtitle}</p>}
+          <h1 style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '26px', color: 'var(--text-primary)', margin: '0 0 6px', letterSpacing: '-0.5px' }}>{title}</h1>
+          {subtitle && <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>{subtitle}</p>}
         </div>
 
         <div className="auth-card" style={{
@@ -200,7 +200,7 @@ export function AuthShell({ title, subtitle, children, footer, maxWidth = '440px
         </div>
 
         {footer && (
-          <div style={{ marginTop: '20px', textAlign: 'center', fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)' }}>
+          <div style={{ marginTop: '20px', textAlign: 'center', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)' }}>
             {footer}
           </div>
         )}
@@ -218,7 +218,7 @@ export function StepDots({ current, total }) {
           <div style={{
             width: 26, height: 26, borderRadius: '50%', flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontFamily: 'Inter', fontSize: '12px', fontWeight: 700,
+            fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', fontWeight: 700,
             background: n <= current ? 'linear-gradient(135deg, #4ade80, #16a34a)' : 'var(--bg-input)',
             color: n <= current ? '#06210f' : 'var(--text-faint)',
             border: n <= current ? 'none' : '1px solid var(--border)',

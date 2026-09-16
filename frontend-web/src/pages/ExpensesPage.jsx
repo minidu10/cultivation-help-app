@@ -9,7 +9,7 @@ const CAT_COLORS = { FERTILIZER: '#f59e0b', LABOR: '#60a5fa', TRANSPORT: '#c084f
 
 const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', backdropFilter: 'blur(12px)', padding: '24px' }
 const inputStyle = { width: '100%', boxSizing: 'border-box', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 14px', fontFamily: 'Inter, sans-serif', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }
-const labelStyle = { display: 'block', fontFamily: 'Inter', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 500 }
+const labelStyle = { display: 'block', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 500 }
 
 export default function ExpensesPage() {
   const isMobile = useIsMobile()
@@ -54,19 +54,19 @@ export default function ExpensesPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
           {/* Crop selector */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 14px' }}>
-            <span style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Select Crop:</span>
+            <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Select Crop:</span>
             {crops.length === 0 ? (
-              <span style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-faint)' }}>No crops yet</span>
+              <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)' }}>No crops yet</span>
             ) : (
-              <select value={selectedCrop} onChange={e => setSelectedCrop(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontFamily: 'Inter', fontSize: '14px', fontWeight: 600, outline: 'none', cursor: 'pointer' }}>
+              <select value={selectedCrop} onChange={e => setSelectedCrop(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '14px', fontWeight: 600, outline: 'none', cursor: 'pointer' }}>
                 {crops.map(crop => <option key={crop.id} value={crop.id}>{crop.name}{crop.variety ? ` (${crop.variety})` : ''}</option>)}
               </select>
             )}
           </div>
           {expenses.length > 0 && (
             <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.2)', borderRadius: '10px', padding: '8px 14px' }}>
-              <div style={{ fontFamily: 'Inter', fontSize: '11px', color: 'rgba(248,113,113,0.7)' }}>Total Spent</div>
-              <div style={{ fontFamily: 'Space Grotesk', fontSize: '16px', fontWeight: 700, color: '#f87171' }}>Rs. {totalExpenses.toLocaleString()}</div>
+              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'rgba(248,113,113,0.7)' }}>Total Spent</div>
+              <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '16px', fontWeight: 700, color: '#f87171' }}>Rs. {totalExpenses.toLocaleString()}</div>
             </div>
           )}
         </div>
@@ -76,14 +76,14 @@ export default function ExpensesPage() {
       </div>
 
       {/* Error */}
-      {error && <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'Inter', fontSize: '13px', color: '#f87171', marginBottom: '16px' }}>{error}</div>}
+      {error && <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: '#f87171', marginBottom: '16px' }}>{error}</div>}
 
       {/* Add expense modal */}
       {showForm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <div className="modal-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-hover)', borderRadius: '20px', padding: '36px', width: '520px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', backdropFilter: 'blur(20px)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '20px', color: 'var(--text-primary)', margin: 0 }}>Add Expense — {selectedCropName}</h2>
+              <h2 style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '20px', color: 'var(--text-primary)', margin: 0 }}>Add Expense — {selectedCropName}</h2>
               <button onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '22px' }}>×</button>
             </div>
             <form onSubmit={handleSubmit}>
@@ -112,7 +112,7 @@ export default function ExpensesPage() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '20px' }}>
-                <button type="button" onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'Inter', fontSize: '14px', padding: '8px 16px' }}>Cancel</button>
+                <button type="button" onClick={() => setShowForm(false)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '14px', padding: '8px 16px' }}>Cancel</button>
                 <button type="submit" disabled={submitting} className="agro-btn">{submitting ? 'Saving…' : 'Save Expense'}</button>
               </div>
             </form>
@@ -124,8 +124,8 @@ export default function ExpensesPage() {
       {expenses.length === 0 ? (
         <div style={{ ...cardStyle, textAlign: 'center', padding: '80px' }}>
           <p style={{ fontSize: '48px', marginBottom: '12px' }}>💸</p>
-          <p style={{ fontFamily: 'Space Grotesk', fontWeight: 600, fontSize: '18px', color: 'var(--text-muted)', marginBottom: '6px' }}>No expenses yet</p>
-          <p style={{ fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-faint)' }}>Click "+ Add Expense" to record a cost</p>
+          <p style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 600, fontSize: '18px', color: 'var(--text-muted)', marginBottom: '6px' }}>No expenses yet</p>
+          <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)' }}>Click "+ Add Expense" to record a cost</p>
         </div>
       ) : (
         <div style={cardStyle}>
@@ -134,7 +134,7 @@ export default function ExpensesPage() {
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(74,222,128,0.1)' }}>
                 {['Category', 'Description', 'Date', 'Notes', 'Amount'].map(h => (
-                  <th key={h} style={{ padding: '12px 14px', fontFamily: 'Inter', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textAlign: h === 'Amount' ? 'right' : 'left', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
+                  <th key={h} style={{ padding: '12px 14px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textAlign: h === 'Amount' ? 'right' : 'left', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -150,21 +150,21 @@ export default function ExpensesPage() {
                     <td style={{ padding: '13px 14px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <span style={{ fontSize: '16px' }}>{CATEGORY_ICONS[exp.category]}</span>
-                        <span style={{ background: `${color}20`, border: `1px solid ${color}50`, borderRadius: '100px', padding: '2px 8px', fontFamily: 'Inter', fontSize: '11px', fontWeight: 600, color }}>{exp.category}</span>
+                        <span style={{ background: `${color}20`, border: `1px solid ${color}50`, borderRadius: '100px', padding: '2px 8px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', fontWeight: 600, color }}>{exp.category}</span>
                       </div>
                     </td>
-                    <td style={{ padding: '13px 14px', fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-primary)' }}>{exp.description}</td>
-                    <td style={{ padding: '13px 14px', fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)' }}>{exp.expenseDate}</td>
-                    <td style={{ padding: '13px 14px', fontFamily: 'Inter', fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic' }}>{exp.notes || '—'}</td>
-                    <td style={{ padding: '13px 14px', fontFamily: 'Space Grotesk', fontSize: '14px', fontWeight: 700, color: '#f87171', textAlign: 'right' }}>Rs. {Number(exp.amount).toLocaleString()}</td>
+                    <td style={{ padding: '13px 14px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-primary)' }}>{exp.description}</td>
+                    <td style={{ padding: '13px 14px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)' }}>{exp.expenseDate}</td>
+                    <td style={{ padding: '13px 14px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic' }}>{exp.notes || '—'}</td>
+                    <td style={{ padding: '13px 14px', fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '14px', fontWeight: 700, color: '#f87171', textAlign: 'right' }}>Rs. {Number(exp.amount).toLocaleString()}</td>
                   </tr>
                 )
               })}
             </tbody>
             <tfoot>
               <tr style={{ borderTop: '1px solid rgba(74,222,128,0.12)', background: 'rgba(74,222,128,0.04)' }}>
-                <td colSpan={4} style={{ padding: '14px', fontFamily: 'Space Grotesk', fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Total Expenses</td>
-                <td style={{ padding: '14px', textAlign: 'right', fontFamily: 'Space Grotesk', fontWeight: 800, fontSize: '18px', color: '#f87171' }}>Rs. {totalExpenses.toLocaleString()}</td>
+                <td colSpan={4} style={{ padding: '14px', fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Total Expenses</td>
+                <td style={{ padding: '14px', textAlign: 'right', fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 800, fontSize: '18px', color: '#f87171' }}>Rs. {totalExpenses.toLocaleString()}</td>
               </tr>
             </tfoot>
           </table>
