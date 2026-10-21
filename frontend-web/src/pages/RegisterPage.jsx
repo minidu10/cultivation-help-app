@@ -97,7 +97,7 @@ export default function RegisterPage() {
       login({
         fullName: data.fullName, email: data.email, city: data.city,
         themePreference: data.themePreference, desktopMode: data.desktopMode,
-      }, data.token)
+      }, data.token, data.refreshToken)
       navigate('/dashboard')
     } catch (err) {
       setError(apiError(err, 'Registration failed. Please try again.'))

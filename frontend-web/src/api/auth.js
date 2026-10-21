@@ -15,6 +15,11 @@ export const register = (payload) =>
 export const login = (email, password) =>
   api.post('/auth/login', { email, password })
 
+// Revokes the refresh token server-side, so a copy left in this browser's
+// storage is useless after signing out.
+export const logoutSession = (refreshToken) =>
+  api.post('/auth/logout', { refreshToken })
+
 // Google Sign-In. The client id is served by the backend so the frontend
 // needs no build-time configuration.
 export const getAuthConfig = () =>
