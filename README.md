@@ -376,6 +376,8 @@ All configuration lives in the root `.env`. The frontend has no environment file
 | `POSTGRES_DB` | local only | Database the container creates (default `cultivation`) |
 | `DB_PORT` | local only | Host port for the Postgres container (default `5434`) |
 | `JWT_SECRET` | Yes | Secret for JWT signing (min 32 chars) |
+| `JWT_EXPIRATION_MS` | No | Access token lifetime, default `1800000` (30 minutes) |
+| `JWT_REFRESH_DAYS` | No | Refresh token lifetime, default `30`. Each refresh replaces the token |
 | `AI_API_KEY` | No | Key for the AI Advisor; without it those endpoints return 503 |
 | `AI_BASE_URL` | No | Any OpenAI-compatible endpoint. Defaults to Gemini's |
 | `AI_MODEL` | No | Model name for that endpoint |
@@ -387,10 +389,12 @@ All configuration lives in the root `.env`. The frontend has no environment file
 | `MAIL_USERNAME` / `MAIL_PASSWORD` | prod only | SMTP credentials |
 | `MAIL_FROM` | No | Sender shown on every email |
 | `GOOGLE_CLIENT_ID` | No | OAuth Web client id. Blank hides the Google button |
+| `GOOGLE_MOBILE_CLIENT_IDS` | No | Android/iOS client ids, comma-separated, also accepted as token audiences |
 | `DOMAIN` | prod | Domain nginx serves and finds TLS certificates under |
 | `HOST_BIND` | No | `0.0.0.0` locally; `127.0.0.1` in production so only nginx is public |
 | `SWAGGER_ENABLED` | No | `false` in production - it publishes the whole API map |
-| `RATE_LIMIT_ENABLED` | No | Per-IP limits on `/api/auth/**`. Leave on |
+| `RATE_LIMIT_ENABLED` | No | Per-IP limits on `/api/auth/**` and `/api/weather/**`, per-farmer limits on AI. Leave on |
+| `AI_RATE_PER_MINUTE` / `AI_RATE_PER_DAY` | No | AI calls allowed per farmer, default `10` / `150` |
 | `REMINDER_LEAD_DAYS` | No | Days of advance notice, default `2,1` |
 | `REMINDER_CRON` | No | Digest schedule, default `0 0 7 * * *` (07:00 daily) |
 | `REMINDER_EMAIL_ENABLED` | No | `false` disables reminder emails for everyone |
