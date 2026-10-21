@@ -51,6 +51,11 @@ public class JwtUtil {
                 .compact();
     }
 
+    /** Access token lifetime, returned to clients so they can refresh ahead of expiry. */
+    public long getExpirationSeconds() {
+        return expiration / 1000;
+    }
+
     // Get email out of token
     public String extractEmail(String token) {
         return extractClaims(token).getSubject();

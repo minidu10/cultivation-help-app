@@ -56,6 +56,16 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
+		<!-- Weather lookups are cached in memory: forecasts change hourly at most,
+		     and the free OpenWeather tier is metered per call. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-cache</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.github.ben-manes.caffeine</groupId>
+			<artifactId>caffeine</artifactId>
+		</dependency>
 		<!-- Verifies Google Sign-In ID tokens (signature, issuer, audience, expiry). -->
 		<dependency>
 			<groupId>com.google.api-client</groupId>
@@ -145,7 +155,8 @@
 		<dependency>
 			<groupId>org.springdoc</groupId>
 			<artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-			<version>2.3.0</version>
+			<!-- 3.x is the line built for Spring Boot 4; 2.x targets Boot 3. -->
+			<version>3.0.3</version>
 		</dependency>
 	</dependencies>
 

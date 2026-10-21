@@ -61,11 +61,19 @@ logging:
 app:
   rate-limit:
     enabled: ${RATE_LIMIT_ENABLED:true}
+    # Per farmer. AI calls are billed per token, so a script holding a
+    # stolen session must not be able to run up the bill.
+    ai-per-minute: ${AI_RATE_PER_MINUTE:10}
+    ai-per-day: ${AI_RATE_PER_DAY:150}
   jwt:
     # No fallback on purpose: a deployment that forgets this must fail to
     # start rather than boot with a publicly known signing key.
     secret: ${APP_JWT_SECRET:${JWT_SECRET:}}
-    expiration: 86400000
+    # Access tokens are short-lived now that clients can refresh them: a
+    # leaked one is useful for 30 minutes rather than a day.
+    expiration: ${JWT_EXPIRATION_MS:1800000}
+    # Refresh tokens keep a phone signed in; each use extends the session.
+    refresh-days: ${JWT_REFRESH_DAYS:30}
   mail:
     from: ${MAIL_FROM:AgroMaster <agromaster026@gmail.com>}
   ai:
@@ -76,6 +84,9 @@ app:
     # OAuth 2.0 Web client ID from Google Cloud Console.
     # Blank disables Google Sign-In; the button hides itself.
     client-id: ${GOOGLE_CLIENT_ID:}
+    # Android/iOS OAuth client ids, comma-separated. ID tokens minted for
+    # these are accepted too; the web client id above is always accepted.
+    mobile-client-ids: ${GOOGLE_MOBILE_CLIENT_IDS:}
   verification:
     # A 6-digit code is only a million guesses, so it has to be short-lived,
     # attempt-limited and single-use.

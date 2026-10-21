@@ -46,6 +46,7 @@ public class CropInsightService {
     private final ExpenseRepository expenseRepository;
     private final HarvestRepository harvestRepository;
     private final CropInsightRepository insightRepository;
+    private final AiAdvisorService aiAdvisorService;
     private final RestTemplate restTemplate = new RestTemplate();
 
     private final String aiServiceUrl;
@@ -54,11 +55,13 @@ public class CropInsightService {
                               ExpenseRepository expenseRepository,
                               HarvestRepository harvestRepository,
                               CropInsightRepository insightRepository,
+                              AiAdvisorService aiAdvisorService,
                               @Value("${app.ai.service-url:http://ai-service:8000}") String aiServiceUrl) {
         this.cropRepository = cropRepository;
         this.expenseRepository = expenseRepository;
         this.harvestRepository = harvestRepository;
         this.insightRepository = insightRepository;
+        this.aiAdvisorService = aiAdvisorService;
         this.aiServiceUrl = aiServiceUrl;
     }
 
@@ -84,6 +87,8 @@ public class CropInsightService {
                                            hit.getGeneratedAt(), false);
         }
 
+        // Only a real generation counts against the allowance; cache hits are free.
+        aiAdvisorService.checkQuota(currentUser);
         String text = generate(crop, expenses, revenue);
 
         CropInsight record = cached.orElseGet(() -> new CropInsight(cropId, fingerprint, text));
