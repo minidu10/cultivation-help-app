@@ -5,13 +5,36 @@ import java.time.LocalDate;
 
 import com.cultivation.app.entity.Harvest;
 
+import jakarta.validation.constraints.Digits;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
+
 public class HarvestRequest {
 
+    @NotNull(groups = OnCreate.class, message = "Harvest date is required")
     private LocalDate harvestDate;
+
+    // Matches NUMERIC(12,3).
+    @NotNull(groups = OnCreate.class, message = "Quantity is required")
+    @Positive(message = "Quantity must be greater than zero")
+    @Digits(integer = 9, fraction = 3, message = "Quantity can have at most 3 decimal places")
     private BigDecimal quantity;
+
+    @NotNull(groups = OnCreate.class, message = "Unit is required")
     private Harvest.QuantityUnit unit;
+
+    // Zero is allowed: produce given away or kept for the household.
+    @NotNull(groups = OnCreate.class, message = "Price per unit is required")
+    @PositiveOrZero(message = "Price cannot be negative")
+    @Digits(integer = 10, fraction = 2, message = "Price can have at most 2 decimal places")
     private BigDecimal pricePerUnit;
+
+    @Size(max = 200, message = "Buyer name must be at most 200 characters")
     private String buyerName;
+
+    @Size(max = 500, message = "Notes must be at most 500 characters")
     private String notes;
 
     public LocalDate getHarvestDate() { return harvestDate; }
