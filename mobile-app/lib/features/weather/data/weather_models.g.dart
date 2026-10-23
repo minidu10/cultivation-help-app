@@ -30,36 +30,38 @@ Map<String, dynamic> _$CurrentWeatherToJson(_CurrentWeather instance) =>
       'iconUrl': instance.iconUrl,
     };
 
-_Forecast _$ForecastFromJson(Map<String, dynamic> json) => _Forecast(
-  location: json['location'] as String?,
-  items:
-      (json['items'] as List<dynamic>?)
-          ?.map((e) => ForecastItem.fromJson(e as Map<String, dynamic>))
-          .toList() ??
-      const [],
-);
-
-Map<String, dynamic> _$ForecastToJson(_Forecast instance) => <String, dynamic>{
-  'location': instance.location,
-  'items': instance.items,
-};
-
-_ForecastItem _$ForecastItemFromJson(Map<String, dynamic> json) =>
-    _ForecastItem(
-      dateTime: json['dateTime'] as String?,
-      temperatureC: (json['temperatureC'] as num?)?.toDouble(),
-      humidity: (json['humidity'] as num?)?.toInt(),
-      rainChancePercent: (json['rainChancePercent'] as num?)?.toInt() ?? 0,
-      description: json['description'] as String?,
-      iconUrl: json['iconUrl'] as String?,
+_DailyForecast _$DailyForecastFromJson(Map<String, dynamic> json) =>
+    _DailyForecast(
+      location: json['location'] as String?,
+      days:
+          (json['days'] as List<dynamic>?)
+              ?.map((e) => ForecastDay.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
 
-Map<String, dynamic> _$ForecastItemToJson(_ForecastItem instance) =>
+Map<String, dynamic> _$DailyForecastToJson(_DailyForecast instance) =>
+    <String, dynamic>{'location': instance.location, 'days': instance.days};
+
+_ForecastDay _$ForecastDayFromJson(Map<String, dynamic> json) => _ForecastDay(
+  date: const DateOnlyConverter().fromJson(json['date'] as String),
+  minTempC: (json['minTempC'] as num?)?.toDouble() ?? 0,
+  maxTempC: (json['maxTempC'] as num?)?.toDouble() ?? 0,
+  rainMm: (json['rainMm'] as num?)?.toDouble() ?? 0,
+  rainChancePercent: (json['rainChancePercent'] as num?)?.toInt() ?? 0,
+  maxWindSpeed: (json['maxWindSpeed'] as num?)?.toDouble() ?? 0,
+  description: json['description'] as String?,
+  iconUrl: json['iconUrl'] as String?,
+);
+
+Map<String, dynamic> _$ForecastDayToJson(_ForecastDay instance) =>
     <String, dynamic>{
-      'dateTime': instance.dateTime,
-      'temperatureC': instance.temperatureC,
-      'humidity': instance.humidity,
+      'date': const DateOnlyConverter().toJson(instance.date),
+      'minTempC': instance.minTempC,
+      'maxTempC': instance.maxTempC,
+      'rainMm': instance.rainMm,
       'rainChancePercent': instance.rainChancePercent,
+      'maxWindSpeed': instance.maxWindSpeed,
       'description': instance.description,
       'iconUrl': instance.iconUrl,
     };

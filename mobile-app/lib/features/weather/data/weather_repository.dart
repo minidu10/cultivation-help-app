@@ -9,10 +9,12 @@ import 'weather_models.dart';
 final weatherRepositoryProvider = Provider<WeatherRepository>((ref) => WeatherRepository(ref.watch(dioProvider)));
 
 class FarmWeather {
-  const FarmWeather(this.current, this.forecast);
+  const FarmWeather(this.current, this.days);
 
   final CurrentWeather current;
-  final List<ForecastItem> forecast;
+
+  /// Five days, one entry each.
+  final List<ForecastDay> days;
 }
 
 /// Weather for the farmer's saved town, falling back to Colombo when none is
@@ -42,8 +44,7 @@ class WeatherRepository {
   Future<FarmWeather> byLocation(String location) => guard(() async {
         final results = await Future.wait([
           _dio.get<Map<String, dynamic>>('/weather/current/by-location', queryParameters: {'location': location}),
-          _dio.get<Map<String, dynamic>>('/weather/forecast/by-location',
-              queryParameters: {'location': location, 'count': 8}),
+          _dio.get<Map<String, dynamic>>('/weather/daily/by-location', queryParameters: {'location': location}),
         ]);
         return _bundle(results);
       });
@@ -51,13 +52,13 @@ class WeatherRepository {
   Future<FarmWeather> byCoordinates(double lat, double lon) => guard(() async {
         final results = await Future.wait([
           _dio.get<Map<String, dynamic>>('/weather/current', queryParameters: {'lat': lat, 'lon': lon}),
-          _dio.get<Map<String, dynamic>>('/weather/forecast', queryParameters: {'lat': lat, 'lon': lon, 'count': 8}),
+          _dio.get<Map<String, dynamic>>('/weather/daily', queryParameters: {'lat': lat, 'lon': lon}),
         ]);
         return _bundle(results);
       });
 
   FarmWeather _bundle(List<Response<Map<String, dynamic>>> results) => FarmWeather(
         CurrentWeather.fromJson(results[0].data!),
-        Forecast.fromJson(results[1].data!).items,
+        DailyForecast.fromJson(results[1].data!).days,
       );
 }

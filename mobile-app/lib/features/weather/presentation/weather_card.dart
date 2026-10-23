@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/format/formatters.dart';
 import '../data/weather_models.dart';
@@ -86,16 +87,10 @@ class _WeatherBody extends StatelessWidget {
               Text(l10n.windValue(c.windSpeed!.toStringAsFixed(1)), style: theme.textTheme.bodySmall),
           ],
         ),
-        if (weather.forecast.isNotEmpty) ...[
+        if (weather.days.isNotEmpty) ...[
           const Divider(height: 24),
-          SizedBox(
-            height: 76,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: weather.forecast.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 14),
-              itemBuilder: (context, i) => _Slot(weather.forecast[i]),
-            ),
+          Row(
+            children: [for (final day in weather.days.take(5)) Expanded(child: _Day(day))],
           ),
         ],
       ],
@@ -103,26 +98,29 @@ class _WeatherBody extends StatelessWidget {
   }
 }
 
-class _Slot extends StatelessWidget {
-  const _Slot(this.item);
+class _Day extends StatelessWidget {
+  const _Day(this.day);
 
-  final ForecastItem item;
+  final ForecastDay day;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // OpenWeather slots are UTC; show them in the phone's time.
-    final time = item.dateTime == null ? null : DateTime.tryParse('${item.dateTime!.replaceFirst(' ', 'T')}Z')?.toLocal();
     return Column(
       children: [
-        Text(time == null ? '' : '${time.hour.toString().padLeft(2, '0')}:00', style: theme.textTheme.labelSmall),
-        const SizedBox(height: 2),
-        Text('${(item.temperatureC ?? 0).round()}°', style: theme.textTheme.titleSmall),
+        Text(DateFormat.E(context.localeName).format(day.date), style: theme.textTheme.labelMedium),
+        if (day.iconUrl != null)
+          Image.network(day.iconUrl!, width: 36, height: 36, errorBuilder: (_, _, _) => const SizedBox(height: 36))
+        else
+          const SizedBox(height: 36),
+        Text('${day.maxTempC.round()}°', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+        Text('${day.minTempC.round()}°', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 2),
         Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.water_drop, size: 12, color: theme.colorScheme.primary),
-            Text(context.l10n.rainChance(item.rainChancePercent), style: theme.textTheme.labelSmall),
+            Icon(Icons.water_drop, size: 11, color: theme.colorScheme.primary),
+            Text(context.l10n.rainChance(day.rainChancePercent), style: theme.textTheme.labelSmall),
           ],
         ),
       ],
