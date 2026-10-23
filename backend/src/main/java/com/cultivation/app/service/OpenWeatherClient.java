@@ -3,6 +3,7 @@ package com.cultivation.app.service;
 import java.net.URI;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.HttpStatus;
@@ -34,7 +35,7 @@ public class OpenWeatherClient {
     /** The free tier's whole horizon: 5 days of 3-hourly slots. */
     public static final int MAX_FORECAST_SLOTS = 40;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${weather.openweather.base-url}")
@@ -43,7 +44,15 @@ public class OpenWeatherClient {
     @Value("${weather.openweather.api-key:}")
     private String apiKey;
 
+    public OpenWeatherClient(@Qualifier("openWeatherRestTemplate") RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
     public record GeocodedPoint(double lat, double lon, String displayName) {}
+
+    public boolean isConfigured() {
+        return apiKey != null && !apiKey.isBlank();
+    }
 
     /**
      * Unknown places are cached too, as an empty result. A crop whose field
