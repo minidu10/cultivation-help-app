@@ -39,6 +39,12 @@ if (!window.IntersectionObserver) {
   }
 }
 
+// Thumbnails are shown from blob URLs, which jsdom cannot create.
+if (!URL.createObjectURL) {
+  URL.createObjectURL = () => 'blob:test-thumbnail'
+  URL.revokeObjectURL = () => {}
+}
+
 if (!window.ResizeObserver) {
   window.ResizeObserver = class {
     observe() {}

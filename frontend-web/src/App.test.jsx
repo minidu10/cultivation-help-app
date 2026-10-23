@@ -1,10 +1,17 @@
-import { describe, expect, it } from 'vitest'
+import { beforeAll, describe, expect, it } from 'vitest'
 import { screen } from '@testing-library/react'
 import App from './App'
 import { http, HttpResponse, server } from './test/server'
 import { renderWithApp, signIn } from './test/render'
 
 describe('session handling', () => {
+  // These pages are lazy chunks. Importing them once up front means the
+  // tests wait on behaviour, not on Vite transforming Recharts mid-test,
+  // which on a busy runner took longer than any sensible timeout.
+  beforeAll(async () => {
+    await Promise.all([import('./pages/DashboardPage'), import('./pages/LoginPage'), import('./pages/LandingPage')])
+  })
+
   it('sends the user to sign in, with a reason, once the session cannot be renewed', async () => {
     signIn()
     server.use(
@@ -14,13 +21,11 @@ describe('session handling', () => {
 
     renderWithApp(<App />, { route: '/dashboard' })
 
-    // The login page is a lazily loaded chunk, so allow time for the import:
-    // on a busy CI runner the first transform of it can take several seconds.
-    expect(await screen.findByText(/Your session has ended\. Please sign in again\./, {}, { timeout: 10000 }))
+    expect(await screen.findByText(/Your session has ended\. Please sign in again\./, {}, { timeout: 5000 }))
       .toBeInTheDocument()
     expect(localStorage.getItem('token')).toBeNull()
     expect(localStorage.getItem('user')).toBeNull()
-  }, 15000)
+  }, 10000)
 
   it('keeps visitors who never signed in on the landing page', async () => {
     renderWithApp(<App />, { route: '/dashboard' })
