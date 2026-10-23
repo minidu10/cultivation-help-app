@@ -6,6 +6,7 @@ import { setupServer } from 'msw/node'
 export const defaultHandlers = [
   http.get('/api/auth/config', () => HttpResponse.json({ googleClientId: '', googleEnabled: false })),
   http.get('/api/weather/*', () => HttpResponse.json({ message: 'Weather is not configured' }, { status: 503 })),
+  http.get('/api/alerts', () => HttpResponse.json([])),
 ]
 
 export const server = setupServer(...defaultHandlers)
