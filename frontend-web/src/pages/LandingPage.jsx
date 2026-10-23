@@ -33,7 +33,7 @@ const FEATURES = [
   { icon: '📦', title: 'Harvest Records',    desc: 'Record yield quantities and revenue with timestamped entries and historical comparisons.' },
   { icon: '📊', title: 'Profit Analytics',   desc: 'Real-time P&L charts with seasonal breakdowns and per-crop profitability scores.' },
   { icon: '🤖', title: 'AI Advisor',         desc: 'Get personalized crop recommendations and cost optimizations powered by advanced AI.' },
-  { icon: '🌦️', title: 'Weather Integration',desc: 'Live weather data and 7-day forecasts tailored to your farm location in Sri Lanka.' },
+  { icon: '🌦️', title: 'Weather Integration',desc: 'Live weather, a 5-day forecast per field, and warnings when rain or wind threatens a planned task.' },
 ]
 
 const STEPS = [
