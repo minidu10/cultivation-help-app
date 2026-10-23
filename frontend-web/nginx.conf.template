@@ -75,6 +75,10 @@ server {
     }
 
     location /api {
+        # Crop doctor photo uploads. nginx's 1 MB default would refuse a
+        # photo before the backend could apply its own 5 MB limit.
+        client_max_body_size 7m;
+
         set $upstream http://backend:8080;
         proxy_pass $upstream;
         proxy_set_header Host $host;

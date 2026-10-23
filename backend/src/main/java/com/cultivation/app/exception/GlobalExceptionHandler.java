@@ -15,6 +15,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -79,6 +80,14 @@ public class GlobalExceptionHandler {
         return buildError(HttpStatus.BAD_REQUEST,
             "Invalid value for '" + ex.getName() + "'",
             request.getRequestURI(), null);
+    }
+
+    /** A photo over the multipart limit is the client's to fix, not a server error. */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<Map<String, Object>> handleTooLarge(MaxUploadSizeExceededException ex,
+                                                              HttpServletRequest request) {
+        return buildError(HttpStatus.CONTENT_TOO_LARGE, "That photo is too large. The limit is 5 MB.",
+                          request.getRequestURI(), null);
     }
 
     @ExceptionHandler(Exception.class)

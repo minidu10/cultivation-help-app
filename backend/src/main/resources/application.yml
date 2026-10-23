@@ -23,6 +23,14 @@ spring:
     connect-retries: ${FLYWAY_CONNECT_RETRIES:10}
     connect-retries-interval: ${FLYWAY_CONNECT_RETRIES_INTERVAL:5s}
 
+  servlet:
+    multipart:
+      # Crop doctor photos. Apps shrink them to well under 1 MB first; this
+      # leaves room for a full-size photo from a browser that cannot resize,
+      # and PhotoProcessor applies the real 5 MB limit with a clear message.
+      max-file-size: 6MB
+      max-request-size: 7MB
+
   jpa:
     open-in-view: false
     hibernate:
@@ -96,6 +104,9 @@ app:
     # How long after confirming a code the user has to finish registering
     # or complete the password reset.
     completion-window-minutes: ${VERIFICATION_COMPLETION_WINDOW_MINUTES:30}
+  diagnosis:
+    # Photos a farmer can have checked per day. Each one is a vision-model call.
+    daily-limit: ${DIAGNOSIS_DAILY_LIMIT:10}
   reminders:
     email-enabled: ${REMINDER_EMAIL_ENABLED:true}
     # How many days ahead to warn. 2,1 = a notice two days before and again

@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -33,16 +34,18 @@ public class AiAdvisorService {
     private static final int MAX_QUESTION_CHARS = 1000;
     private static final int MAX_CONTEXT_CHARS = 2000;
 
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
     private final String aiServiceUrl;
     private final RateLimiter rateLimiter;
     private final int perMinute;
     private final int perDay;
 
-    public AiAdvisorService(@Value("${app.ai.service-url:http://ai-service:8000}") String aiServiceUrl,
+    public AiAdvisorService(@Qualifier("aiRestTemplate") RestTemplate restTemplate,
+                            @Value("${app.ai.service-url:http://ai-service:8000}") String aiServiceUrl,
                             RateLimiter rateLimiter,
                             @Value("${app.rate-limit.ai-per-minute:10}") int perMinute,
                             @Value("${app.rate-limit.ai-per-day:150}") int perDay) {
+        this.restTemplate = restTemplate;
         this.aiServiceUrl = aiServiceUrl;
         this.rateLimiter = rateLimiter;
         this.perMinute = perMinute;

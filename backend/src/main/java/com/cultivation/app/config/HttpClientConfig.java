@@ -19,9 +19,23 @@ public class HttpClientConfig {
 
     @Bean
     public RestTemplate openWeatherRestTemplate() {
+        return withTimeouts(Duration.ofSeconds(5), Duration.ofSeconds(10));
+    }
+
+    /**
+     * The AI service. Reasoning models and photo diagnosis can take most of a
+     * minute, so the read timeout is long, but still finite: nginx gives up
+     * at 120 seconds, and the backend should answer before it does.
+     */
+    @Bean
+    public RestTemplate aiRestTemplate() {
+        return withTimeouts(Duration.ofSeconds(5), Duration.ofSeconds(90));
+    }
+
+    private static RestTemplate withTimeouts(Duration connect, Duration read) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofSeconds(5));
-        factory.setReadTimeout(Duration.ofSeconds(10));
+        factory.setConnectTimeout(connect);
+        factory.setReadTimeout(read);
         return new RestTemplate(factory);
     }
 }
