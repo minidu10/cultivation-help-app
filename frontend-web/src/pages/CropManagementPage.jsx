@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Layout from '../components/Layout'
+import CropDoctor from '../components/CropDoctor'
 import {
   createCropReminder,
   deleteCropReminder,
@@ -238,6 +239,9 @@ export default function CropManagementPage() {
           </button>
         </div>
       </div>
+
+      {/* Photo diagnosis */}
+      <CropDoctor cropId={id} />
 
       {/* Add Reminder */}
       <div style={{ ...cardStyle, marginBottom: '20px' }}>
