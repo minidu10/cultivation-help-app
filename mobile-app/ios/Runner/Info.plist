@@ -6,6 +6,10 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSCameraUsageDescription</key>
+	<string>AgroMaster uses the camera to photograph a crop so the crop doctor can check it for disease.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AgroMaster lets you choose an existing photo of a crop for the crop doctor to check.</string>
 	<key>CFBundleDisplayName</key>
 	<string>AgroMaster</string>
 	<key>CFBundleExecutable</key>

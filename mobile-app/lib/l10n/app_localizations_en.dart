@@ -217,13 +217,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navMore => 'More';
 
   @override
-  String get scanComingTitle => 'Crop doctor is coming';
-
-  @override
-  String get scanComingBody =>
-      'Soon you will be able to photograph a sick leaf and get a likely diagnosis with treatment advice.';
-
-  @override
   String greeting(String name) {
     return 'Ayubowan, $name';
   }
@@ -738,4 +731,103 @@ class AppLocalizationsEn extends AppLocalizations {
   String rescheduledTo(String when) {
     return 'Rescheduled to $when';
   }
+
+  @override
+  String get scanChooseSource => 'Check a crop photo';
+
+  @override
+  String get scanTakePhoto => 'Take a photo';
+
+  @override
+  String get scanFromGallery => 'Choose from gallery';
+
+  @override
+  String get scanChooseCrop => 'Which crop is this?';
+
+  @override
+  String get scanNoCrops => 'Add a crop first, then check its photos.';
+
+  @override
+  String get diagnosisTitle => 'Crop doctor';
+
+  @override
+  String get diagnosisChecking => 'Checking the photo…';
+
+  @override
+  String get diagnosisCheckingHint => 'This can take up to a minute.';
+
+  @override
+  String diagnosisLooksLike(String crop) {
+    return 'Looks like $crop';
+  }
+
+  @override
+  String diagnosisConfidence(int percent) {
+    return 'Confidence $percent%';
+  }
+
+  @override
+  String get diagnosisSeeExpert =>
+      'Show this to your local Agrarian Service Centre or agriculture extension officer before you spray anything.';
+
+  @override
+  String get diagnosisSymptoms => 'What we see';
+
+  @override
+  String get diagnosisOrganic => 'Organic treatment';
+
+  @override
+  String get diagnosisChemical => 'Chemical options';
+
+  @override
+  String get diagnosisChemicalSafety =>
+      'Follow the product label for dose and waiting period, and wear gloves and a mask.';
+
+  @override
+  String get diagnosisPrevention => 'Prevention';
+
+  @override
+  String get diagnosisNotPlantTitle => 'We could not see a plant clearly';
+
+  @override
+  String get diagnosisTipFrame =>
+      'Fill the frame with one affected leaf or fruit';
+
+  @override
+  String get diagnosisTipLight => 'Take it in daylight, without flash';
+
+  @override
+  String get diagnosisTipSteady =>
+      'Hold the phone steady so the spots are sharp';
+
+  @override
+  String get diagnosisRetake => 'Take another photo';
+
+  @override
+  String get diagnosisDisclaimer =>
+      'AI suggestions can be wrong. Only a small copy of each photo is kept, without its location data.';
+
+  @override
+  String get severityNone => 'Healthy';
+
+  @override
+  String get severityLow => 'Mild';
+
+  @override
+  String get severityModerate => 'Moderate';
+
+  @override
+  String get severitySevere => 'Severe';
+
+  @override
+  String get tabHealth => 'Health';
+
+  @override
+  String get noDiagnoses => 'No photos checked for this crop yet.';
+
+  @override
+  String get checkPhoto => 'Check a photo';
+
+  @override
+  String get done => 'Done';
 }
