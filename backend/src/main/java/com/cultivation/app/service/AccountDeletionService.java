@@ -45,6 +45,7 @@ public class AccountDeletionService {
         delete("DELETE FROM harvests WHERE crop_id IN (" + USER_CROPS + ")", userId);
         delete("DELETE FROM crops WHERE user_id = :userId", userId);
         delete("DELETE FROM refresh_tokens WHERE user_id = :userId", userId);
+        delete("DELETE FROM device_tokens WHERE user_id = :userId", userId);
 
         jdbc.sql("DELETE FROM email_verifications WHERE email = :email")
             .param("email", user.getEmail())

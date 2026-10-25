@@ -32,6 +32,12 @@ public class HttpClientConfig {
         return withTimeouts(Duration.ofSeconds(5), Duration.ofSeconds(90));
     }
 
+    /** Firebase Cloud Messaging: one small request per phone. */
+    @Bean
+    public RestTemplate fcmRestTemplate() {
+        return withTimeouts(Duration.ofSeconds(5), Duration.ofSeconds(10));
+    }
+
     private static RestTemplate withTimeouts(Duration connect, Duration read) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(connect);
