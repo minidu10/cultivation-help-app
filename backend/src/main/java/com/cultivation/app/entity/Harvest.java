@@ -3,6 +3,7 @@ package com.cultivation.app.entity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
@@ -54,6 +55,10 @@ public class Harvest {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    /** Phone-generated id for writes made offline; a replay with the same one is not a new row. */
+    @Column(name = "client_ref")
+    private UUID clientRef;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
@@ -94,4 +99,7 @@ public class Harvest {
     public void setNotes(String notes) { this.notes = notes; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
+
+    public UUID getClientRef() { return clientRef; }
+    public void setClientRef(UUID clientRef) { this.clientRef = clientRef; }
 }

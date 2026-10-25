@@ -2,6 +2,7 @@ package com.cultivation.app.dto;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.UUID;
 
 import com.cultivation.app.entity.Expense;
 
@@ -32,6 +33,12 @@ public class ExpenseRequest {
     @Size(max = 500, message = "Notes must be at most 500 characters")
     private String notes;
 
+    /**
+     * Set by the phone for writes queued offline. Sending the same one twice
+     * returns the first record instead of creating a duplicate.
+     */
+    private UUID clientRef;
+
     public Expense.ExpenseCategory getCategory() { return category; }
     public void setCategory(Expense.ExpenseCategory category) { this.category = category; }
 
@@ -46,4 +53,7 @@ public class ExpenseRequest {
 
     public String getNotes() { return notes; }
     public void setNotes(String notes) { this.notes = notes; }
+
+    public UUID getClientRef() { return clientRef; }
+    public void setClientRef(UUID clientRef) { this.clientRef = clientRef; }
 }

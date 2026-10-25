@@ -3,6 +3,7 @@ package com.cultivation.app.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import com.cultivation.app.entity.Harvest;
 
@@ -17,6 +18,7 @@ public class HarvestResponse {
     private String buyerName;
     private String notes;
     private LocalDateTime createdAt;
+    private UUID clientRef;
 
     public static HarvestResponse fromEntity(Harvest harvest) {
         HarvestResponse response = new HarvestResponse();
@@ -29,6 +31,7 @@ public class HarvestResponse {
         response.setBuyerName(harvest.getBuyerName());
         response.setNotes(harvest.getNotes());
         response.setCreatedAt(harvest.getCreatedAt());
+        response.setClientRef(harvest.getClientRef());
         return response;
     }
 
@@ -58,4 +61,7 @@ public class HarvestResponse {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public UUID getClientRef() { return clientRef; }
+    public void setClientRef(UUID clientRef) { this.clientRef = clientRef; }
 }

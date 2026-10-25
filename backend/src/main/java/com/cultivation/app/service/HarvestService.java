@@ -2,6 +2,7 @@ package com.cultivation.app.service;
 
 import java.util.List;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -25,8 +26,20 @@ public class HarvestService {
         this.cropRepository = cropRepository;
     }
 
+    /**
+     * Saves the record, unless it is a replay of an offline write that
+     * already arrived: then the original is returned. The unique index on
+     * (crop_id, client_ref) settles two copies arriving at once; the loser's
+     * insert fails and it returns the winner's row.
+     */
     public Harvest addHarvest(Long cropId, HarvestRequest request, User currentUser) {
         Crop crop = findCrop(cropId, currentUser);
+        if (request.getClientRef() != null) {
+            var replay = harvestRepository.findByCropIdAndClientRef(cropId, request.getClientRef());
+            if (replay.isPresent()) {
+                return replay.get();
+            }
+        }
 
         Harvest harvest = new Harvest();
         harvest.setCrop(crop);
@@ -36,8 +49,16 @@ public class HarvestService {
         harvest.setPricePerUnit(request.getPricePerUnit());
         harvest.setBuyerName(request.getBuyerName());
         harvest.setNotes(request.getNotes());
+        harvest.setClientRef(request.getClientRef());
 
-        return harvestRepository.save(harvest);
+        try {
+            return harvestRepository.saveAndFlush(harvest);
+        } catch (DataIntegrityViolationException race) {
+            if (request.getClientRef() == null) {
+                throw race;
+            }
+            return harvestRepository.findByCropIdAndClientRef(cropId, request.getClientRef()).orElseThrow(() -> race);
+        }
     }
 
     public List<Harvest> getHarvestsForCrop(Long cropId, User currentUser) {
