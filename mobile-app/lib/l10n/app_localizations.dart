@@ -1611,6 +1611,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Done'**
   String get done;
+
+  /// No description provided for @offlineBanner.
+  ///
+  /// In en, this message translates to:
+  /// **'You are offline. Showing what was last saved.'**
+  String get offlineBanner;
+
+  /// No description provided for @pendingCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 record waiting to send} other{{count} records waiting to send}}'**
+  String pendingCount(int count);
+
+  /// No description provided for @syncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Send now'**
+  String get syncNow;
+
+  /// No description provided for @syncing.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get syncing;
+
+  /// No description provided for @savedOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this phone. It will be sent when you are back online.'**
+  String get savedOffline;
+
+  /// No description provided for @waitingToSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to send'**
+  String get waitingToSend;
+
+  /// No description provided for @rejectedRecords.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save: {labels}'**
+  String rejectedRecords(String labels);
+
+  /// No description provided for @dismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get dismiss;
+
+  /// No description provided for @editNeedsConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Editing needs a connection. Try again when you are back online.'**
+  String get editNeedsConnection;
 }
 
 class _AppLocalizationsDelegate

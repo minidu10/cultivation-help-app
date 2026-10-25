@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/data/auth_models.dart';
+import '../offline/outbox.dart';
 import '../providers.dart';
 
 /// Who is signed in, as far as drawing screens is concerned.
@@ -120,12 +121,16 @@ class SessionController extends Notifier<SessionState> {
     }
     await tokens.clear();
     await ref.read(sharedPreferencesProvider).remove(_userKey);
+    // Saved data and unsent records belong to the person signing out.
+    await ref.read(responseCacheProvider).clear();
+    await ref.read(outboxProvider.notifier).clear();
     state = const SessionState.signedOut();
   }
 
   /// Called by the API client once the refresh token has been refused.
   void expire() {
     unawaited(ref.read(sharedPreferencesProvider).remove(_userKey));
+    unawaited(ref.read(responseCacheProvider).clear());
     state = const SessionState.signedOut(expired: true);
   }
 

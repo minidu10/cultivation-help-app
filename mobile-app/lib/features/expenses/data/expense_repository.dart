@@ -14,7 +14,7 @@ final expensesProvider = FutureProvider.autoDispose.family<List<Expense>, int>(
 );
 
 class ExpenseInput {
-  const ExpenseInput({this.category, this.description, this.amount, this.expenseDate, this.notes});
+  const ExpenseInput({this.category, this.description, this.amount, this.expenseDate, this.notes, this.clientRef});
 
   final ExpenseCategory? category;
   final String? description;
@@ -22,7 +22,11 @@ class ExpenseInput {
   final DateTime? expenseDate;
   final String? notes;
 
+  /// Generated on the phone for new records, so a resend is not a duplicate.
+  final String? clientRef;
+
   Map<String, Object?> toJson() => compact({
+        'clientRef': clientRef,
         'category': category?.wire,
         'description': description?.trim(),
         'amount': amount,

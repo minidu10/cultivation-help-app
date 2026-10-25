@@ -6,7 +6,7 @@ import 'package:dio/dio.dart';
 /// the server's own wording is preferred; anything else (no connection, a
 /// proxy's HTML page) falls back to a plain sentence.
 class ApiException implements Exception {
-  const ApiException(this.message, {this.statusCode, this.fieldErrors = const {}});
+  const ApiException(this.message, {this.statusCode, this.fieldErrors = const {}, this.offline = false});
 
   factory ApiException.from(Object error) {
     if (error is ApiException) return error;
@@ -14,7 +14,9 @@ class ApiException implements Exception {
 
     final response = error.response;
     if (response == null) {
-      return ApiException(switch (error.type) {
+      // No reply at all: the request may never have reached the server.
+      // Writes in this state are safe to queue and send later.
+      return ApiException(offline: true, switch (error.type) {
         DioExceptionType.connectionTimeout ||
         DioExceptionType.receiveTimeout ||
         DioExceptionType.sendTimeout =>
@@ -40,6 +42,9 @@ class ApiException implements Exception {
   final String message;
   final int? statusCode;
   final Map<String, String> fieldErrors;
+
+  /// True when the server was never reached, as opposed to it saying no.
+  final bool offline;
 
   @override
   String toString() => message;
