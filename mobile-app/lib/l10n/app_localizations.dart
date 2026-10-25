@@ -1665,6 +1665,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Editing needs a connection. Try again when you are back online.'**
   String get editNeedsConnection;
+
+  /// No description provided for @notificationsTest.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a test notification'**
+  String get notificationsTest;
+
+  /// No description provided for @notificationsTestSent.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =0{No phone received it. Check that notifications are allowed for AgroMaster.} =1{Sent. It should arrive in a few seconds.} other{Sent to {count} phones.}}'**
+  String notificationsTestSent(int count);
 }
 
 class _AppLocalizationsDelegate

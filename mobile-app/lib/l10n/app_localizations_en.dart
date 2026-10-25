@@ -869,4 +869,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get editNeedsConnection =>
       'Editing needs a connection. Try again when you are back online.';
+
+  @override
+  String get notificationsTest => 'Send a test notification';
+
+  @override
+  String notificationsTestSent(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sent to $count phones.',
+      one: 'Sent. It should arrive in a few seconds.',
+      zero:
+          'No phone received it. Check that notifications are allowed for AgroMaster.',
+    );
+    return '$_temp0';
+  }
 }

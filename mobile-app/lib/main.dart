@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
 import 'core/providers.dart';
+import 'core/push/push_messaging.dart';
 import 'core/session/session_controller.dart';
 import 'core/storage/token_store.dart';
 
@@ -15,6 +16,8 @@ Future<void> main() async {
   final prefs = await SharedPreferences.getInstance();
   final tokens = SecureTokenStore();
   final hasSession = await tokens.readRefreshToken() != null;
+  // Only when built with Firebase settings; otherwise push simply stays off.
+  await FirebasePushMessaging.initializeFirebase();
 
   runApp(ProviderScope(
     overrides: [

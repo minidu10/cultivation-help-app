@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../features/auth/data/auth_models.dart';
 import '../offline/outbox.dart';
 import '../providers.dart';
+import '../push/push_registrar.dart';
 
 /// Who is signed in, as far as drawing screens is concerned.
 ///
@@ -111,6 +112,9 @@ class SessionController extends Notifier<SessionState> {
   /// Revokes the refresh token server-side, then forgets everything locally.
   /// The network call is best effort: signing out must work offline.
   Future<void> signOut() async {
+    // First, while the session still works: this phone stops getting this
+    // farmer's notifications.
+    await ref.read(pushRegistrarProvider).unregister();
     final tokens = ref.read(tokenStoreProvider);
     final refreshToken = await tokens.readRefreshToken();
     if (refreshToken != null) {

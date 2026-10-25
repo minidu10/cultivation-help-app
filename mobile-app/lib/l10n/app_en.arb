@@ -301,5 +301,8 @@
   "rejectedRecords": "Could not save: {labels}",
   "@rejectedRecords": { "placeholders": { "labels": { "type": "String" } } },
   "dismiss": "Dismiss",
-  "editNeedsConnection": "Editing needs a connection. Try again when you are back online."
+  "editNeedsConnection": "Editing needs a connection. Try again when you are back online.",
+  "notificationsTest": "Send a test notification",
+  "notificationsTestSent": "{count, plural, =0{No phone received it. Check that notifications are allowed for AgroMaster.} =1{Sent. It should arrive in a few seconds.} other{Sent to {count} phones.}}",
+  "@notificationsTestSent": { "placeholders": { "count": { "type": "int" } } }
 }
