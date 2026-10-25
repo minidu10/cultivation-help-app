@@ -397,6 +397,10 @@ All configuration lives in the root `.env`. The frontend has no environment file
 | `SWAGGER_ENABLED` | No | `false` in production - it publishes the whole API map |
 | `RATE_LIMIT_ENABLED` | No | Per-IP limits on `/api/auth/**` and `/api/weather/**`, per-farmer limits on AI. Leave on |
 | `AI_RATE_PER_MINUTE` / `AI_RATE_PER_DAY` | No | AI calls allowed per farmer, default `10` / `150` |
+| `AI_VISION_MODEL` | No | Model for crop doctor photos. Blank uses `AI_MODEL`, which must then accept images |
+| `DIAGNOSIS_DAILY_LIMIT` | No | Crop doctor photo checks per farmer per day, default `10` |
+| `FIREBASE_CREDENTIALS` | No | Firebase service account JSON (or a path to it) for push notifications. Blank turns push off |
+| `FIREBASE_PROJECT_ID` | No | Firebase project; read from the service account when blank |
 | `REMINDER_LEAD_DAYS` | No | Days of advance notice, default `2,1` |
 | `REMINDER_CRON` | No | Digest schedule, default `0 0 7 * * *` (07:00 daily) |
 | `REMINDER_EMAIL_ENABLED` | No | `false` disables reminder emails for everyone |
