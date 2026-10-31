@@ -490,18 +490,6 @@ abstract class AppLocalizations {
   /// **'More'**
   String get navMore;
 
-  /// No description provided for @scanComingTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Crop doctor is coming'**
-  String get scanComingTitle;
-
-  /// No description provided for @scanComingBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Soon you will be able to photograph a sick leaf and get a likely diagnosis with treatment advice.'**
-  String get scanComingBody;
-
   /// No description provided for @greeting.
   ///
   /// In en, this message translates to:
@@ -1443,6 +1431,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rescheduled to {when}'**
   String rescheduledTo(String when);
+
+  /// No description provided for @scanChooseSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Check a crop photo'**
+  String get scanChooseSource;
+
+  /// No description provided for @scanTakePhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a photo'**
+  String get scanTakePhoto;
+
+  /// No description provided for @scanFromGallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from gallery'**
+  String get scanFromGallery;
+
+  /// No description provided for @scanChooseCrop.
+  ///
+  /// In en, this message translates to:
+  /// **'Which crop is this?'**
+  String get scanChooseCrop;
+
+  /// No description provided for @scanNoCrops.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a crop first, then check its photos.'**
+  String get scanNoCrops;
+
+  /// No description provided for @diagnosisTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Crop doctor'**
+  String get diagnosisTitle;
+
+  /// No description provided for @diagnosisChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the photo…'**
+  String get diagnosisChecking;
+
+  /// No description provided for @diagnosisCheckingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'This can take up to a minute.'**
+  String get diagnosisCheckingHint;
+
+  /// No description provided for @diagnosisLooksLike.
+  ///
+  /// In en, this message translates to:
+  /// **'Looks like {crop}'**
+  String diagnosisLooksLike(String crop);
+
+  /// No description provided for @diagnosisConfidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Confidence {percent}%'**
+  String diagnosisConfidence(int percent);
+
+  /// No description provided for @diagnosisSeeExpert.
+  ///
+  /// In en, this message translates to:
+  /// **'Show this to your local Agrarian Service Centre or agriculture extension officer before you spray anything.'**
+  String get diagnosisSeeExpert;
+
+  /// No description provided for @diagnosisSymptoms.
+  ///
+  /// In en, this message translates to:
+  /// **'What we see'**
+  String get diagnosisSymptoms;
+
+  /// No description provided for @diagnosisOrganic.
+  ///
+  /// In en, this message translates to:
+  /// **'Organic treatment'**
+  String get diagnosisOrganic;
+
+  /// No description provided for @diagnosisChemical.
+  ///
+  /// In en, this message translates to:
+  /// **'Chemical options'**
+  String get diagnosisChemical;
+
+  /// No description provided for @diagnosisChemicalSafety.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the product label for dose and waiting period, and wear gloves and a mask.'**
+  String get diagnosisChemicalSafety;
+
+  /// No description provided for @diagnosisPrevention.
+  ///
+  /// In en, this message translates to:
+  /// **'Prevention'**
+  String get diagnosisPrevention;
+
+  /// No description provided for @diagnosisNotPlantTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not see a plant clearly'**
+  String get diagnosisNotPlantTitle;
+
+  /// No description provided for @diagnosisTipFrame.
+  ///
+  /// In en, this message translates to:
+  /// **'Fill the frame with one affected leaf or fruit'**
+  String get diagnosisTipFrame;
+
+  /// No description provided for @diagnosisTipLight.
+  ///
+  /// In en, this message translates to:
+  /// **'Take it in daylight, without flash'**
+  String get diagnosisTipLight;
+
+  /// No description provided for @diagnosisTipSteady.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold the phone steady so the spots are sharp'**
+  String get diagnosisTipSteady;
+
+  /// No description provided for @diagnosisRetake.
+  ///
+  /// In en, this message translates to:
+  /// **'Take another photo'**
+  String get diagnosisRetake;
+
+  /// No description provided for @diagnosisDisclaimer.
+  ///
+  /// In en, this message translates to:
+  /// **'AI suggestions can be wrong. Only a small copy of each photo is kept, without its location data.'**
+  String get diagnosisDisclaimer;
+
+  /// No description provided for @severityNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Healthy'**
+  String get severityNone;
+
+  /// No description provided for @severityLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Mild'**
+  String get severityLow;
+
+  /// No description provided for @severityModerate.
+  ///
+  /// In en, this message translates to:
+  /// **'Moderate'**
+  String get severityModerate;
+
+  /// No description provided for @severitySevere.
+  ///
+  /// In en, this message translates to:
+  /// **'Severe'**
+  String get severitySevere;
+
+  /// No description provided for @tabHealth.
+  ///
+  /// In en, this message translates to:
+  /// **'Health'**
+  String get tabHealth;
+
+  /// No description provided for @noDiagnoses.
+  ///
+  /// In en, this message translates to:
+  /// **'No photos checked for this crop yet.'**
+  String get noDiagnoses;
+
+  /// No description provided for @checkPhoto.
+  ///
+  /// In en, this message translates to:
+  /// **'Check a photo'**
+  String get checkPhoto;
+
+  /// No description provided for @done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get done;
 }
 
 class _AppLocalizationsDelegate

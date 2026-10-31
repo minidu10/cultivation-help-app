@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/format/formatters.dart';
+import '../../diagnosis/presentation/scan_flow.dart';
 
 /// The signed-in frame: four tabs in a bottom bar with the crop-doctor
 /// camera in a notch at the centre, where a thumb reaches it first.
-class HomeShell extends StatelessWidget {
+class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.shell});
 
   final StatefulNavigationShell shell;
@@ -13,7 +15,7 @@ class HomeShell extends StatelessWidget {
   void _go(int index) => shell.goBranch(index, initialLocation: index == shell.currentIndex);
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     return Scaffold(
       extendBody: true,
@@ -23,7 +25,7 @@ class HomeShell extends StatelessWidget {
         heroTag: 'scan',
         tooltip: l10n.navScan,
         shape: const CircleBorder(),
-        onPressed: () => showScanComingSoon(context),
+        onPressed: () => startScan(context, ref),
         child: const Icon(Icons.photo_camera_outlined),
       ),
       bottomNavigationBar: BottomAppBar(
@@ -90,33 +92,4 @@ class _NavItem extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Placeholder until photo diagnosis lands: says what is coming instead of
-/// a dead button.
-Future<void> showScanComingSoon(BuildContext context) {
-  final l10n = context.l10n;
-  return showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    builder: (context) => Padding(
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          CircleAvatar(
-            radius: 32,
-            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-            child: const Icon(Icons.biotech_outlined, size: 32),
-          ),
-          const SizedBox(height: 16),
-          Text(l10n.scanComingTitle, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          Text(l10n.scanComingBody, textAlign: TextAlign.center),
-          const SizedBox(height: 20),
-          FilledButton.tonal(onPressed: () => Navigator.pop(context), child: Text(l10n.close)),
-        ],
-      ),
-    ),
-  );
 }

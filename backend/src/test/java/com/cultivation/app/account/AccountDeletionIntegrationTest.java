@@ -23,7 +23,8 @@ class AccountDeletionIntegrationTest extends IntegrationTest {
      */
     private static final Set<String> KNOWN_TABLES = Set.of(
         "users", "crops", "expenses", "harvests", "reminders", "reminder_notifications",
-        "crop_insights", "email_verifications", "refresh_tokens", "flyway_schema_history");
+        "crop_insights", "email_verifications", "refresh_tokens", "flyway_schema_history",
+        "crop_diagnoses", "crop_diagnosis_thumbnails");
 
     @Autowired
     private JdbcClient jdbc;

@@ -37,6 +37,9 @@ public class AccountDeletionService {
         delete("DELETE FROM reminder_notifications WHERE reminder_id IN "
              + "(SELECT id FROM reminders WHERE crop_id IN (" + USER_CROPS + "))", userId);
         delete("DELETE FROM reminders WHERE crop_id IN (" + USER_CROPS + ")", userId);
+        delete("DELETE FROM crop_diagnosis_thumbnails WHERE diagnosis_id IN "
+             + "(SELECT id FROM crop_diagnoses WHERE crop_id IN (" + USER_CROPS + "))", userId);
+        delete("DELETE FROM crop_diagnoses WHERE crop_id IN (" + USER_CROPS + ")", userId);
         delete("DELETE FROM crop_insights WHERE crop_id IN (" + USER_CROPS + ")", userId);
         delete("DELETE FROM expenses WHERE crop_id IN (" + USER_CROPS + ")", userId);
         delete("DELETE FROM harvests WHERE crop_id IN (" + USER_CROPS + ")", userId);

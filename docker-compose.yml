@@ -105,6 +105,7 @@ services:
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       AI_RATE_PER_MINUTE: ${AI_RATE_PER_MINUTE:-10}
       AI_RATE_PER_DAY: ${AI_RATE_PER_DAY:-150}
+      DIAGNOSIS_DAILY_LIMIT: ${DIAGNOSIS_DAILY_LIMIT:-10}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       SHOW_SQL: ${SHOW_SQL:-false}
       MAIL_HOST: ${MAIL_HOST:-mailpit}
@@ -141,6 +142,8 @@ services:
       AI_API_KEY: ${AI_API_KEY}
       AI_BASE_URL: ${AI_BASE_URL:-https://generativelanguage.googleapis.com/v1beta/openai/}
       AI_MODEL: ${AI_MODEL:-gemini-3.6-flash}
+      # Crop doctor photos. Blank uses AI_MODEL, which must then accept images.
+      AI_VISION_MODEL: ${AI_VISION_MODEL:-}
       AI_MAX_TOKENS: ${AI_MAX_TOKENS:-4096}
       AI_REASONING_EFFORT: ${AI_REASONING_EFFORT:-low}
       AI_ALLOWED_ORIGINS: ${AI_ALLOWED_ORIGINS:-}

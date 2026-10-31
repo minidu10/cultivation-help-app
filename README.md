@@ -41,6 +41,7 @@ The parts of this build that were not obvious, and why they were done that way:
 - **Harvest Records** — Record yield quantities and revenue with historical comparisons
 - **Profit Analytics** — Real-time P&L charts with seasonal breakdowns and per-crop profitability scores
 - **AI Advisor** — Personalized crop recommendations and cost optimizations, backed by any OpenAI-compatible model
+- **Crop Doctor** — Photograph a sick leaf and get the likely disease, pest or deficiency with organic and chemical treatment options, kept per crop so you can see whether a treatment worked. Uncertain or severe cases are referred to the local Agrarian Service Centre
 - **Weather Integration** — Live weather and a 5-day forecast for each field's location in Sri Lanka
 - **Smart Weather Alerts** — Every upcoming task is checked against its field's forecast. Fertilizer before heavy rain, spraying in wind, irrigating ahead of a downpour, harvesting in the wet and heat stress are flagged, with a one-tap move to the next safe time
 - **Verified Accounts** — Registration and password reset are confirmed by a 6-digit code emailed to the address, so every account has a reachable inbox

@@ -10,6 +10,7 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -47,7 +48,7 @@ public class CropInsightService {
     private final HarvestRepository harvestRepository;
     private final CropInsightRepository insightRepository;
     private final AiAdvisorService aiAdvisorService;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final RestTemplate restTemplate;
 
     private final String aiServiceUrl;
 
@@ -56,12 +57,14 @@ public class CropInsightService {
                               HarvestRepository harvestRepository,
                               CropInsightRepository insightRepository,
                               AiAdvisorService aiAdvisorService,
+                              @Qualifier("aiRestTemplate") RestTemplate restTemplate,
                               @Value("${app.ai.service-url:http://ai-service:8000}") String aiServiceUrl) {
         this.cropRepository = cropRepository;
         this.expenseRepository = expenseRepository;
         this.harvestRepository = harvestRepository;
         this.insightRepository = insightRepository;
         this.aiAdvisorService = aiAdvisorService;
+        this.restTemplate = restTemplate;
         this.aiServiceUrl = aiServiceUrl;
     }
 

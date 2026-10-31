@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from services import advisor
+from services import advisor, diagnosis
 
 router = APIRouter()
 
@@ -57,6 +57,27 @@ async def get_crop_insights(request: InsightRequest):
         return {"insights": advisor.ask(question), "crop": request.crop_name}
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e)) from e
+
+
+class DiagnoseRequest(BaseModel):
+    image_base64: str
+    mime_type: str = "image/jpeg"
+    crop_hint: str = ""
+
+
+class DiagnoseResponse(diagnosis.Diagnosis):
+    model: str
+
+
+@router.post("/diagnose", response_model=DiagnoseResponse)
+async def diagnose(request: DiagnoseRequest):
+    try:
+        result = diagnosis.diagnose(request.image_base64, request.mime_type, request.crop_hint)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
+    except RuntimeError as e:
+        raise HTTPException(status_code=503, detail=str(e)) from e
+    return DiagnoseResponse(**result.model_dump(), model=diagnosis.vision_model())
 
 
 @router.get("/health")

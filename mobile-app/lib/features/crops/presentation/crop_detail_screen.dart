@@ -9,6 +9,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/async_view.dart';
 import '../../../core/widgets/common.dart';
 import '../../dashboard/data/dashboard_repository.dart';
+import '../../diagnosis/presentation/health_tab.dart';
 import '../../expenses/presentation/expenses_tab.dart';
 import '../../harvests/presentation/harvests_tab.dart';
 import '../../reminders/presentation/reminders_tab.dart';
@@ -67,7 +68,7 @@ class _CropDetail extends ConsumerWidget {
     final l10n = context.l10n;
     final theme = Theme.of(context);
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         body: NestedScrollView(
           headerSliverBuilder: (context, _) => [
@@ -119,6 +120,7 @@ class _CropDetail extends ConsumerWidget {
                     Tab(text: l10n.tabExpenses),
                     Tab(text: l10n.tabHarvests),
                     Tab(text: l10n.tabReminders),
+                    Tab(text: l10n.tabHealth),
                   ],
                 ),
                 theme.scaffoldBackgroundColor,
@@ -130,6 +132,7 @@ class _CropDetail extends ConsumerWidget {
               ExpensesTab(cropId: crop.id),
               HarvestsTab(cropId: crop.id),
               RemindersTab(cropId: crop.id),
+              HealthTab(crop: crop),
             ],
           ),
         ),
