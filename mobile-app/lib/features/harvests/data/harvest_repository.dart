@@ -21,6 +21,7 @@ class HarvestInput {
     this.pricePerUnit,
     this.buyerName,
     this.notes,
+    this.clientRef,
   });
 
   final DateTime? harvestDate;
@@ -30,7 +31,11 @@ class HarvestInput {
   final String? buyerName;
   final String? notes;
 
+  /// Generated on the phone for new records, so a resend is not a duplicate.
+  final String? clientRef;
+
   Map<String, Object?> toJson() => compact({
+        'clientRef': clientRef,
         'harvestDate': harvestDate == null ? null : formatDateOnly(harvestDate!),
         'quantity': quantity,
         'unit': unit?.wire,

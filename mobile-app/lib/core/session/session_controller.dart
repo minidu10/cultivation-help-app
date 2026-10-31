@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../features/auth/data/auth_models.dart';
+import '../offline/outbox.dart';
 import '../providers.dart';
+import '../push/push_registrar.dart';
 
 /// Who is signed in, as far as drawing screens is concerned.
 ///
@@ -110,6 +112,9 @@ class SessionController extends Notifier<SessionState> {
   /// Revokes the refresh token server-side, then forgets everything locally.
   /// The network call is best effort: signing out must work offline.
   Future<void> signOut() async {
+    // First, while the session still works: this phone stops getting this
+    // farmer's notifications.
+    await ref.read(pushRegistrarProvider).unregister();
     final tokens = ref.read(tokenStoreProvider);
     final refreshToken = await tokens.readRefreshToken();
     if (refreshToken != null) {
@@ -120,12 +125,16 @@ class SessionController extends Notifier<SessionState> {
     }
     await tokens.clear();
     await ref.read(sharedPreferencesProvider).remove(_userKey);
+    // Saved data and unsent records belong to the person signing out.
+    await ref.read(responseCacheProvider).clear();
+    await ref.read(outboxProvider.notifier).clear();
     state = const SessionState.signedOut();
   }
 
   /// Called by the API client once the refresh token has been refused.
   void expire() {
     unawaited(ref.read(sharedPreferencesProvider).remove(_userKey));
+    unawaited(ref.read(responseCacheProvider).clear());
     state = const SessionState.signedOut(expired: true);
   }
 

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_exception.dart';
 import '../../../core/format/formatters.dart';
+import '../../../core/push/push_registrar.dart';
 import '../../../core/session/session_controller.dart';
 import '../../../core/widgets/async_view.dart';
 import '../../../core/widgets/common.dart';
@@ -121,6 +122,24 @@ class _SettingsBody extends ConsumerWidget {
             secondary: const Icon(Icons.mark_email_unread_outlined),
           ),
         ),
+        if (ref.watch(pushRegistrarProvider).enabled)
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
+            child: Card(
+              child: ListTile(
+                leading: const Icon(Icons.notifications_active_outlined),
+                title: Text(l10n.notificationsTest),
+                onTap: () async {
+                  try {
+                    final sent = await ref.read(pushRegistrarProvider).sendTest();
+                    if (context.mounted) showMessage(context, l10n.notificationsTestSent(sent));
+                  } on Exception catch (e) {
+                    if (context.mounted) showError(context, e);
+                  }
+                },
+              ),
+            ),
+          ),
         SectionHeader(l10n.accountSection),
         Card(
           child: Column(

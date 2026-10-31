@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/api/api_exception.dart';
 import '../../../core/format/formatters.dart';
 import '../../../core/format/labels.dart';
+import '../../../core/offline/outbox.dart';
+import '../../../core/offline/pending_records.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/async_view.dart';
 import '../../../core/widgets/common.dart';
@@ -34,6 +37,7 @@ class ExpensesTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final pending = ref.watch(outboxProvider.select((o) => o.forCrop(cropId, OutboxKind.expense)));
     return AsyncView(
       value: ref.watch(expensesProvider(cropId)),
       onRetry: () => ref.invalidate(expensesProvider(cropId)),
@@ -46,15 +50,20 @@ class ExpensesTab extends ConsumerWidget {
           onAdd: () => showFormSheet<void>(context, ExpenseSheet(cropId: cropId)),
           onEdit: (e) => showFormSheet<void>(context, ExpenseSheet(cropId: cropId, existing: e)),
           onDelete: (e) => _delete(context, ref, e),
-          header: expenses.isEmpty
-              ? null
-              : Padding(
+          header: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              PendingRecords(pending),
+              if (expenses.isNotEmpty)
+                Padding(
                   padding: const EdgeInsets.only(bottom: 8, left: 4),
                   child: Text(
                     '${l10n.totalLabel}: ${formatMoney(context, total)}',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Brand.loss),
                   ),
                 ),
+            ],
+          ),
           tile: (e) => ListTile(
             leading: CircleAvatar(child: Icon(e.category.icon, size: 20)),
             title: Text(e.description),
@@ -104,16 +113,18 @@ class _ExpenseSheetState extends ConsumerState<ExpenseSheet> {
       _busy = true;
       _error = null;
     });
+    final existing = widget.existing;
     final input = ExpenseInput(
       category: _category,
       description: _description.text,
       amount: parseAmount(_amount.text),
       expenseDate: _date,
       notes: _notes.text,
+      // Every new record gets one, so a lost reply can be resent safely.
+      clientRef: existing == null ? const Uuid().v4() : null,
     );
     final repo = ref.read(expenseRepositoryProvider);
     try {
-      final existing = widget.existing;
       if (existing == null) {
         await repo.add(widget.cropId, input);
       } else {
@@ -123,10 +134,32 @@ class _ExpenseSheetState extends ConsumerState<ExpenseSheet> {
       invalidateCropFigures(ref, widget.cropId);
       if (mounted) Navigator.pop(context);
     } on ApiException catch (e) {
-      setState(() => _error = e.fieldErrors.values.firstOrNull ?? e.message);
+      if (e.offline && existing == null) {
+        await _queue(input);
+      } else if (e.offline) {
+        setState(() => _error = context.l10n.editNeedsConnection);
+      } else {
+        setState(() => _error = e.fieldErrors.values.firstOrNull ?? e.message);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// No signal: keep it on the phone and send it later.
+  Future<void> _queue(ExpenseInput input) async {
+    await ref.read(outboxProvider.notifier).enqueue(OutboxEntry(
+          clientRef: input.clientRef!,
+          kind: OutboxKind.expense,
+          cropId: widget.cropId,
+          body: input.toJson(),
+          label: '${input.description?.trim()} · ${formatMoney(context, input.amount ?? 0)}',
+          createdAt: DateTime.now(),
+        ));
+    if (!mounted) return;
+    final message = context.l10n.savedOffline;
+    Navigator.pop(context);
+    showMessage(context, message);
   }
 
   @override

@@ -10,6 +10,10 @@ uses the same account.
 - **Dashboard**: revenue, expenses, net profit and active crops; a revenue vs expenses chart per crop; weather for your town; due and upcoming reminders, each with one-tap "mark done".
 - **Crops**: filter by status; add and edit crops; change status in one tap; per-crop profit, AI insight and tabs for expenses, harvests and reminders, all editable.
 - **AI advisor**: a chat that sends your crop list as context automatically.
+- **Crop doctor**: the centre camera button checks a photo of a sick leaf; each crop keeps its history in a Health tab.
+- **Weather alerts**: tasks the forecast puts at risk, with one-tap rescheduling.
+- **Works offline**: screens show what was last loaded, and expenses and harvests saved with no signal are sent once it returns.
+- **Push notifications** (optional): the daily reminder digest on the phone; tapping it opens the crop.
 - **Settings**: theme (follows the web choice), reminder emails, change password, sign out, and delete account.
 
 ## Architecture
@@ -49,6 +53,10 @@ lib/
 | **Tokens read before the first frame** | `main()` checks secure storage first, so a signed-in farmer opens straight onto the dashboard with no login-screen flash |
 | **Farm-local times, no zones** | The API stores reminder times as Sri Lanka local time without an offset. The app parses and sends them as local time; converting through UTC would move a 7 AM reminder by 5½ hours |
 | **Strings in ARB from day one** | Every label is in `app_en.arb`, so adding Sinhala and Tamil is new files, not a rewrite |
+| **Offline reads in one interceptor** | Every successful GET is saved; a GET that gets no reply is answered from that copy and the app shows an offline banner. No screen has offline-specific code. A real error from the server (404, 403) is never hidden behind a cached answer |
+| **Offline writes are idempotent** | A new expense or harvest carries a UUID made on the phone. Saved offline, it waits in a persistent outbox and is sent in order when the network, or the app, comes back. The server keeps one row per (crop, UUID), so a resend after a lost reply cannot duplicate it |
+| **Firebase from build settings** | Firebase is initialised from `--dart-define` values, not a committed google-services.json, so the repo carries no project config and builds without one (push simply off) |
+| **Photos upright before upload** | Photos are shrunk with flutter_image_compress, which rotates the pixels; image_picker's own resizing keeps an EXIF rotation tag the server strips, which turned portrait photos sideways |
 
 ## Running it
 
@@ -87,6 +95,21 @@ flutter test
 - `test/core/auth_interceptor_test.dart` runs the interceptor against a fake backend that, like the real one, accepts each refresh token once. That proves concurrent expiries cause exactly one refresh.
 - `test/features/` holds widget tests for sign-in, the three-step sign-up and the crop list.
 - `test/data/` covers model parsing (including unknown enum values from a newer server) and request bodies.
+
+## Push notifications setup
+
+Optional. Without it the app works fully, minus notifications.
+
+1. Create a project at [console.firebase.google.com](https://console.firebase.google.com) and add an **Android app** with package `com.agromaster.app`.
+2. From the app's settings, note the **API key**, **App ID**, **Project number** (sender ID) and **Project ID**, and build with them:
+
+   ```bash
+   flutter build apk --dart-define=FIREBASE_API_KEY=... --dart-define=FIREBASE_APP_ID=... \
+     --dart-define=FIREBASE_SENDER_ID=... --dart-define=FIREBASE_PROJECT_ID=...
+   ```
+
+3. For the backend, go to **Project settings → Service accounts → Generate new private key**. Put the JSON (on one line, or a path to the file) in the backend's `FIREBASE_CREDENTIALS`.
+4. In the app, go to **More → Send a test notification**.
 
 ## Google Sign-In setup
 

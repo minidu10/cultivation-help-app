@@ -289,5 +289,20 @@
   "tabHealth": "Health",
   "noDiagnoses": "No photos checked for this crop yet.",
   "checkPhoto": "Check a photo",
-  "done": "Done"
+  "done": "Done",
+
+  "offlineBanner": "You are offline. Showing what was last saved.",
+  "pendingCount": "{count, plural, =1{1 record waiting to send} other{{count} records waiting to send}}",
+  "@pendingCount": { "placeholders": { "count": { "type": "int" } } },
+  "syncNow": "Send now",
+  "syncing": "Sending…",
+  "savedOffline": "Saved on this phone. It will be sent when you are back online.",
+  "waitingToSend": "Waiting to send",
+  "rejectedRecords": "Could not save: {labels}",
+  "@rejectedRecords": { "placeholders": { "labels": { "type": "String" } } },
+  "dismiss": "Dismiss",
+  "editNeedsConnection": "Editing needs a connection. Try again when you are back online.",
+  "notificationsTest": "Send a test notification",
+  "notificationsTestSent": "{count, plural, =0{No phone received it. Check that notifications are allowed for AgroMaster.} =1{Sent. It should arrive in a few seconds.} other{Sent to {count} phones.}}",
+  "@notificationsTestSent": { "placeholders": { "count": { "type": "int" } } }
 }

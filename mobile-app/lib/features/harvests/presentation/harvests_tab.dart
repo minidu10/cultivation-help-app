@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../../core/api/api_exception.dart';
 import '../../../core/format/formatters.dart';
 import '../../../core/format/labels.dart';
+import '../../../core/offline/outbox.dart';
+import '../../../core/offline/pending_records.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/async_view.dart';
 import '../../../core/widgets/common.dart';
@@ -34,6 +37,7 @@ class HarvestsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final pending = ref.watch(outboxProvider.select((o) => o.forCrop(cropId, OutboxKind.harvest)));
     return AsyncView(
       value: ref.watch(harvestsProvider(cropId)),
       onRetry: () => ref.invalidate(harvestsProvider(cropId)),
@@ -46,15 +50,20 @@ class HarvestsTab extends ConsumerWidget {
           onAdd: () => showFormSheet<void>(context, HarvestSheet(cropId: cropId)),
           onEdit: (h) => showFormSheet<void>(context, HarvestSheet(cropId: cropId, existing: h)),
           onDelete: (h) => _delete(context, ref, h),
-          header: harvests.isEmpty
-              ? null
-              : Padding(
+          header: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              PendingRecords(pending),
+              if (harvests.isNotEmpty)
+                Padding(
                   padding: const EdgeInsets.only(bottom: 8, left: 4),
                   child: Text(
                     '${l10n.totalLabel}: ${formatMoney(context, total)}',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(color: Brand.profit),
                   ),
                 ),
+            ],
+          ),
           tile: (h) => ListTile(
             leading: const CircleAvatar(child: Icon(Icons.inventory_2_outlined, size: 20)),
             title: Text('${formatNumber(context, h.quantity)} ${h.unit.label(l10n)}'),
@@ -109,6 +118,7 @@ class _HarvestSheetState extends ConsumerState<HarvestSheet> {
       _busy = true;
       _error = null;
     });
+    final existing = widget.existing;
     final input = HarvestInput(
       harvestDate: _date,
       quantity: parseAmount(_quantity.text),
@@ -116,10 +126,10 @@ class _HarvestSheetState extends ConsumerState<HarvestSheet> {
       pricePerUnit: parseAmount(_price.text),
       buyerName: _buyer.text,
       notes: _notes.text,
+      clientRef: existing == null ? const Uuid().v4() : null,
     );
     final repo = ref.read(harvestRepositoryProvider);
     try {
-      final existing = widget.existing;
       if (existing == null) {
         await repo.add(widget.cropId, input);
       } else {
@@ -129,10 +139,32 @@ class _HarvestSheetState extends ConsumerState<HarvestSheet> {
       invalidateCropFigures(ref, widget.cropId);
       if (mounted) Navigator.pop(context);
     } on ApiException catch (e) {
-      setState(() => _error = e.fieldErrors.values.firstOrNull ?? e.message);
+      if (e.offline && existing == null) {
+        await _queue(input);
+      } else if (e.offline) {
+        setState(() => _error = context.l10n.editNeedsConnection);
+      } else {
+        setState(() => _error = e.fieldErrors.values.firstOrNull ?? e.message);
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  /// No signal: keep it on the phone and send it later.
+  Future<void> _queue(HarvestInput input) async {
+    final l10n = context.l10n;
+    await ref.read(outboxProvider.notifier).enqueue(OutboxEntry(
+          clientRef: input.clientRef!,
+          kind: OutboxKind.harvest,
+          cropId: widget.cropId,
+          body: input.toJson(),
+          label: '${formatNumber(context, input.quantity ?? 0)} ${(input.unit ?? QuantityUnit.kg).label(l10n)}',
+          createdAt: DateTime.now(),
+        ));
+    if (!mounted) return;
+    Navigator.pop(context);
+    showMessage(context, l10n.savedOffline);
   }
 
   @override

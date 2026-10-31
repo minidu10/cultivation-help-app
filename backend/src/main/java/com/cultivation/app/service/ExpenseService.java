@@ -3,6 +3,7 @@ package com.cultivation.app.service;
 import java.math.BigDecimal;
 import java.util.List;
 
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -31,8 +32,20 @@ public class ExpenseService {
         this.harvestRepository = harvestRepository;
     }
 
+    /**
+     * Saves the record, unless it is a replay of an offline write that
+     * already arrived: then the original is returned. The unique index on
+     * (crop_id, client_ref) settles two copies arriving at once; the loser's
+     * insert fails and it returns the winner's row.
+     */
     public Expense addExpense(Long cropId, ExpenseRequest request, User currentUser) {
         Crop crop = findCrop(cropId, currentUser);
+        if (request.getClientRef() != null) {
+            var replay = expenseRepository.findByCropIdAndClientRef(cropId, request.getClientRef());
+            if (replay.isPresent()) {
+                return replay.get();
+            }
+        }
 
         Expense expense = new Expense();
         expense.setCrop(crop);
@@ -41,8 +54,16 @@ public class ExpenseService {
         expense.setAmount(request.getAmount());
         expense.setExpenseDate(request.getExpenseDate());
         expense.setNotes(request.getNotes());
+        expense.setClientRef(request.getClientRef());
 
-        return expenseRepository.save(expense);
+        try {
+            return expenseRepository.saveAndFlush(expense);
+        } catch (DataIntegrityViolationException race) {
+            if (request.getClientRef() == null) {
+                throw race;
+            }
+            return expenseRepository.findByCropIdAndClientRef(cropId, request.getClientRef()).orElseThrow(() -> race);
+        }
     }
 
     public List<Expense> getExpensesForCrop(Long cropId, User currentUser) {

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/offline/offline_banner.dart';
+import 'core/offline/sync_coordinator.dart';
+import 'core/push/push_coordinator.dart';
 import 'core/router/app_router.dart';
 import 'core/session/session_controller.dart';
 import 'core/theme/app_theme.dart';
@@ -23,6 +26,10 @@ class AgroMasterApp extends ConsumerWidget {
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: ref.watch(routerProvider),
+      // Above the router, so the offline banner and syncing span every screen.
+      builder: (context, child) => PushCoordinator(
+        child: SyncCoordinator(child: OfflineFrame(child: child ?? const SizedBox.shrink())),
+      ),
     );
   }
 }

@@ -830,4 +830,59 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get done => 'Done';
+
+  @override
+  String get offlineBanner => 'You are offline. Showing what was last saved.';
+
+  @override
+  String pendingCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count records waiting to send',
+      one: '1 record waiting to send',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get syncNow => 'Send now';
+
+  @override
+  String get syncing => 'Sending…';
+
+  @override
+  String get savedOffline =>
+      'Saved on this phone. It will be sent when you are back online.';
+
+  @override
+  String get waitingToSend => 'Waiting to send';
+
+  @override
+  String rejectedRecords(String labels) {
+    return 'Could not save: $labels';
+  }
+
+  @override
+  String get dismiss => 'Dismiss';
+
+  @override
+  String get editNeedsConnection =>
+      'Editing needs a connection. Try again when you are back online.';
+
+  @override
+  String get notificationsTest => 'Send a test notification';
+
+  @override
+  String notificationsTestSent(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Sent to $count phones.',
+      one: 'Sent. It should arrive in a few seconds.',
+      zero:
+          'No phone received it. Check that notifications are allowed for AgroMaster.',
+    );
+    return '$_temp0';
+  }
 }

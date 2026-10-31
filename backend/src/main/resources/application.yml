@@ -104,6 +104,12 @@ app:
     # How long after confirming a code the user has to finish registering
     # or complete the password reset.
     completion-window-minutes: ${VERIFICATION_COMPLETION_WINDOW_MINUTES:30}
+  push:
+    # Firebase service account: the JSON itself, or a path to it. Blank turns
+    # push notifications off; reminders still go out by email.
+    credentials: ${FIREBASE_CREDENTIALS:}
+    # Read from the service account when blank.
+    project-id: ${FIREBASE_PROJECT_ID:}
   diagnosis:
     # Photos a farmer can have checked per day. Each one is a vision-model call.
     daily-limit: ${DIAGNOSIS_DAILY_LIMIT:10}
