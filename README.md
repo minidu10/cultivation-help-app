@@ -4,18 +4,19 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 AgroMaster is an AI-powered farm management platform for small-scale Sri Lankan
-farmers. It tracks every crop from planting to harvest, records the costs against
-it and the revenue it produced, and answers the question that matters: **did this
-crop actually make money?**
+farmers, on the web and on Android. It tracks every crop from planting to harvest,
+records the costs against it and the revenue it produced, and answers the question
+that matters: **did this crop actually make money?**
 
 **Live demo:** https://agromaster.duckdns.org
 
 > Hosted on a free-tier EC2 instance that is powered off between demos. If the
 > link does not respond, the server is asleep — ask and it will be started.
 
-**Documentation:** [Technical Overview](docs/AgroMaster-Technical-Overview.pdf)
-(12 pages — how it works and why) · [Software Requirements Specification](docs/AgroMaster-SRS.pdf)
-(19 pages) · [Deployment runbook](docs/DEPLOYMENT.md)
+**Documentation:** [Deployment runbook](docs/DEPLOYMENT.md) ·
+[Mobile app](mobile-app/README.md) · [Technical Overview](docs/AgroMaster-Technical-Overview.pdf)
+(12 pages — how it works and why) and [Software Requirements Specification](docs/AgroMaster-SRS.pdf)
+(19 pages), both written for v1, the web app
 
 ---
 
@@ -28,6 +29,13 @@ The parts of this build that were not obvious, and why they were done that way:
 | **Images built in CI, never on the server** | The 1 GB instance cannot reliably compile Java. GitHub Actions publishes to ghcr.io and the server only pulls — deploys went from 3–5 minutes with OOM risk to about 30 seconds |
 | **AI reached only through the backend** | The AI service was briefly a public, unauthenticated LLM endpoint billed to this project's API key. It is now on the internal network with the backend in front of it |
 | **AI insights cached on a fingerprint** | The dashboard asked the model for an insight per crop on every load. The result is stored against a hash of the figures behind it, so an unchanged crop costs nothing |
+| **Refresh tokens are single-use, with reuse detection** | Access tokens last 30 minutes; refresh tokens keep a phone signed in. Only a SHA-256 of each refresh token is stored, and every refresh replaces it. A used token turning up again means it was copied, so its whole family is revoked and both copies must sign in again |
+| **One refresh for many expired requests** | When the access token expires, every in-flight request fails at once. Clients queue them behind a single refresh, because a second use of the same refresh token would look like theft and end the session |
+| **Offline saves cannot duplicate** | The phone gives each expense or harvest a UUID and queues it while there is no signal. A unique index on `(crop_id, client_ref)` means a resend after a lost reply returns the existing row instead of inserting a second one |
+| **Crop doctor keeps a thumbnail, not the photo** | Uploads are typed by their file header, refused by pixel count before any pixel is decoded, and re-encoded, which strips EXIF and GPS. The model gets a 1024 px copy; only a 320 px thumbnail is stored, in its own table so history lists never load image bytes |
+| **Push over FCM HTTP v1, not the Firebase Admin SDK** | An OAuth token from google-auth-library and one REST call per message keep the backend inside its 640 MB memory limit. Tokens FCM reports as gone are deleted |
+| **Weather cached, alerts off the critical path** | Geocoding is cached for 24 hours, current weather for 10 minutes and forecasts for 30. Alerts are their own endpoint, so a slow weather API never holds up the dashboard figures |
+| **Rate limits keyed on the real client IP** | The limiter reads the `X-Real-IP` nginx sets, not the first `X-Forwarded-For` entry, which any client can forge. AI calls are also limited per farmer, since each one is billed |
 | **One daily reminder digest, not one email per task** | Per-reminder mail floods the inbox on a busy week and trains people to ignore it. A unique constraint on `(reminder_id, lead_days)` makes duplicate sends impossible at the database level |
 | **One compose file for both environments** | `COMPOSE_PROFILES` decides which services start, so the deploy command is identical locally and in production and the two cannot drift |
 | **6-digit codes, attempt-limited** | A million possibilities is brute-forceable, so codes expire in 10 minutes, die after 5 wrong guesses and are single-use — enforced in the database, not in job logic |
@@ -36,17 +44,21 @@ The parts of this build that were not obvious, and why they were done that way:
 
 ## Features
 
-- **Crop Management** — Track every crop from seed to harvest with status monitoring and growth milestones
-- **Expense Tracking** — Log seeds, fertilizer, labor and equipment costs by category
-- **Harvest Records** — Record yield quantities and revenue with historical comparisons
-- **Profit Analytics** — Real-time P&L charts with seasonal breakdowns and per-crop profitability scores
-- **AI Advisor** — Personalized crop recommendations and cost optimizations, backed by any OpenAI-compatible model
+- **Crop Management** — Track every crop from planting to harvest: planted, growing, ready to harvest, harvested or failed
+- **Expense Tracking** — Log costs by category: seeds, fertilizer, pesticides, labor, irrigation, equipment, transport and miscellaneous. Every entry can be edited or deleted
+- **Harvest Records** — Record yield quantities and the revenue each harvest brought in
+- **Profit Analytics** — Profit and loss per crop and across the farm, with revenue vs expenses charts
+- **AI Advisor** — Ask questions about your crops, answered by any OpenAI-compatible model, plus a per-crop insight generated from your own figures
 - **Crop Doctor** — Photograph a sick leaf and get the likely disease, pest or deficiency with organic and chemical treatment options, kept per crop so you can see whether a treatment worked. Uncertain or severe cases are referred to the local Agrarian Service Centre
 - **Weather Integration** — Live weather and a 5-day forecast for each field's location in Sri Lanka
 - **Smart Weather Alerts** — Every upcoming task is checked against its field's forecast. Fertilizer before heavy rain, spraying in wind, irrigating ahead of a downpour, harvesting in the wet and heat stress are flagged, with a one-tap move to the next safe time
+- **Android App** — Everything above on a phone, with a camera button for the crop doctor
+- **Works Offline** — The app shows what it last loaded, and expenses and harvests saved with no signal are sent once it returns, exactly once
+- **Push Notifications** — Optional. The daily reminder digest arrives on the phone, and tapping it opens the crop
 - **Verified Accounts** — Registration and password reset are confirmed by a 6-digit code emailed to the address, so every account has a reachable inbox
 - **Google Sign-In** — One-tap account creation with a Google account; the address is already proven, so no code is needed
-- **Reminder Digests** — One email a day at 7:00 AM listing tasks due tomorrow and the day after, never one message per task. Farmers switch it off in Settings
+- **Reminder Digests** — One email a day at 7:00 AM listing tasks due tomorrow and the day after, with weather warnings, never one message per task. Farmers switch it off in Settings
+- **Account Control** — Change your password or delete your account from the app's Settings
 
 ---
 
@@ -55,32 +67,39 @@ The parts of this build that were not obvious, and why they were done that way:
 | Layer | Technology |
 |-------|-----------|
 | Frontend | React 19, Vite, React Router, Recharts, Nginx |
-| Backend | Spring Boot 4, Spring Security, Flyway, JWT, Java 17 |
-| AI Service | FastAPI, Python 3.12, OpenAI-compatible API |
+| Mobile | Flutter 3.41, Riverpod, go_router, Dio, fl_chart, Firebase Cloud Messaging |
+| Backend | Spring Boot 4, Spring Security, Flyway, JWT, Caffeine, Java 17 |
+| AI Service | FastAPI, Python 3.12, OpenAI-compatible API (chat and vision) |
 | Database | PostgreSQL (Neon) |
-| Deployment | Docker Compose, AWS EC2, Let's Encrypt, DuckDNS |
+| Testing | JUnit 5 and Testcontainers, JaCoCo · Vitest, Testing Library, MSW · pytest, ruff · flutter test |
+| Deployment | Docker Compose, AWS EC2, GitHub Actions, ghcr.io, Let's Encrypt, DuckDNS |
 
 ---
 
 ## Architecture
 
 ```
-                         Browser
-                            │  HTTPS
-                            ▼
+               Browser               Android app (Flutter)
+                  │  HTTPS                │  HTTPS
+                  └──────────┬────────────┘
+                             ▼
            ┌─────────────────────────────────┐
-           │  Nginx   80 → redirect, 443 TLS │   the only public port
+           │  Nginx   80 → redirect, 443 TLS │   the only public entry
            │  gzip · cache · security headers│
            └─────────────────────────────────┘
                │                        │
                │ /                      │ /api
                ▼                        ▼
         React SPA (static)      Spring Boot  127.0.0.1:8080
-                                     │
-                        ┌────────────┼────────────┐
-                        ▼            ▼            ▼
-                  FastAPI AI    PostgreSQL     SMTP
-                127.0.0.1:8000    (Neon)      (Gmail)
+                                        │
+        ┌──────────────┬────────────────┼──────────────┬──────────────┐
+        ▼              ▼                ▼              ▼              ▼
+   FastAPI AI     PostgreSQL          SMTP        OpenWeather    Firebase Cloud
+ 127.0.0.1:8000     (Neon)           (Gmail)                     Messaging
+        │                                                         → phones
+        ▼
+  chat + vision model
+  (OpenAI-compatible)
 
   Neither the backend nor the AI service is reachable from the internet;
   both bind to loopback and are reached only through Nginx.
@@ -94,14 +113,16 @@ The parts of this build that were not obvious, and why they were done that way:
 cultivation-help-app/
 ├── backend/              # Spring Boot REST API
 │   ├── src/
-│   │   └── main/java/com/cultivation/app/
-│   │       ├── controller/
-│   │       ├── service/
-│   │       ├── repository/
-│   │       ├── entity/
-│   │       ├── dto/
-│   │       ├── security/
-│   │       └── config/
+│   │   ├── main/java/com/cultivation/app/
+│   │   │   ├── controller/
+│   │   │   ├── service/
+│   │   │   ├── repository/
+│   │   │   ├── entity/
+│   │   │   ├── dto/
+│   │   │   ├── security/
+│   │   │   └── config/
+│   │   ├── main/resources/db/migration/   # Flyway migrations
+│   │   └── test/                          # unit + Testcontainers integration tests
 │   └── Dockerfile
 ├── frontend-web/         # React + Vite SPA
 │   ├── src/
@@ -112,19 +133,26 @@ cultivation-help-app/
 │   ├── nginx.conf.template   # ${DOMAIN} rendered at container start
 │   ├── security-headers.conf
 │   └── Dockerfile
+├── mobile-app/           # Flutter Android app
+│   ├── lib/
+│   │   ├── core/             # API client, session, offline, push, routing, theme
+│   │   └── features/         # auth, dashboard, crops, diagnosis, alerts, advisor, settings
+│   └── test/
 ├── ai-service/           # FastAPI AI microservice
 │   ├── main.py
 │   ├── routers/
 │   ├── services/
+│   ├── tests/
 │   └── Dockerfile
 ├── deploy/                   # server bootstrap and boot automation
 ├── docs/
-│   ├── AgroMaster-Technical-Overview.pdf  # architecture and design rationale
-│   ├── AgroMaster-SRS.pdf                 # requirements specification
+│   ├── AgroMaster-Technical-Overview.pdf  # architecture and design rationale (v1)
+│   ├── AgroMaster-SRS.pdf                 # requirements specification (v1)
 │   └── DEPLOYMENT.md                      # production runbook
 ├── scripts/
 │   ├── seed-local.sql        # demo data for local analysis
 │   └── analysis-queries.sql  # starter queries for pgAdmin
+├── .github/workflows/ci.yml  # tests, image publishing and deploy
 ├── docker-compose.yml    # one file, local + prod via COMPOSE_PROFILES
 ├── .env.example
 └── README.md
@@ -143,6 +171,7 @@ docker compose up -d --build
 | Service | `COMPOSE_PROFILES=local` | `COMPOSE_PROFILES=prod` |
 |---|---|---|
 | `db` (Postgres container) | starts | not started — `DB_URL` points at managed Postgres |
+| `mailpit` (mail catcher) | starts | not started — a real SMTP relay is used |
 | `backend` | starts | starts |
 | `ai-service` | starts | starts |
 | `frontend` (nginx + SSL) | not started — use the Vite dev server | starts |
@@ -153,7 +182,8 @@ docker compose up -d --build
 
 ### Prerequisites
 - Docker and Docker Compose
-- Node.js 20+ (for the frontend dev server)
+- Node.js 22.12+ for the frontend (CI uses 24)
+- Flutter 3.41+ and the Android SDK, only for the mobile app
 
 ### 1. Clone and configure
 ```bash
@@ -162,14 +192,14 @@ cd cultivation-help-app
 cp .env.example .env
 ```
 
-The defaults in `.env.example` run entirely locally — no cloud database needed. Set `JWT_SECRET` to any 32+ character string. `AI_API_KEY` and `OPENWEATHER_API_KEY` are optional; without them the AI Advisor and weather widgets fail while everything else works.
+The defaults in `.env.example` run entirely locally — no cloud database needed. Set `JWT_SECRET` to any 32+ character string. `AI_API_KEY` and `OPENWEATHER_API_KEY` are optional; without them the AI features (advisor, insights, crop doctor) and the weather features (forecast, alerts) are unavailable while everything else works.
 
 ### 2. Start the backend services
 ```bash
 docker compose up -d --build
 ```
 
-Starts Postgres, the Spring Boot API and the AI service. The first Maven build takes ~3–5 minutes. Flyway creates the schema automatically on first boot.
+Starts Postgres, Mailpit, the Spring Boot API and the AI service. The first Maven build takes ~3–5 minutes. Flyway creates the schema automatically on first boot.
 
 ### 3. Start the frontend
 ```bash
@@ -184,9 +214,10 @@ npm run dev
 | Backend API | http://localhost:8080 |
 | Swagger UI | http://localhost:8080/swagger-ui.html |
 | AI Service | http://localhost:8000 |
+| Mailpit inbox | http://localhost:8025 |
 | Postgres | localhost:**5434** |
 
-The Vite dev server proxies `/api` and `/ai` to the containers, mirroring what nginx does in production — so the app uses relative paths everywhere and the frontend needs no environment file at all.
+The Vite dev server proxies `/api` to the backend container, mirroring what nginx does in production — so the app uses relative paths everywhere and the frontend needs no environment file at all.
 
 > Postgres is published on **5434**, not 5432, because a locally installed PostgreSQL usually occupies 5432/5433. Change `DB_PORT` in `.env` if you need a different one. Containers always reach it internally on 5432.
 
@@ -257,11 +288,54 @@ No client secret is needed. The browser obtains an ID token and the backend veri
 
 **Account linking.** Signing in with Google using an address that already has a password account links the two, and afterwards either method works. Linking only happens when Google reports the address as verified, so an unverified Google account cannot claim an existing user. A Google-only account has no password until one is set through **Forgot password**, at which point both methods work.
 
+The Android app needs its own OAuth client as well; see [mobile-app/README.md](mobile-app/README.md#google-sign-in-setup).
+
 ### Inspecting the database
 
 Connect any client (pgAdmin, DBeaver) to `localhost:5434`, database `cultivation`, user/password `postgres`. `scripts/analysis-queries.sql` has ready-made queries for profit per crop, spend by category, monthly burn and revenue per acre.
 
 Data lives in the `pgdata` volume and survives `docker compose down`. To wipe and start fresh: `docker compose down -v`.
+
+---
+
+## Mobile App
+
+The Flutter app in [`mobile-app/`](mobile-app/README.md) uses the same API and the same accounts as the website.
+
+**Install it:** every CI run builds a release APK pointed at the live server. Download it from the run's **Artifacts** (`agromaster-android`) on the [Actions page](https://github.com/minidu10/cultivation-help-app/actions/workflows/ci.yml) and install it on an Android phone.
+
+**Run it locally** against the backend from step 2:
+
+```bash
+cd mobile-app
+flutter pub get
+flutter run                                                    # emulator: reaches the host at 10.0.2.2:8080
+flutter run --dart-define=API_BASE_URL=http://<laptop-ip>:8080/api   # a phone on the same Wi-Fi
+```
+
+Debug builds allow plain HTTP for this; release builds only talk HTTPS. Offline mode, push notification setup and the app's architecture are covered in [mobile-app/README.md](mobile-app/README.md).
+
+---
+
+## Testing
+
+```bash
+# Backend: unit tests, plus integration tests against a real Postgres (Docker must be running)
+cd backend && ./mvnw verify            # coverage report: target/site/jacoco/index.html
+
+# Web
+cd frontend-web && npm test
+
+# AI service
+cd ai-service && pip install -r requirements-dev.txt && ruff check . && pytest
+
+# Mobile
+cd mobile-app && flutter analyze && flutter test
+```
+
+The backend integration tests run the real Flyway migrations on a Testcontainers Postgres, with the AI service, OpenWeather and FCM stubbed. They cover sign-up with emailed codes, refresh-token rotation and reuse detection, one farmer being unable to read or change another's crops, profit and loss figures, validation errors, rate limiting, digest de-duplication, weather alerts, crop doctor uploads, offline replays, push registration and account deletion. The weather rules and photo processing have their own unit tests.
+
+The web suite covers the session and token refresh, the dashboard, expense editing, weather alerts and the crop doctor. The mobile suite runs the refresh logic against a fake backend that, like the real one, accepts each refresh token once, and covers sign-in, sign-up, crops, the dashboard, weather alerts, the crop doctor, the offline outbox and push registration.
 
 ---
 
@@ -277,7 +351,7 @@ cd cultivation-help-app && bash deploy/bootstrap.sh
 ```
 
 It creates swap, installs Docker, writes `.env`, issues a TLS certificate,
-builds the images and installs a boot service.
+pulls the images CI published and installs a boot service.
 
 The instance is designed to be **stopped between uses**. On each start the boot
 service updates DNS to the new public IP, starts the containers from prebuilt
@@ -295,26 +369,30 @@ steps. The database is on Neon, so nothing is lost while the server is off.
 
 ## CI/CD
 
-Every push to `main` runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
+Every push to `main` and every pull request runs [`.github/workflows/ci.yml`](.github/workflows/ci.yml):
 
 ```
-backend  → mvnw verify                          ┐ every push
-frontend → npm ci, eslint, build                ┘ and pull request
+backend    → mvnw verify: unit + Testcontainers tests, JaCoCo coverage   ┐
+frontend   → npm ci, eslint, vitest, build                               │ every push
+ai-service → ruff, pytest                                                │ and pull request
+mobile     → generated code is current, analyze, test, release APK       ┘
 
-images   → build 3 images, push to ghcr.io      ┐ main only
-deploy   → ssh to EC2, pull, restart            ┘
+images     → build 3 images, push to ghcr.io     ┐ main only, after backend,
+deploy     → ssh to EC2, pull, restart           ┘ frontend and ai-service pass
 ```
 
 Images are built **in CI, never on the server** — the instance has no JDK,
 Maven or Node. Each image is tagged `:latest` and `:<commit-sha>`, so rolling
-back is `IMAGE_TAG=<sha>` and a restart.
+back is `IMAGE_TAG=<sha>` and a restart. The deploy step stops at the first
+command that fails, so a release that does not come up healthy fails the job.
 
-**Required GitHub Secrets** (Settings → Secrets and variables → Actions):
+**GitHub Secrets** (Settings → Secrets and variables → Actions):
 
 | Secret | Value |
 |---|---|
 | `EC2_HOST` | The DuckDNS hostname — **not an IP**, which changes on every restart |
 | `EC2_SSH_KEY` | Full contents of the `.pem`, including the BEGIN and END lines |
+| `FIREBASE_API_KEY`, `FIREBASE_APP_ID`, `FIREBASE_SENDER_ID`, `FIREBASE_PROJECT_ID` | Optional. Built into the APK for push notifications; without them push is off |
 
 Publishing needs no secret: the workflow's built-in `GITHUB_TOKEN` has
 `packages: write`.
@@ -342,8 +420,8 @@ docker compose restart
 # Full stop
 docker compose down
 
-# Hard reset (removes containers, images, volumes)
-docker system prune -af --volumes
+# Full stop and delete the local database volume
+docker compose down -v
 ```
 
 ---
@@ -372,6 +450,7 @@ All configuration lives in the root `.env`. The frontend has no environment file
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `COMPOSE_PROFILES` | Yes | `local` or `prod` — decides which services start |
+| `IMAGE_TAG` | No | Image tag to run. `latest` follows `main`; a commit SHA rolls back |
 | `DB_URL` | Yes | PostgreSQL JDBC URL, without credentials. Local: `jdbc:postgresql://db:5432/cultivation` |
 | `DB_USERNAME` | Yes | Database username |
 | `DB_PASSWORD` | Yes | Database password |
@@ -409,11 +488,13 @@ All configuration lives in the root `.env`. The frontend has no environment file
 
 ## Security Checklist
 
-- Never commit `.env` files to Git
-- Use a strong random `JWT_SECRET` (32+ characters)
-- Restrict RDS inbound rules to EC2 security group only
-- Keep SSL certificates up to date (auto-renew cron above)
-- Rotate API keys and database passwords periodically
+- Never commit `.env` files to Git (`*.env` is ignored)
+- Use a strong random `JWT_SECRET` (32+ characters); the backend refuses to start without one
+- In production set `HOST_BIND=127.0.0.1` and leave `SWAGGER_ENABLED=false`, so nginx is the only way in
+- Allow SSH (port 22) only from your own IP in the EC2 security group; only 80 and 443 are open to everyone
+- Connect to Neon with `sslmode=require`
+- Rotate API keys, the database password and the Firebase service account key periodically
+- TLS certificates renew themselves on boot (see TLS renewal above)
 
 ---
 

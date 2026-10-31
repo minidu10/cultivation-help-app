@@ -194,6 +194,9 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            # Stop at the first failed command, so an unhealthy release
+            # fails this job instead of ending green on `docker compose ps`.
+            set -e
             cd ~/cultivation-help-app
             git pull --ff-only
             docker compose pull -q
