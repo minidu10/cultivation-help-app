@@ -21,6 +21,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.cultivation.app.dto.WeatherAlertResponse;
 import com.cultivation.app.entity.Reminder;
 import com.cultivation.app.entity.ReminderNotification;
 import com.cultivation.app.entity.User;
@@ -54,17 +55,20 @@ public class ReminderNotificationJob {
     private final ReminderRepository reminderRepository;
     private final ReminderNotificationRepository notificationRepository;
     private final MailService mailService;
+    private final WeatherAlertService weatherAlertService;
     private final boolean enabled;
     private final List<Integer> leadDays;
 
     public ReminderNotificationJob(ReminderRepository reminderRepository,
                                    ReminderNotificationRepository notificationRepository,
                                    MailService mailService,
+                                   WeatherAlertService weatherAlertService,
                                    @Value("${app.reminders.email-enabled:true}") boolean enabled,
                                    @Value("${app.reminders.lead-days:2,1}") List<Integer> leadDays) {
         this.reminderRepository = reminderRepository;
         this.notificationRepository = notificationRepository;
         this.mailService = mailService;
+        this.weatherAlertService = weatherAlertService;
         this.enabled = enabled;
         // Descending, so the digest reads furthest-out first.
         this.leadDays = leadDays.stream().distinct().sorted(Comparator.reverseOrder()).toList();
@@ -119,7 +123,7 @@ public class ReminderNotificationJob {
                 mailService.sendReminderDigest(
                     user.getEmail(),
                     user.getFullName(),
-                    buildDigest(today, reminders),
+                    buildDigest(today, reminders, weatherFor(user, reminders)),
                     reminders.size());
 
                 // Recorded only after a successful send, so a mail failure is
@@ -133,12 +137,25 @@ public class ReminderNotificationJob {
         }
     }
 
+    /**
+     * Weather warnings for the tasks in this digest. The email goes out with
+     * or without them: a forecast outage must not cost anyone their reminder.
+     */
+    private Map<Long, WeatherAlertResponse> weatherFor(User user, List<Reminder> reminders) {
+        try {
+            return weatherAlertService.alertsByReminder(user, reminders);
+        } catch (RuntimeException ex) {
+            log.warn("Weather alerts unavailable for digest to {}: {}", user.getEmail(), ex.getMessage());
+            return Map.of();
+        }
+    }
+
     private static int daysAhead(LocalDate today, Reminder reminder) {
         return (int) ChronoUnit.DAYS.between(today, reminder.getReminderAt().toLocalDate());
     }
 
     /** Groups the reminders under a plain-language heading per day. */
-    private String buildDigest(LocalDate today, List<Reminder> reminders) {
+    private String buildDigest(LocalDate today, List<Reminder> reminders, Map<Long, WeatherAlertResponse> weather) {
         Map<Integer, List<Reminder>> byLead = new LinkedHashMap<>();
         for (Integer lead : leadDays) {
             List<Reminder> forLead = reminders.stream()
@@ -165,6 +182,10 @@ public class ReminderNotificationJob {
                        .append(" at ").append(r.getReminderAt().format(TIME_FMT)).append('\n');
                 if (r.getNote() != null && !r.getNote().isBlank()) {
                     section.append("    ").append(r.getNote().trim()).append('\n');
+                }
+                WeatherAlertResponse alert = weather.get(r.getId());
+                if (alert != null) {
+                    section.append("    WEATHER: ").append(alert.message()).append('\n');
                 }
             }
             sections.add(section.toString());

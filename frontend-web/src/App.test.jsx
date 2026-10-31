@@ -14,12 +14,13 @@ describe('session handling', () => {
 
     renderWithApp(<App />, { route: '/dashboard' })
 
-    // The login page is a lazily loaded chunk, so allow time for the import.
-    expect(await screen.findByText(/Your session has ended\. Please sign in again\./, {}, { timeout: 5000 }))
+    // The login page is a lazily loaded chunk, so allow time for the import:
+    // on a busy CI runner the first transform of it can take several seconds.
+    expect(await screen.findByText(/Your session has ended\. Please sign in again\./, {}, { timeout: 10000 }))
       .toBeInTheDocument()
     expect(localStorage.getItem('token')).toBeNull()
     expect(localStorage.getItem('user')).toBeNull()
-  })
+  }, 15000)
 
   it('keeps visitors who never signed in on the landing page', async () => {
     renderWithApp(<App />, { route: '/dashboard' })

@@ -85,9 +85,9 @@ describe('DashboardPage', () => {
     server.use(
       http.get('/api/dashboard/summary', () => HttpResponse.json(SUMMARY)),
       http.get('/api/weather/current/by-location', () => HttpResponse.json({ message: 'Location not found' }, { status: 404 })),
-      http.get('/api/weather/forecast/by-location', () => HttpResponse.json({ message: 'Location not found' }, { status: 404 })),
+      http.get('/api/weather/daily/by-location', () => HttpResponse.json({ message: 'Location not found' }, { status: 404 })),
       http.get('/api/weather/current', () => HttpResponse.json({ location: 'Colombo, LK', temperatureC: 31, description: 'scattered clouds' })),
-      http.get('/api/weather/forecast', () => HttpResponse.json({ location: 'Colombo, LK', items: [] })),
+      http.get('/api/weather/daily', () => HttpResponse.json({ location: 'Colombo, LK', days: [] })),
     )
 
     renderWithApp(<DashboardPage />)

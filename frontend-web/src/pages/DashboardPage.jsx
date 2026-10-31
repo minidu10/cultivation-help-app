@@ -5,12 +5,13 @@ import {
 } from 'recharts'
 import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
+import WeatherAlerts from '../components/WeatherAlerts'
 import { useAuth } from '../context/AuthContext'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { getDashboardSummary, getDueReminders, updateCropReminder, getCropInsight } from '../api/crops'
 import {
   getCurrentWeather, getCurrentWeatherByLocation,
-  getWeatherForecast, getWeatherForecastByLocation,
+  getDailyForecast, getDailyForecastByLocation, getWeatherAlerts,
 } from '../api/weather'
 
 const CHART_COLORS = ['#4ade80', '#f87171', '#60a5fa', '#f59e0b', '#c084fc']
@@ -73,28 +74,50 @@ export default function DashboardPage() {
   const [weatherError, setWeatherError] = useState('')
   const [cropWeatherById, setCropWeatherById] = useState({})
   const [dueReminders, setDueReminders] = useState([])
+  const [alerts, setAlerts] = useState([])
+  const [movingReminderId, setMovingReminderId] = useState(null)
 
   useEffect(() => {
     loadDashboard()
     loadWeather()
+    loadAlerts()
   }, [])
 
   const fetchWeatherByCoords = async (lat, lon) => {
-    const [currentRes, forecastRes] = await Promise.all([
+    const [currentRes, dailyRes] = await Promise.all([
       getCurrentWeather(lat, lon),
-      getWeatherForecast(lat, lon, 5),
+      getDailyForecast(lat, lon),
     ])
     setWeatherCurrent(currentRes.data)
-    setWeatherForecast(forecastRes.data?.items ?? [])
+    setWeatherForecast(dailyRes.data?.days ?? [])
   }
 
   const fetchWeatherByLocation = async (location) => {
-    const [currentRes, forecastRes] = await Promise.all([
+    const [currentRes, dailyRes] = await Promise.all([
       getCurrentWeatherByLocation(location),
-      getWeatherForecastByLocation(location, 5),
+      getDailyForecastByLocation(location),
     ])
     setWeatherCurrent(currentRes.data)
-    setWeatherForecast(forecastRes.data?.items ?? [])
+    setWeatherForecast(dailyRes.data?.days ?? [])
+  }
+
+  // Fetched alongside the summary rather than inside it, so a slow forecast
+  // never holds up the figures. Failing quietly is right: alerts are advice.
+  const loadAlerts = async () => {
+    try { const res = await getWeatherAlerts(); setAlerts(res.data) }
+    catch { setAlerts([]) }
+  }
+
+  const moveReminder = async (alert) => {
+    setMovingReminderId(alert.reminderId)
+    try {
+      await updateCropReminder(alert.cropId, alert.reminderId, { reminderAt: alert.suggestedAt })
+      await Promise.all([loadAlerts(), loadDueReminders()])
+    } catch {
+      // Leave the alert in place so the user can retry.
+    } finally {
+      setMovingReminderId(null)
+    }
   }
 
   // Saved city first, then the browser's position, then Colombo. Each step
@@ -193,10 +216,6 @@ export default function DashboardPage() {
   const activeCrops = totals?.activeCrops ?? 0
   const totalCrops = totals?.totalCrops ?? 0
 
-  const weatherAlerts = []
-  if ((weatherCurrent?.temperatureC ?? 0) >= 34) weatherAlerts.push('High heat today. Check irrigation timing and mulch moisture retention.')
-  if ((weatherCurrent?.rainMm ?? 0) > 0) weatherAlerts.push('Rain has started. Avoid pesticide spraying until conditions clear.')
-  if (weatherForecast.some(f => (f.rainChancePercent ?? 0) >= 60)) weatherAlerts.push('Strong rain chance in forecast. Plan drainage and postpone field spraying.')
 
   const pieData = [
     { name: 'Revenue', value: totalRevenue },
@@ -247,6 +266,9 @@ export default function DashboardPage() {
         <StatCard title="Net Profit"      value={`Rs. ${netProfit.toLocaleString()}`} sub={netProfit >= 0 ? 'Profitable ✓' : 'Loss'} color={netProfit >= 0 ? 'green' : 'red'} icon="📈" />
         <StatCard title="Active Crops"    value={activeCrops} sub={`${totalCrops} total`} color="blue" icon="🌾" />
       </div>
+
+      {/* Weather risks to planned tasks: above the charts, because they need acting on */}
+      <WeatherAlerts alerts={alerts} onMove={moveReminder} movingId={movingReminderId} />
 
       {/* Charts row */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '16px', marginBottom: '20px' }}>
@@ -320,22 +342,20 @@ export default function DashboardPage() {
 
               {weatherForecast.length > 0 && (
                 <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(weatherForecast.length, 5)}, 1fr)`, gap: '6px', marginBottom: '12px' }}>
-                  {weatherForecast.slice(0, 5).map((item, idx) => (
-                    <div key={idx} style={{ textAlign: 'center', background: 'var(--bg-input)', borderRadius: '10px', padding: '8px 4px', border: '1px solid var(--border)' }}>
-                      <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>{item.dateTime?.slice(5, 13) || '-'}</div>
-                      {item.iconUrl && <img src={item.iconUrl} alt="" style={{ width: 28, height: 28, margin: '0 auto 4px', display: 'block' }} />}
-                      <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{Math.round(item.temperatureC ?? 0)}°</div>
-                      <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '10px', color: '#60a5fa' }}>{item.rainChancePercent ?? 0}%</div>
+                  {weatherForecast.slice(0, 5).map((day) => (
+                    <div key={day.date} style={{ textAlign: 'center', background: 'var(--bg-input)', borderRadius: '10px', padding: '8px 4px', border: '1px solid var(--border)' }}>
+                      <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                        {new Date(`${day.date}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'short' })}
+                      </div>
+                      {day.iconUrl && <img src={day.iconUrl} alt={day.description || ''} style={{ width: 28, height: 28, margin: '0 auto 4px', display: 'block' }} />}
+                      <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {Math.round(day.maxTempC ?? 0)}° <span style={{ fontWeight: 400, color: 'var(--text-faint)' }}>{Math.round(day.minTempC ?? 0)}°</span>
+                      </div>
+                      <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '10px', color: '#60a5fa' }}>{day.rainChancePercent ?? 0}%</div>
                     </div>
                   ))}
                 </div>
               )}
-
-              {weatherAlerts.map((alert, idx) => (
-                <div key={idx} style={{ marginTop: '8px', padding: '10px 12px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px' }}>
-                  <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: '#f59e0b' }}>⚠ {alert}</span>
-                </div>
-              ))}
             </>
           ) : (
             <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)' }}>No weather data available.</p>

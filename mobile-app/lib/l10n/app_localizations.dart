@@ -1365,6 +1365,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'AgroMaster helps Sri Lankan farmers see whether each crop actually made money.'**
   String get aboutBody;
+
+  /// No description provided for @alertsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Weather alerts for your plans'**
+  String get alertsTitle;
+
+  /// No description provided for @alertWashoffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain may wash it off'**
+  String get alertWashoffTitle;
+
+  /// No description provided for @alertWindTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Too windy to spray'**
+  String get alertWindTitle;
+
+  /// No description provided for @alertIrrigationTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain will do the watering'**
+  String get alertIrrigationTitle;
+
+  /// No description provided for @alertHarvestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain on harvest day'**
+  String get alertHarvestTitle;
+
+  /// No description provided for @alertHeatTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Heat stress'**
+  String get alertHeatTitle;
+
+  /// No description provided for @alertWashoffBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain likely on {day} ({chance}% chance). \"{task}\" for {crop} may wash off before it soaks in.'**
+  String alertWashoffBody(String day, int chance, String task, String crop);
+
+  /// No description provided for @alertWindBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Wind up to {speed} m/s on {day}. Spray for {crop} will drift off target.'**
+  String alertWindBody(String speed, String day, String crop);
+
+  /// No description provided for @alertIrrigationBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain expected on {day} ({chance}% chance). You can probably skip \"{task}\" for {crop} and save the water.'**
+  String alertIrrigationBody(String day, int chance, String task, String crop);
+
+  /// No description provided for @alertHarvestBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Rain likely on {day} ({chance}% chance). Harvesting {crop} wet risks spoilage in storage.'**
+  String alertHarvestBody(String day, int chance, String crop);
+
+  /// No description provided for @alertHeatBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {temp}°C at {place} on {day}. Water {crops} early morning or evening, and mulch to hold moisture.'**
+  String alertHeatBody(int temp, String place, String day, String crops);
+
+  /// No description provided for @moveTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to {when}'**
+  String moveTo(String when);
+
+  /// No description provided for @rescheduledTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Rescheduled to {when}'**
+  String rescheduledTo(String when);
 }
 
 class _AppLocalizationsDelegate

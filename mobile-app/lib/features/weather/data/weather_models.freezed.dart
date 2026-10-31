@@ -297,42 +297,42 @@ as String?,
 
 
 /// @nodoc
-mixin _$Forecast {
+mixin _$DailyForecast {
 
- String? get location; List<ForecastItem> get items;
-/// Create a copy of Forecast
+ String? get location; List<ForecastDay> get days;
+/// Create a copy of DailyForecast
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$ForecastCopyWith<Forecast> get copyWith => _$ForecastCopyWithImpl<Forecast>(this as Forecast, _$identity);
+$DailyForecastCopyWith<DailyForecast> get copyWith => _$DailyForecastCopyWithImpl<DailyForecast>(this as DailyForecast, _$identity);
 
-  /// Serializes this Forecast to a JSON map.
+  /// Serializes this DailyForecast to a JSON map.
   Map<String, dynamic> toJson();
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Forecast&&(identical(other.location, location) || other.location == location)&&const DeepCollectionEquality().equals(other.items, items));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is DailyForecast&&(identical(other.location, location) || other.location == location)&&const DeepCollectionEquality().equals(other.days, days));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,location,const DeepCollectionEquality().hash(items));
+int get hashCode => Object.hash(runtimeType,location,const DeepCollectionEquality().hash(days));
 
 @override
 String toString() {
-  return 'Forecast(location: $location, items: $items)';
+  return 'DailyForecast(location: $location, days: $days)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $ForecastCopyWith<$Res>  {
-  factory $ForecastCopyWith(Forecast value, $Res Function(Forecast) _then) = _$ForecastCopyWithImpl;
+abstract mixin class $DailyForecastCopyWith<$Res>  {
+  factory $DailyForecastCopyWith(DailyForecast value, $Res Function(DailyForecast) _then) = _$DailyForecastCopyWithImpl;
 @useResult
 $Res call({
- String? location, List<ForecastItem> items
+ String? location, List<ForecastDay> days
 });
 
 
@@ -340,28 +340,28 @@ $Res call({
 
 }
 /// @nodoc
-class _$ForecastCopyWithImpl<$Res>
-    implements $ForecastCopyWith<$Res> {
-  _$ForecastCopyWithImpl(this._self, this._then);
+class _$DailyForecastCopyWithImpl<$Res>
+    implements $DailyForecastCopyWith<$Res> {
+  _$DailyForecastCopyWithImpl(this._self, this._then);
 
-  final Forecast _self;
-  final $Res Function(Forecast) _then;
+  final DailyForecast _self;
+  final $Res Function(DailyForecast) _then;
 
-/// Create a copy of Forecast
+/// Create a copy of DailyForecast
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? location = freezed,Object? items = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? location = freezed,Object? days = null,}) {
   return _then(_self.copyWith(
 location: freezed == location ? _self.location : location // ignore: cast_nullable_to_non_nullable
-as String?,items: null == items ? _self.items : items // ignore: cast_nullable_to_non_nullable
-as List<ForecastItem>,
+as String?,days: null == days ? _self.days : days // ignore: cast_nullable_to_non_nullable
+as List<ForecastDay>,
   ));
 }
 
 }
 
 
-/// Adds pattern-matching-related methods to [Forecast].
-extension ForecastPatterns on Forecast {
+/// Adds pattern-matching-related methods to [DailyForecast].
+extension DailyForecastPatterns on DailyForecast {
 /// A variant of `map` that fallback to returning `orElse`.
 ///
 /// It is equivalent to doing:
@@ -374,10 +374,10 @@ extension ForecastPatterns on Forecast {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _Forecast value)?  $default,{required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _DailyForecast value)?  $default,{required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case _Forecast() when $default != null:
+case _DailyForecast() when $default != null:
 return $default(_that);case _:
   return orElse();
 
@@ -396,10 +396,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _Forecast value)  $default,){
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _DailyForecast value)  $default,){
 final _that = this;
 switch (_that) {
-case _Forecast():
+case _DailyForecast():
 return $default(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -417,10 +417,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _Forecast value)?  $default,){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _DailyForecast value)?  $default,){
 final _that = this;
 switch (_that) {
-case _Forecast() when $default != null:
+case _DailyForecast() when $default != null:
 return $default(_that);case _:
   return null;
 
@@ -438,10 +438,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? location,  List<ForecastItem> items)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? location,  List<ForecastDay> days)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case _Forecast() when $default != null:
-return $default(_that.location,_that.items);case _:
+case _DailyForecast() when $default != null:
+return $default(_that.location,_that.days);case _:
   return orElse();
 
 }
@@ -459,10 +459,10 @@ return $default(_that.location,_that.items);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? location,  List<ForecastItem> items)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? location,  List<ForecastDay> days)  $default,) {final _that = this;
 switch (_that) {
-case _Forecast():
-return $default(_that.location,_that.items);case _:
+case _DailyForecast():
+return $default(_that.location,_that.days);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -479,10 +479,10 @@ return $default(_that.location,_that.items);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? location,  List<ForecastItem> items)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? location,  List<ForecastDay> days)?  $default,) {final _that = this;
 switch (_that) {
-case _Forecast() when $default != null:
-return $default(_that.location,_that.items);case _:
+case _DailyForecast() when $default != null:
+return $default(_that.location,_that.days);case _:
   return null;
 
 }
@@ -493,53 +493,53 @@ return $default(_that.location,_that.items);case _:
 /// @nodoc
 @JsonSerializable()
 
-class _Forecast implements Forecast {
-  const _Forecast({this.location, final  List<ForecastItem> items = const []}): _items = items;
-  factory _Forecast.fromJson(Map<String, dynamic> json) => _$ForecastFromJson(json);
+class _DailyForecast implements DailyForecast {
+  const _DailyForecast({this.location, final  List<ForecastDay> days = const []}): _days = days;
+  factory _DailyForecast.fromJson(Map<String, dynamic> json) => _$DailyForecastFromJson(json);
 
 @override final  String? location;
- final  List<ForecastItem> _items;
-@override@JsonKey() List<ForecastItem> get items {
-  if (_items is EqualUnmodifiableListView) return _items;
+ final  List<ForecastDay> _days;
+@override@JsonKey() List<ForecastDay> get days {
+  if (_days is EqualUnmodifiableListView) return _days;
   // ignore: implicit_dynamic_type
-  return EqualUnmodifiableListView(_items);
+  return EqualUnmodifiableListView(_days);
 }
 
 
-/// Create a copy of Forecast
+/// Create a copy of DailyForecast
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-_$ForecastCopyWith<_Forecast> get copyWith => __$ForecastCopyWithImpl<_Forecast>(this, _$identity);
+_$DailyForecastCopyWith<_DailyForecast> get copyWith => __$DailyForecastCopyWithImpl<_DailyForecast>(this, _$identity);
 
 @override
 Map<String, dynamic> toJson() {
-  return _$ForecastToJson(this, );
+  return _$DailyForecastToJson(this, );
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Forecast&&(identical(other.location, location) || other.location == location)&&const DeepCollectionEquality().equals(other._items, _items));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _DailyForecast&&(identical(other.location, location) || other.location == location)&&const DeepCollectionEquality().equals(other._days, _days));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,location,const DeepCollectionEquality().hash(_items));
+int get hashCode => Object.hash(runtimeType,location,const DeepCollectionEquality().hash(_days));
 
 @override
 String toString() {
-  return 'Forecast(location: $location, items: $items)';
+  return 'DailyForecast(location: $location, days: $days)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class _$ForecastCopyWith<$Res> implements $ForecastCopyWith<$Res> {
-  factory _$ForecastCopyWith(_Forecast value, $Res Function(_Forecast) _then) = __$ForecastCopyWithImpl;
+abstract mixin class _$DailyForecastCopyWith<$Res> implements $DailyForecastCopyWith<$Res> {
+  factory _$DailyForecastCopyWith(_DailyForecast value, $Res Function(_DailyForecast) _then) = __$DailyForecastCopyWithImpl;
 @override @useResult
 $Res call({
- String? location, List<ForecastItem> items
+ String? location, List<ForecastDay> days
 });
 
 
@@ -547,20 +547,20 @@ $Res call({
 
 }
 /// @nodoc
-class __$ForecastCopyWithImpl<$Res>
-    implements _$ForecastCopyWith<$Res> {
-  __$ForecastCopyWithImpl(this._self, this._then);
+class __$DailyForecastCopyWithImpl<$Res>
+    implements _$DailyForecastCopyWith<$Res> {
+  __$DailyForecastCopyWithImpl(this._self, this._then);
 
-  final _Forecast _self;
-  final $Res Function(_Forecast) _then;
+  final _DailyForecast _self;
+  final $Res Function(_DailyForecast) _then;
 
-/// Create a copy of Forecast
+/// Create a copy of DailyForecast
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? location = freezed,Object? items = null,}) {
-  return _then(_Forecast(
+@override @pragma('vm:prefer-inline') $Res call({Object? location = freezed,Object? days = null,}) {
+  return _then(_DailyForecast(
 location: freezed == location ? _self.location : location // ignore: cast_nullable_to_non_nullable
-as String?,items: null == items ? _self._items : items // ignore: cast_nullable_to_non_nullable
-as List<ForecastItem>,
+as String?,days: null == days ? _self._days : days // ignore: cast_nullable_to_non_nullable
+as List<ForecastDay>,
   ));
 }
 
@@ -569,43 +569,42 @@ as List<ForecastItem>,
 
 
 /// @nodoc
-mixin _$ForecastItem {
+mixin _$ForecastDay {
 
-/// OpenWeather's "2026-05-10 09:00:00", in UTC.
- String? get dateTime; double? get temperatureC; int? get humidity; int get rainChancePercent; String? get description; String? get iconUrl;
-/// Create a copy of ForecastItem
+@DateOnlyConverter() DateTime get date; double get minTempC; double get maxTempC; double get rainMm; int get rainChancePercent; double get maxWindSpeed; String? get description; String? get iconUrl;
+/// Create a copy of ForecastDay
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-$ForecastItemCopyWith<ForecastItem> get copyWith => _$ForecastItemCopyWithImpl<ForecastItem>(this as ForecastItem, _$identity);
+$ForecastDayCopyWith<ForecastDay> get copyWith => _$ForecastDayCopyWithImpl<ForecastDay>(this as ForecastDay, _$identity);
 
-  /// Serializes this ForecastItem to a JSON map.
+  /// Serializes this ForecastDay to a JSON map.
   Map<String, dynamic> toJson();
 
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ForecastItem&&(identical(other.dateTime, dateTime) || other.dateTime == dateTime)&&(identical(other.temperatureC, temperatureC) || other.temperatureC == temperatureC)&&(identical(other.humidity, humidity) || other.humidity == humidity)&&(identical(other.rainChancePercent, rainChancePercent) || other.rainChancePercent == rainChancePercent)&&(identical(other.description, description) || other.description == description)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ForecastDay&&(identical(other.date, date) || other.date == date)&&(identical(other.minTempC, minTempC) || other.minTempC == minTempC)&&(identical(other.maxTempC, maxTempC) || other.maxTempC == maxTempC)&&(identical(other.rainMm, rainMm) || other.rainMm == rainMm)&&(identical(other.rainChancePercent, rainChancePercent) || other.rainChancePercent == rainChancePercent)&&(identical(other.maxWindSpeed, maxWindSpeed) || other.maxWindSpeed == maxWindSpeed)&&(identical(other.description, description) || other.description == description)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,dateTime,temperatureC,humidity,rainChancePercent,description,iconUrl);
+int get hashCode => Object.hash(runtimeType,date,minTempC,maxTempC,rainMm,rainChancePercent,maxWindSpeed,description,iconUrl);
 
 @override
 String toString() {
-  return 'ForecastItem(dateTime: $dateTime, temperatureC: $temperatureC, humidity: $humidity, rainChancePercent: $rainChancePercent, description: $description, iconUrl: $iconUrl)';
+  return 'ForecastDay(date: $date, minTempC: $minTempC, maxTempC: $maxTempC, rainMm: $rainMm, rainChancePercent: $rainChancePercent, maxWindSpeed: $maxWindSpeed, description: $description, iconUrl: $iconUrl)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class $ForecastItemCopyWith<$Res>  {
-  factory $ForecastItemCopyWith(ForecastItem value, $Res Function(ForecastItem) _then) = _$ForecastItemCopyWithImpl;
+abstract mixin class $ForecastDayCopyWith<$Res>  {
+  factory $ForecastDayCopyWith(ForecastDay value, $Res Function(ForecastDay) _then) = _$ForecastDayCopyWithImpl;
 @useResult
 $Res call({
- String? dateTime, double? temperatureC, int? humidity, int rainChancePercent, String? description, String? iconUrl
+@DateOnlyConverter() DateTime date, double minTempC, double maxTempC, double rainMm, int rainChancePercent, double maxWindSpeed, String? description, String? iconUrl
 });
 
 
@@ -613,22 +612,24 @@ $Res call({
 
 }
 /// @nodoc
-class _$ForecastItemCopyWithImpl<$Res>
-    implements $ForecastItemCopyWith<$Res> {
-  _$ForecastItemCopyWithImpl(this._self, this._then);
+class _$ForecastDayCopyWithImpl<$Res>
+    implements $ForecastDayCopyWith<$Res> {
+  _$ForecastDayCopyWithImpl(this._self, this._then);
 
-  final ForecastItem _self;
-  final $Res Function(ForecastItem) _then;
+  final ForecastDay _self;
+  final $Res Function(ForecastDay) _then;
 
-/// Create a copy of ForecastItem
+/// Create a copy of ForecastDay
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? dateTime = freezed,Object? temperatureC = freezed,Object? humidity = freezed,Object? rainChancePercent = null,Object? description = freezed,Object? iconUrl = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? date = null,Object? minTempC = null,Object? maxTempC = null,Object? rainMm = null,Object? rainChancePercent = null,Object? maxWindSpeed = null,Object? description = freezed,Object? iconUrl = freezed,}) {
   return _then(_self.copyWith(
-dateTime: freezed == dateTime ? _self.dateTime : dateTime // ignore: cast_nullable_to_non_nullable
-as String?,temperatureC: freezed == temperatureC ? _self.temperatureC : temperatureC // ignore: cast_nullable_to_non_nullable
-as double?,humidity: freezed == humidity ? _self.humidity : humidity // ignore: cast_nullable_to_non_nullable
-as int?,rainChancePercent: null == rainChancePercent ? _self.rainChancePercent : rainChancePercent // ignore: cast_nullable_to_non_nullable
-as int,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
+as DateTime,minTempC: null == minTempC ? _self.minTempC : minTempC // ignore: cast_nullable_to_non_nullable
+as double,maxTempC: null == maxTempC ? _self.maxTempC : maxTempC // ignore: cast_nullable_to_non_nullable
+as double,rainMm: null == rainMm ? _self.rainMm : rainMm // ignore: cast_nullable_to_non_nullable
+as double,rainChancePercent: null == rainChancePercent ? _self.rainChancePercent : rainChancePercent // ignore: cast_nullable_to_non_nullable
+as int,maxWindSpeed: null == maxWindSpeed ? _self.maxWindSpeed : maxWindSpeed // ignore: cast_nullable_to_non_nullable
+as double,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,iconUrl: freezed == iconUrl ? _self.iconUrl : iconUrl // ignore: cast_nullable_to_non_nullable
 as String?,
   ));
@@ -637,8 +638,8 @@ as String?,
 }
 
 
-/// Adds pattern-matching-related methods to [ForecastItem].
-extension ForecastItemPatterns on ForecastItem {
+/// Adds pattern-matching-related methods to [ForecastDay].
+extension ForecastDayPatterns on ForecastDay {
 /// A variant of `map` that fallback to returning `orElse`.
 ///
 /// It is equivalent to doing:
@@ -651,10 +652,10 @@ extension ForecastItemPatterns on ForecastItem {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _ForecastItem value)?  $default,{required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _ForecastDay value)?  $default,{required TResult orElse(),}){
 final _that = this;
 switch (_that) {
-case _ForecastItem() when $default != null:
+case _ForecastDay() when $default != null:
 return $default(_that);case _:
   return orElse();
 
@@ -673,10 +674,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _ForecastItem value)  $default,){
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _ForecastDay value)  $default,){
 final _that = this;
 switch (_that) {
-case _ForecastItem():
+case _ForecastDay():
 return $default(_that);case _:
   throw StateError('Unexpected subclass');
 
@@ -694,10 +695,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _ForecastItem value)?  $default,){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _ForecastDay value)?  $default,){
 final _that = this;
 switch (_that) {
-case _ForecastItem() when $default != null:
+case _ForecastDay() when $default != null:
 return $default(_that);case _:
   return null;
 
@@ -715,10 +716,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String? dateTime,  double? temperatureC,  int? humidity,  int rainChancePercent,  String? description,  String? iconUrl)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@DateOnlyConverter()  DateTime date,  double minTempC,  double maxTempC,  double rainMm,  int rainChancePercent,  double maxWindSpeed,  String? description,  String? iconUrl)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
-case _ForecastItem() when $default != null:
-return $default(_that.dateTime,_that.temperatureC,_that.humidity,_that.rainChancePercent,_that.description,_that.iconUrl);case _:
+case _ForecastDay() when $default != null:
+return $default(_that.date,_that.minTempC,_that.maxTempC,_that.rainMm,_that.rainChancePercent,_that.maxWindSpeed,_that.description,_that.iconUrl);case _:
   return orElse();
 
 }
@@ -736,10 +737,10 @@ return $default(_that.dateTime,_that.temperatureC,_that.humidity,_that.rainChanc
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String? dateTime,  double? temperatureC,  int? humidity,  int rainChancePercent,  String? description,  String? iconUrl)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@DateOnlyConverter()  DateTime date,  double minTempC,  double maxTempC,  double rainMm,  int rainChancePercent,  double maxWindSpeed,  String? description,  String? iconUrl)  $default,) {final _that = this;
 switch (_that) {
-case _ForecastItem():
-return $default(_that.dateTime,_that.temperatureC,_that.humidity,_that.rainChancePercent,_that.description,_that.iconUrl);case _:
+case _ForecastDay():
+return $default(_that.date,_that.minTempC,_that.maxTempC,_that.rainMm,_that.rainChancePercent,_that.maxWindSpeed,_that.description,_that.iconUrl);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -756,10 +757,10 @@ return $default(_that.dateTime,_that.temperatureC,_that.humidity,_that.rainChanc
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String? dateTime,  double? temperatureC,  int? humidity,  int rainChancePercent,  String? description,  String? iconUrl)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@DateOnlyConverter()  DateTime date,  double minTempC,  double maxTempC,  double rainMm,  int rainChancePercent,  double maxWindSpeed,  String? description,  String? iconUrl)?  $default,) {final _that = this;
 switch (_that) {
-case _ForecastItem() when $default != null:
-return $default(_that.dateTime,_that.temperatureC,_that.humidity,_that.rainChancePercent,_that.description,_that.iconUrl);case _:
+case _ForecastDay() when $default != null:
+return $default(_that.date,_that.minTempC,_that.maxTempC,_that.rainMm,_that.rainChancePercent,_that.maxWindSpeed,_that.description,_that.iconUrl);case _:
   return null;
 
 }
@@ -770,52 +771,53 @@ return $default(_that.dateTime,_that.temperatureC,_that.humidity,_that.rainChanc
 /// @nodoc
 @JsonSerializable()
 
-class _ForecastItem implements ForecastItem {
-  const _ForecastItem({this.dateTime, this.temperatureC, this.humidity, this.rainChancePercent = 0, this.description, this.iconUrl});
-  factory _ForecastItem.fromJson(Map<String, dynamic> json) => _$ForecastItemFromJson(json);
+class _ForecastDay implements ForecastDay {
+  const _ForecastDay({@DateOnlyConverter() required this.date, this.minTempC = 0, this.maxTempC = 0, this.rainMm = 0, this.rainChancePercent = 0, this.maxWindSpeed = 0, this.description, this.iconUrl});
+  factory _ForecastDay.fromJson(Map<String, dynamic> json) => _$ForecastDayFromJson(json);
 
-/// OpenWeather's "2026-05-10 09:00:00", in UTC.
-@override final  String? dateTime;
-@override final  double? temperatureC;
-@override final  int? humidity;
+@override@DateOnlyConverter() final  DateTime date;
+@override@JsonKey() final  double minTempC;
+@override@JsonKey() final  double maxTempC;
+@override@JsonKey() final  double rainMm;
 @override@JsonKey() final  int rainChancePercent;
+@override@JsonKey() final  double maxWindSpeed;
 @override final  String? description;
 @override final  String? iconUrl;
 
-/// Create a copy of ForecastItem
+/// Create a copy of ForecastDay
 /// with the given fields replaced by the non-null parameter values.
 @override @JsonKey(includeFromJson: false, includeToJson: false)
 @pragma('vm:prefer-inline')
-_$ForecastItemCopyWith<_ForecastItem> get copyWith => __$ForecastItemCopyWithImpl<_ForecastItem>(this, _$identity);
+_$ForecastDayCopyWith<_ForecastDay> get copyWith => __$ForecastDayCopyWithImpl<_ForecastDay>(this, _$identity);
 
 @override
 Map<String, dynamic> toJson() {
-  return _$ForecastItemToJson(this, );
+  return _$ForecastDayToJson(this, );
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ForecastItem&&(identical(other.dateTime, dateTime) || other.dateTime == dateTime)&&(identical(other.temperatureC, temperatureC) || other.temperatureC == temperatureC)&&(identical(other.humidity, humidity) || other.humidity == humidity)&&(identical(other.rainChancePercent, rainChancePercent) || other.rainChancePercent == rainChancePercent)&&(identical(other.description, description) || other.description == description)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ForecastDay&&(identical(other.date, date) || other.date == date)&&(identical(other.minTempC, minTempC) || other.minTempC == minTempC)&&(identical(other.maxTempC, maxTempC) || other.maxTempC == maxTempC)&&(identical(other.rainMm, rainMm) || other.rainMm == rainMm)&&(identical(other.rainChancePercent, rainChancePercent) || other.rainChancePercent == rainChancePercent)&&(identical(other.maxWindSpeed, maxWindSpeed) || other.maxWindSpeed == maxWindSpeed)&&(identical(other.description, description) || other.description == description)&&(identical(other.iconUrl, iconUrl) || other.iconUrl == iconUrl));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,dateTime,temperatureC,humidity,rainChancePercent,description,iconUrl);
+int get hashCode => Object.hash(runtimeType,date,minTempC,maxTempC,rainMm,rainChancePercent,maxWindSpeed,description,iconUrl);
 
 @override
 String toString() {
-  return 'ForecastItem(dateTime: $dateTime, temperatureC: $temperatureC, humidity: $humidity, rainChancePercent: $rainChancePercent, description: $description, iconUrl: $iconUrl)';
+  return 'ForecastDay(date: $date, minTempC: $minTempC, maxTempC: $maxTempC, rainMm: $rainMm, rainChancePercent: $rainChancePercent, maxWindSpeed: $maxWindSpeed, description: $description, iconUrl: $iconUrl)';
 }
 
 
 }
 
 /// @nodoc
-abstract mixin class _$ForecastItemCopyWith<$Res> implements $ForecastItemCopyWith<$Res> {
-  factory _$ForecastItemCopyWith(_ForecastItem value, $Res Function(_ForecastItem) _then) = __$ForecastItemCopyWithImpl;
+abstract mixin class _$ForecastDayCopyWith<$Res> implements $ForecastDayCopyWith<$Res> {
+  factory _$ForecastDayCopyWith(_ForecastDay value, $Res Function(_ForecastDay) _then) = __$ForecastDayCopyWithImpl;
 @override @useResult
 $Res call({
- String? dateTime, double? temperatureC, int? humidity, int rainChancePercent, String? description, String? iconUrl
+@DateOnlyConverter() DateTime date, double minTempC, double maxTempC, double rainMm, int rainChancePercent, double maxWindSpeed, String? description, String? iconUrl
 });
 
 
@@ -823,22 +825,24 @@ $Res call({
 
 }
 /// @nodoc
-class __$ForecastItemCopyWithImpl<$Res>
-    implements _$ForecastItemCopyWith<$Res> {
-  __$ForecastItemCopyWithImpl(this._self, this._then);
+class __$ForecastDayCopyWithImpl<$Res>
+    implements _$ForecastDayCopyWith<$Res> {
+  __$ForecastDayCopyWithImpl(this._self, this._then);
 
-  final _ForecastItem _self;
-  final $Res Function(_ForecastItem) _then;
+  final _ForecastDay _self;
+  final $Res Function(_ForecastDay) _then;
 
-/// Create a copy of ForecastItem
+/// Create a copy of ForecastDay
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? dateTime = freezed,Object? temperatureC = freezed,Object? humidity = freezed,Object? rainChancePercent = null,Object? description = freezed,Object? iconUrl = freezed,}) {
-  return _then(_ForecastItem(
-dateTime: freezed == dateTime ? _self.dateTime : dateTime // ignore: cast_nullable_to_non_nullable
-as String?,temperatureC: freezed == temperatureC ? _self.temperatureC : temperatureC // ignore: cast_nullable_to_non_nullable
-as double?,humidity: freezed == humidity ? _self.humidity : humidity // ignore: cast_nullable_to_non_nullable
-as int?,rainChancePercent: null == rainChancePercent ? _self.rainChancePercent : rainChancePercent // ignore: cast_nullable_to_non_nullable
-as int,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
+@override @pragma('vm:prefer-inline') $Res call({Object? date = null,Object? minTempC = null,Object? maxTempC = null,Object? rainMm = null,Object? rainChancePercent = null,Object? maxWindSpeed = null,Object? description = freezed,Object? iconUrl = freezed,}) {
+  return _then(_ForecastDay(
+date: null == date ? _self.date : date // ignore: cast_nullable_to_non_nullable
+as DateTime,minTempC: null == minTempC ? _self.minTempC : minTempC // ignore: cast_nullable_to_non_nullable
+as double,maxTempC: null == maxTempC ? _self.maxTempC : maxTempC // ignore: cast_nullable_to_non_nullable
+as double,rainMm: null == rainMm ? _self.rainMm : rainMm // ignore: cast_nullable_to_non_nullable
+as double,rainChancePercent: null == rainChancePercent ? _self.rainChancePercent : rainChancePercent // ignore: cast_nullable_to_non_nullable
+as int,maxWindSpeed: null == maxWindSpeed ? _self.maxWindSpeed : maxWindSpeed // ignore: cast_nullable_to_non_nullable
+as double,description: freezed == description ? _self.description : description // ignore: cast_nullable_to_non_nullable
 as String?,iconUrl: freezed == iconUrl ? _self.iconUrl : iconUrl // ignore: cast_nullable_to_non_nullable
 as String?,
   ));

@@ -237,5 +237,26 @@
   "deleteForever": "Delete forever",
   "accountDeleted": "Your account has been deleted.",
   "aboutSection": "About",
-  "aboutBody": "AgroMaster helps Sri Lankan farmers see whether each crop actually made money."
+  "aboutBody": "AgroMaster helps Sri Lankan farmers see whether each crop actually made money.",
+
+  "alertsTitle": "Weather alerts for your plans",
+  "alertWashoffTitle": "Rain may wash it off",
+  "alertWindTitle": "Too windy to spray",
+  "alertIrrigationTitle": "Rain will do the watering",
+  "alertHarvestTitle": "Rain on harvest day",
+  "alertHeatTitle": "Heat stress",
+  "alertWashoffBody": "Rain likely on {day} ({chance}% chance). \"{task}\" for {crop} may wash off before it soaks in.",
+  "@alertWashoffBody": { "placeholders": { "day": { "type": "String" }, "chance": { "type": "int" }, "task": { "type": "String" }, "crop": { "type": "String" } } },
+  "alertWindBody": "Wind up to {speed} m/s on {day}. Spray for {crop} will drift off target.",
+  "@alertWindBody": { "placeholders": { "speed": { "type": "String" }, "day": { "type": "String" }, "crop": { "type": "String" } } },
+  "alertIrrigationBody": "Rain expected on {day} ({chance}% chance). You can probably skip \"{task}\" for {crop} and save the water.",
+  "@alertIrrigationBody": { "placeholders": { "day": { "type": "String" }, "chance": { "type": "int" }, "task": { "type": "String" }, "crop": { "type": "String" } } },
+  "alertHarvestBody": "Rain likely on {day} ({chance}% chance). Harvesting {crop} wet risks spoilage in storage.",
+  "@alertHarvestBody": { "placeholders": { "day": { "type": "String" }, "chance": { "type": "int" }, "crop": { "type": "String" } } },
+  "alertHeatBody": "Up to {temp}°C at {place} on {day}. Water {crops} early morning or evening, and mulch to hold moisture.",
+  "@alertHeatBody": { "placeholders": { "temp": { "type": "int" }, "place": { "type": "String" }, "day": { "type": "String" }, "crops": { "type": "String" } } },
+  "moveTo": "Move to {when}",
+  "@moveTo": { "placeholders": { "when": { "type": "String" } } },
+  "rescheduledTo": "Rescheduled to {when}",
+  "@rescheduledTo": { "placeholders": { "when": { "type": "String" } } }
 }

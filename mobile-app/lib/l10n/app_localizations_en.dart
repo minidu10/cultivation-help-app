@@ -685,4 +685,57 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get aboutBody =>
       'AgroMaster helps Sri Lankan farmers see whether each crop actually made money.';
+
+  @override
+  String get alertsTitle => 'Weather alerts for your plans';
+
+  @override
+  String get alertWashoffTitle => 'Rain may wash it off';
+
+  @override
+  String get alertWindTitle => 'Too windy to spray';
+
+  @override
+  String get alertIrrigationTitle => 'Rain will do the watering';
+
+  @override
+  String get alertHarvestTitle => 'Rain on harvest day';
+
+  @override
+  String get alertHeatTitle => 'Heat stress';
+
+  @override
+  String alertWashoffBody(String day, int chance, String task, String crop) {
+    return 'Rain likely on $day ($chance% chance). \"$task\" for $crop may wash off before it soaks in.';
+  }
+
+  @override
+  String alertWindBody(String speed, String day, String crop) {
+    return 'Wind up to $speed m/s on $day. Spray for $crop will drift off target.';
+  }
+
+  @override
+  String alertIrrigationBody(String day, int chance, String task, String crop) {
+    return 'Rain expected on $day ($chance% chance). You can probably skip \"$task\" for $crop and save the water.';
+  }
+
+  @override
+  String alertHarvestBody(String day, int chance, String crop) {
+    return 'Rain likely on $day ($chance% chance). Harvesting $crop wet risks spoilage in storage.';
+  }
+
+  @override
+  String alertHeatBody(int temp, String place, String day, String crops) {
+    return 'Up to $temp°C at $place on $day. Water $crops early morning or evening, and mulch to hold moisture.';
+  }
+
+  @override
+  String moveTo(String when) {
+    return 'Move to $when';
+  }
+
+  @override
+  String rescheduledTo(String when) {
+    return 'Rescheduled to $when';
+  }
 }

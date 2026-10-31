@@ -9,6 +9,8 @@ import '../../../core/session/session_controller.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/async_view.dart';
 import '../../../core/widgets/common.dart';
+import '../../alerts/data/alert_repository.dart';
+import '../../alerts/presentation/alerts_section.dart';
 import '../../reminders/data/reminder_models.dart';
 import '../../reminders/data/reminder_repository.dart';
 import '../../weather/data/weather_repository.dart';
@@ -26,7 +28,9 @@ class DashboardScreen extends ConsumerWidget {
     final summary = ref.watch(dashboardProvider);
 
     Future<void> refresh() {
-      ref.invalidate(farmWeatherProvider);
+      ref
+        ..invalidate(farmWeatherProvider)
+        ..invalidate(weatherAlertsProvider);
       return settle(ref.refresh(dashboardProvider.future));
     }
 
@@ -109,6 +113,9 @@ class _SummaryBody extends StatelessWidget {
             ),
           ],
         ),
+        // Risks to planned tasks sit high up: they are the only thing here
+        // that asks the farmer to do something.
+        const AlertsSection(),
         const SizedBox(height: 12),
         const WeatherCard(),
         SectionHeader(l10n.revenueVsExpenses),

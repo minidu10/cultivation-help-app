@@ -1,4 +1,6 @@
 import 'package:agromaster/core/session/session_controller.dart';
+import 'package:agromaster/features/alerts/data/alert_models.dart';
+import 'package:agromaster/features/alerts/data/alert_repository.dart';
 import 'package:agromaster/features/auth/data/auth_models.dart';
 import 'package:agromaster/features/dashboard/data/dashboard_models.dart';
 import 'package:agromaster/features/dashboard/data/dashboard_repository.dart';
@@ -28,6 +30,7 @@ void main() {
       overrides: [
         dashboardProvider.overrideWith((ref) async => _summary),
         farmWeatherProvider.overrideWith((ref) async => throw Exception('offline')),
+        weatherAlertsProvider.overrideWith((ref) async => <WeatherAlert>[]),
       ],
     );
     await container.read(sessionControllerProvider.notifier).signIn(
@@ -50,6 +53,7 @@ void main() {
       overrides: [
         dashboardProvider.overrideWith((ref) async => _summary),
         farmWeatherProvider.overrideWith((ref) async => throw Exception('offline')),
+        weatherAlertsProvider.overrideWith((ref) async => <WeatherAlert>[]),
       ],
     );
     await tester.pumpAndSettle();

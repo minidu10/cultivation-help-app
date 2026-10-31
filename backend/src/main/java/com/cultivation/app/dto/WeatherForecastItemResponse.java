@@ -6,6 +6,8 @@ public class WeatherForecastItemResponse {
     private Double temperatureC;
     private Integer humidity;
     private Integer rainChancePercent;
+    private Double rainMm;
+    private Double windSpeed;
     private String description;
     private String iconCode;
     private String iconUrl;
@@ -18,6 +20,12 @@ public class WeatherForecastItemResponse {
 
     public Integer getHumidity() { return humidity; }
     public void setHumidity(Integer humidity) { this.humidity = humidity; }
+
+    public Double getRainMm() { return rainMm; }
+    public void setRainMm(Double rainMm) { this.rainMm = rainMm; }
+
+    public Double getWindSpeed() { return windSpeed; }
+    public void setWindSpeed(Double windSpeed) { this.windSpeed = windSpeed; }
 
     public Integer getRainChancePercent() { return rainChancePercent; }
     public void setRainChancePercent(Integer rainChancePercent) { this.rainChancePercent = rainChancePercent; }
