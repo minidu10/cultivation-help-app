@@ -93,6 +93,8 @@ services:
       FLYWAY_CONNECT_RETRIES_INTERVAL: ${FLYWAY_CONNECT_RETRIES_INTERVAL:-5s}
       # Deliberately no default - a missing secret must fail loudly.
       APP_JWT_SECRET: ${JWT_SECRET:?JWT_SECRET must be set in .env}
+      JWT_EXPIRATION_MS: ${JWT_EXPIRATION_MS:-1800000}
+      JWT_REFRESH_DAYS: ${JWT_REFRESH_DAYS:-30}
       OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
       OPENWEATHER_BASE_URL: ${OPENWEATHER_BASE_URL:-https://api.openweathermap.org}
       # Containers default to UTC. Reminders are written as plain LocalDateTime,
@@ -101,6 +103,8 @@ services:
       AI_SERVICE_URL: ${AI_SERVICE_URL:-http://ai-service:8000}
       SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
+      AI_RATE_PER_MINUTE: ${AI_RATE_PER_MINUTE:-10}
+      AI_RATE_PER_DAY: ${AI_RATE_PER_DAY:-150}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       SHOW_SQL: ${SHOW_SQL:-false}
       MAIL_HOST: ${MAIL_HOST:-mailpit}
@@ -111,6 +115,7 @@ services:
       MAIL_STARTTLS: ${MAIL_STARTTLS:-false}
       MAIL_FROM: ${MAIL_FROM:-AgroMaster <agromaster026@gmail.com>}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_MOBILE_CLIENT_IDS: ${GOOGLE_MOBILE_CLIENT_IDS:-}
       REMINDER_CRON: ${REMINDER_CRON:-0 0 7 * * *}
       REMINDER_LEAD_DAYS: ${REMINDER_LEAD_DAYS:-2,1}
       REMINDER_EMAIL_ENABLED: ${REMINDER_EMAIL_ENABLED:-true}

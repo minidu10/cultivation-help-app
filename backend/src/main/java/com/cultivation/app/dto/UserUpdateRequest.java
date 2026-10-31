@@ -1,11 +1,22 @@
 package com.cultivation.app.dto;
 
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
+
 public class UserUpdateRequest {
 
+    @Size(max = 100, message = "Name must be at most 100 characters")
     private String fullName;
+
+    @Size(max = 20, message = "Phone must be at most 20 characters")
     private String phone;
+
+    @Size(max = 100, message = "City must be at most 100 characters")
     private String city;
+
+    @Pattern(regexp = "(?i)LIGHT|DARK", message = "Theme must be LIGHT or DARK")
     private String themePreference;
+
     private Boolean desktopMode;
     private Boolean reminderEmailsEnabled;
 

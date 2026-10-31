@@ -1,5 +1,6 @@
 package com.cultivation.app.service;
 
+import java.time.Duration;
 import java.util.Map;
 
 import org.slf4j.Logger;
@@ -12,6 +13,7 @@ import org.springframework.web.client.RestTemplate;
 
 import com.cultivation.app.entity.User;
 import com.cultivation.app.exception.ApiException;
+import com.cultivation.app.security.RateLimiter;
 
 /**
  * Fronts the AI service for the chat advisor.
@@ -33,9 +35,34 @@ public class AiAdvisorService {
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final String aiServiceUrl;
+    private final RateLimiter rateLimiter;
+    private final int perMinute;
+    private final int perDay;
 
-    public AiAdvisorService(@Value("${app.ai.service-url:http://ai-service:8000}") String aiServiceUrl) {
+    public AiAdvisorService(@Value("${app.ai.service-url:http://ai-service:8000}") String aiServiceUrl,
+                            RateLimiter rateLimiter,
+                            @Value("${app.rate-limit.ai-per-minute:10}") int perMinute,
+                            @Value("${app.rate-limit.ai-per-day:150}") int perDay) {
         this.aiServiceUrl = aiServiceUrl;
+        this.rateLimiter = rateLimiter;
+        this.perMinute = perMinute;
+        this.perDay = perDay;
+    }
+
+    /**
+     * Shared by every feature that calls the model on a farmer's behalf, so
+     * the allowance is per person rather than per feature.
+     */
+    public void checkQuota(User user) {
+        String key = "ai:" + user.getId();
+        if (!rateLimiter.tryAcquire(key, perMinute, Duration.ofMinutes(1))) {
+            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS,
+                "You are asking very quickly. Wait a minute and try again.");
+        }
+        if (!rateLimiter.tryAcquire(key, perDay, Duration.ofDays(1))) {
+            throw new ApiException(HttpStatus.TOO_MANY_REQUESTS,
+                "You have reached today's AI limit. It resets tomorrow.");
+        }
     }
 
     /**
@@ -67,6 +94,8 @@ public class AiAdvisorService {
             throw new ApiException(HttpStatus.BAD_REQUEST,
                 "Question is too long (max " + MAX_QUESTION_CHARS + " characters)");
         }
+
+        checkQuota(currentUser);
 
         String context = cropContext == null ? "" : cropContext;
         if (context.length() > MAX_CONTEXT_CHARS) {

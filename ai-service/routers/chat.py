@@ -33,7 +33,7 @@ async def ask_advisor(request: ChatRequest):
         answer = advisor.ask(request.question, request.crop_context)
         return ChatResponse(answer=answer, model=advisor.model())
     except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        raise HTTPException(status_code=503, detail=str(e)) from e
 
 
 @router.post("/insights")
@@ -56,7 +56,7 @@ async def get_crop_insights(request: InsightRequest):
     try:
         return {"insights": advisor.ask(question), "crop": request.crop_name}
     except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        raise HTTPException(status_code=503, detail=str(e)) from e
 
 
 @router.get("/health")

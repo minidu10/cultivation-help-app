@@ -4,22 +4,26 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.cultivation.app.dto.ExpenseRequest;
 import com.cultivation.app.dto.ExpenseResponse;
+import com.cultivation.app.dto.OnCreate;
 import com.cultivation.app.dto.ProfitLossResponse;
 import com.cultivation.app.entity.User;
 import com.cultivation.app.service.ExpenseService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/crops/{cropId}/expenses")
@@ -36,7 +40,7 @@ public class ExpenseController {
     @Operation(summary = "Add an expense to a crop")
     public ResponseEntity<ExpenseResponse> addExpense(
             @PathVariable Long cropId,
-            @RequestBody ExpenseRequest request,
+            @Validated(OnCreate.class) @RequestBody ExpenseRequest request,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(
                 ExpenseResponse.fromEntity(expenseService.addExpense(cropId, request, currentUser))
@@ -56,18 +60,29 @@ public class ExpenseController {
         );
     }
 
+    @PutMapping("/{expenseId}")
+    @Operation(summary = "Update an expense (fields left out are unchanged)")
+    public ResponseEntity<ExpenseResponse> updateExpense(
+            @PathVariable Long cropId,
+            @PathVariable Long expenseId,
+            @Valid @RequestBody ExpenseRequest request,
+            @AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(ExpenseResponse.fromEntity(
+                expenseService.updateExpense(cropId, expenseId, request, currentUser)));
+    }
+
     @DeleteMapping("/{expenseId}")
-    @Operation(summary = "Calculate profit or loss for a crop")
+    @Operation(summary = "Delete an expense")
     public ResponseEntity<Void> deleteExpense(
             @PathVariable Long cropId,
             @PathVariable Long expenseId,
             @AuthenticationPrincipal User currentUser) {
-        expenseService.deleteExpense(expenseId, currentUser);
+        expenseService.deleteExpense(cropId, expenseId, currentUser);
         return ResponseEntity.noContent().build();
     }
 
-    // Profit/Loss for this crop
     @GetMapping("/profit-loss")
+    @Operation(summary = "Calculate profit or loss for a crop")
     public ResponseEntity<ProfitLossResponse> getProfitLoss(
             @PathVariable Long cropId,
             @AuthenticationPrincipal User currentUser) {

@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cultivation.app.dto.OnCreate;
 import com.cultivation.app.dto.ReminderRequest;
 import com.cultivation.app.dto.ReminderResponse;
 import com.cultivation.app.entity.User;
@@ -20,6 +22,7 @@ import com.cultivation.app.service.ReminderService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api")
@@ -44,7 +47,7 @@ public class ReminderController {
     @Operation(summary = "Create a reminder for a crop")
     public ResponseEntity<ReminderResponse> createReminder(
             @PathVariable Long cropId,
-            @RequestBody ReminderRequest request,
+            @Validated(OnCreate.class) @RequestBody ReminderRequest request,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(reminderService.createReminder(cropId, request, currentUser));
     }
@@ -54,9 +57,9 @@ public class ReminderController {
     public ResponseEntity<ReminderResponse> updateReminder(
             @PathVariable Long cropId,
             @PathVariable Long reminderId,
-            @RequestBody ReminderRequest request,
+            @Valid @RequestBody ReminderRequest request,
             @AuthenticationPrincipal User currentUser) {
-        return ResponseEntity.ok(reminderService.updateReminder(reminderId, request, currentUser));
+        return ResponseEntity.ok(reminderService.updateReminder(cropId, reminderId, request, currentUser));
     }
 
     @DeleteMapping("/crops/{cropId}/reminders/{reminderId}")
@@ -65,7 +68,7 @@ public class ReminderController {
             @PathVariable Long cropId,
             @PathVariable Long reminderId,
             @AuthenticationPrincipal User currentUser) {
-        reminderService.deleteReminder(reminderId, currentUser);
+        reminderService.deleteReminder(cropId, reminderId, currentUser);
         return ResponseEntity.noContent().build();
     }
 

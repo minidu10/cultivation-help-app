@@ -1,11 +1,15 @@
 package com.cultivation.app.service;
 
+import java.time.LocalDateTime;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cultivation.app.dto.AuthResponse;
+import com.cultivation.app.dto.ChangePasswordRequest;
+import com.cultivation.app.dto.DeleteAccountRequest;
 import com.cultivation.app.dto.LoginRequest;
 import com.cultivation.app.dto.RegisterRequest;
 import com.cultivation.app.dto.UserResponse;
@@ -14,7 +18,6 @@ import com.cultivation.app.entity.EmailVerification.Purpose;
 import com.cultivation.app.entity.User;
 import com.cultivation.app.exception.ApiException;
 import com.cultivation.app.repository.UserRepository;
-import com.cultivation.app.security.JwtUtil;
 
 @Service
 public class UserService {
@@ -23,19 +26,25 @@ public class UserService {
     private static final String THEME_DARK = "DARK";
 
     private final UserRepository userRepository;
-    private final JwtUtil jwtUtil;
+    private final AuthTokenService authTokenService;
     private final VerificationService verificationService;
     private final MailService mailService;
+    private final GoogleAuthService googleAuthService;
+    private final AccountDeletionService accountDeletionService;
     private final BCryptPasswordEncoder passwordEncoder;
 
     public UserService(UserRepository userRepository,
-                       JwtUtil jwtUtil,
+                       AuthTokenService authTokenService,
                        VerificationService verificationService,
-                       MailService mailService) {
+                       MailService mailService,
+                       GoogleAuthService googleAuthService,
+                       AccountDeletionService accountDeletionService) {
         this.userRepository = userRepository;
-        this.jwtUtil = jwtUtil;
+        this.authTokenService = authTokenService;
         this.verificationService = verificationService;
         this.mailService = mailService;
+        this.googleAuthService = googleAuthService;
+        this.accountDeletionService = accountDeletionService;
         this.passwordEncoder = new BCryptPasswordEncoder();
     }
 
@@ -66,15 +75,7 @@ public class UserService {
         userRepository.save(user);
         mailService.sendWelcome(user.getEmail(), user.getFullName());
 
-        String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(
-            token,
-            user.getEmail(),
-            user.getFullName(),
-            user.getCity(),
-            user.getThemePreference(),
-            user.getDesktopMode()
-        );
+        return authTokenService.issue(user);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -96,15 +97,7 @@ public class UserService {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "Invalid email or password");
         }
 
-        String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(
-            token,
-            user.getEmail(),
-            user.getFullName(),
-            user.getCity(),
-            user.getThemePreference(),
-            user.getDesktopMode()
-        );
+        return authTokenService.issue(user);
     }
 
     @Transactional
@@ -119,19 +112,72 @@ public class UserService {
 
         user.setPassword(passwordEncoder.encode(newPassword));
         // Evicts any token issued before now - including one an attacker holds.
-        user.setPasswordChangedAt(java.time.LocalDateTime.now());
+        user.setPasswordChangedAt(LocalDateTime.now());
         userRepository.save(user);
+        authTokenService.revokeAll(user);
+    }
+
+    /**
+     * Change the password while signed in. Every other session is signed out,
+     * and this one gets a fresh token pair so the user is not bounced to the
+     * login screen for doing the right thing.
+     */
+    @Transactional
+    public AuthResponse changePassword(User currentUser, ChangePasswordRequest request) {
+        User user = findUser(currentUser);
+
+        // A Google-only account has no current password to prove. Letting a
+        // bare session set one would let a stolen token take the account over,
+        // so those users go through the emailed reset code instead.
+        if (user.getPassword() == null) {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                "This account has no password yet. Use Forgot password to set one.");
+        }
+        if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Current password is incorrect");
+        }
+        PasswordPolicy.validate(request.getNewPassword());
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        user.setPasswordChangedAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        authTokenService.revokeAll(user);
+        return authTokenService.issue(user);
+    }
+
+    /**
+     * Permanently deletes the account and every record in it. Required by the
+     * app stores for any app that lets people sign up.
+     */
+    @Transactional
+    public void deleteAccount(User currentUser, DeleteAccountRequest request) {
+        User user = findUser(currentUser);
+        String password = request == null ? null : request.getPassword();
+        String googleCredential = request == null ? null : request.getGoogleCredential();
+
+        if (password != null && !password.isBlank()) {
+            if (user.getPassword() == null || !passwordEncoder.matches(password, user.getPassword())) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "Password is incorrect");
+            }
+        } else if (googleCredential != null && !googleCredential.isBlank()) {
+            googleAuthService.verifyOwnership(user, googleCredential);
+        } else {
+            throw new ApiException(HttpStatus.BAD_REQUEST,
+                user.getPassword() == null
+                    ? "Confirm with Google to delete your account"
+                    : "Enter your password to delete your account");
+        }
+
+        accountDeletionService.deleteEverything(user);
     }
 
     public UserResponse getMe(User currentUser) {
-        User user = userRepository.findById(currentUser.getId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return mapToUserResponse(user);
+        return mapToUserResponse(findUser(currentUser));
     }
 
     public UserResponse updateMe(User currentUser, UserUpdateRequest request) {
-        User user = userRepository.findById(currentUser.getId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = findUser(currentUser);
 
         if (request.getFullName() != null && !request.getFullName().isBlank()) {
             user.setFullName(request.getFullName().trim());
@@ -156,6 +202,11 @@ public class UserService {
         return mapToUserResponse(saved);
     }
 
+    private User findUser(User currentUser) {
+        return userRepository.findById(currentUser.getId())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found"));
+    }
+
     private static String normalizeTheme(String value) {
         String normalized = value.trim().toUpperCase();
         return THEME_DARK.equals(normalized) ? THEME_DARK : THEME_LIGHT;
@@ -171,7 +222,10 @@ public class UserService {
             user.getThemePreference(),
             user.getDesktopMode(),
             user.getReminderEmailsEnabled(),
-            user.getCreatedAt()
+            user.getCreatedAt(),
+            user.getAuthProvider(),
+            user.getPassword() != null,
+            user.getGoogleId() != null
         );
     }
 }

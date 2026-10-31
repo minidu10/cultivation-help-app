@@ -84,7 +84,7 @@ export default function GoogleSignIn({ onError, text = 'signin_with' }) {
           doLogin({
             fullName: auth.fullName, email: auth.email, city: auth.city,
             themePreference: auth.themePreference, desktopMode: auth.desktopMode,
-          }, auth.token)
+          }, auth.token, auth.refreshToken)
           go('/dashboard')
         } catch (err) {
           onErr?.(apiError(err, 'Google sign-in failed. Please try again.'))

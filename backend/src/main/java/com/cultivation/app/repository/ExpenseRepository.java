@@ -18,6 +18,18 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
 
     Optional<Expense> findByIdAndCropUserId(Long id, Long userId);
 
+    /** Scoped to the crop in the URL as well as the owner, so a path cannot name the wrong crop. */
+    Optional<Expense> findByIdAndCropIdAndCropUserId(Long id, Long cropId, Long userId);
+
+    /**
+     * Expense total per crop for one farmer, in a single grouped query. The
+     * dashboard used to ask once per crop; this is one round trip for all of them.
+     * Rows are [cropId, total].
+     */
+    @Query("SELECT e.crop.id, COALESCE(SUM(e.amount), 0) FROM Expense e "
+         + "WHERE e.crop.user.id = :userId GROUP BY e.crop.id")
+    List<Object[]> sumAmountPerCropForUser(@Param("userId") Long userId);
+
     // Sum all expenses for a crop
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.crop.id = :cropId")
     BigDecimal sumAmountByCropId(@Param("cropId") Long cropId);
