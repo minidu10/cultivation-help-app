@@ -2,7 +2,15 @@ package com.cultivation.app.dto;
 
 public class AuthResponse {
 
+    /** Short-lived JWT sent as "Authorization: Bearer ...". */
     private String token;
+
+    /** Single-use token for POST /api/auth/refresh once the JWT expires. */
+    private String refreshToken;
+
+    /** Lifetime of {@link #token} in seconds, so a client can refresh ahead of time. */
+    private long expiresIn;
+
     private String email;
     private String fullName;
     private String city;
@@ -11,12 +19,16 @@ public class AuthResponse {
 
     public AuthResponse(
             String token,
+            String refreshToken,
+            long expiresIn,
             String email,
             String fullName,
             String city,
             String themePreference,
             Boolean desktopMode) {
         this.token = token;
+        this.refreshToken = refreshToken;
+        this.expiresIn = expiresIn;
         this.email = email;
         this.fullName = fullName;
         this.city = city;
@@ -25,6 +37,8 @@ public class AuthResponse {
     }
 
     public String getToken() { return token; }
+    public String getRefreshToken() { return refreshToken; }
+    public long getExpiresIn() { return expiresIn; }
     public String getEmail() { return email; }
     public String getFullName() { return fullName; }
     public String getCity() { return city; }

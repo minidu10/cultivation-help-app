@@ -48,8 +48,8 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const response = await api.post('/auth/login', { email, password })
-      const { token, fullName, email: userEmail, city, themePreference, desktopMode } = response.data
-      login({ fullName, email: userEmail, city, themePreference, desktopMode }, token)
+      const { token, refreshToken, fullName, email: userEmail, city, themePreference, desktopMode } = response.data
+      login({ fullName, email: userEmail, city, themePreference, desktopMode }, token, refreshToken)
       navigate('/dashboard')
     } catch {
       setError('Invalid email or password. Please try again.')

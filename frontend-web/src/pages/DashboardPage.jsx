@@ -5,15 +5,36 @@ import {
 } from 'recharts'
 import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
+import WeatherAlerts from '../components/WeatherAlerts'
 import { useAuth } from '../context/AuthContext'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { getCrops, getDueReminders, getProfitLoss, updateCropReminder, getCropInsight } from '../api/crops'
+import { getDashboardSummary, getDueReminders, updateCropReminder, getCropInsight } from '../api/crops'
 import {
   getCurrentWeather, getCurrentWeatherByLocation,
-  getWeatherForecast, getWeatherForecastByLocation,
+  getDailyForecast, getDailyForecastByLocation, getWeatherAlerts,
 } from '../api/weather'
 
 const CHART_COLORS = ['#4ade80', '#f87171', '#60a5fa', '#f59e0b', '#c084fc']
+
+// Colombo, for when neither a saved city nor the browser's position works.
+const FALLBACK_LAT = 6.9271
+const FALLBACK_LON = 79.8612
+
+/** Resolves to the browser's coordinates, or null if unavailable or refused. */
+function browserPosition() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) { resolve(null); return }
+    navigator.geolocation.getCurrentPosition(
+      (position) => resolve(position.coords),
+      () => resolve(null),
+      { enableHighAccuracy: false, timeout: 7000, maximumAge: 300000 },
+    )
+  })
+}
+
+async function succeeds(attempt) {
+  try { await attempt(); return true } catch { return false }
+}
 
 const CUSTOM_TOOLTIP_STYLE = {
   background: 'var(--bg-card)',
@@ -42,7 +63,7 @@ function CustomTooltip({ active, payload, label }) {
 export default function DashboardPage() {
   const { user } = useAuth()
   const isMobile = useIsMobile()
-  const [crops, setCrops] = useState([])
+  const [totals, setTotals] = useState(null)
   const [profitData, setProfitData] = useState([])
   const [loading, setLoading] = useState(true)
   const [insights, setInsights] = useState({})
@@ -53,88 +74,96 @@ export default function DashboardPage() {
   const [weatherError, setWeatherError] = useState('')
   const [cropWeatherById, setCropWeatherById] = useState({})
   const [dueReminders, setDueReminders] = useState([])
+  const [alerts, setAlerts] = useState([])
+  const [movingReminderId, setMovingReminderId] = useState(null)
 
   useEffect(() => {
     loadDashboard()
     loadWeather()
-    loadDueReminders()
+    loadAlerts()
   }, [])
 
   const fetchWeatherByCoords = async (lat, lon) => {
-    const [currentRes, forecastRes] = await Promise.all([
+    const [currentRes, dailyRes] = await Promise.all([
       getCurrentWeather(lat, lon),
-      getWeatherForecast(lat, lon, 5),
+      getDailyForecast(lat, lon),
     ])
     setWeatherCurrent(currentRes.data)
-    setWeatherForecast(forecastRes.data?.items ?? [])
+    setWeatherForecast(dailyRes.data?.days ?? [])
   }
 
+  const fetchWeatherByLocation = async (location) => {
+    const [currentRes, dailyRes] = await Promise.all([
+      getCurrentWeatherByLocation(location),
+      getDailyForecastByLocation(location),
+    ])
+    setWeatherCurrent(currentRes.data)
+    setWeatherForecast(dailyRes.data?.days ?? [])
+  }
+
+  // Fetched alongside the summary rather than inside it, so a slow forecast
+  // never holds up the figures. Failing quietly is right: alerts are advice.
+  const loadAlerts = async () => {
+    try { const res = await getWeatherAlerts(); setAlerts(res.data) }
+    catch { setAlerts([]) }
+  }
+
+  const moveReminder = async (alert) => {
+    setMovingReminderId(alert.reminderId)
+    try {
+      await updateCropReminder(alert.cropId, alert.reminderId, { reminderAt: alert.suggestedAt })
+      await Promise.all([loadAlerts(), loadDueReminders()])
+    } catch {
+      // Leave the alert in place so the user can retry.
+    } finally {
+      setMovingReminderId(null)
+    }
+  }
+
+  // Saved city first, then the browser's position, then Colombo. Each step
+  // only runs if the one before it failed, and the card always ends up with
+  // either weather or a message: previously a failed lookup on the city or
+  // fallback path rejected unhandled and left the card blank.
   const loadWeather = async () => {
     setLoadingWeather(true)
     setWeatherError('')
-    const fallbackLat = 6.9271, fallbackLon = 79.8612
     const savedCity = user?.city?.trim()
     try {
-      if (savedCity) {
-        const [currentRes, forecastRes] = await Promise.all([
-          getCurrentWeatherByLocation(savedCity),
-          getWeatherForecastByLocation(savedCity, 5),
-        ])
-        setWeatherCurrent(currentRes.data)
-        setWeatherForecast(forecastRes.data?.items ?? [])
-        return
-      }
-      if (!navigator.geolocation) { await fetchWeatherByCoords(fallbackLat, fallbackLon); return }
-      await new Promise((resolve) => {
-        navigator.geolocation.getCurrentPosition(
-          async (position) => {
-            try { await fetchWeatherByCoords(position.coords.latitude, position.coords.longitude) }
-            catch { try { await fetchWeatherByCoords(fallbackLat, fallbackLon) } catch { setWeatherError('Unable to load weather now.') } }
-            resolve()
-          },
-          async () => {
-            try { await fetchWeatherByCoords(fallbackLat, fallbackLon) } catch { setWeatherError('Unable to load weather now.') }
-            resolve()
-          },
-          { enableHighAccuracy: false, timeout: 7000, maximumAge: 300000 }
-        )
-      })
+      if (savedCity && await succeeds(() => fetchWeatherByLocation(savedCity))) return
+      const position = await browserPosition()
+      if (position && await succeeds(() => fetchWeatherByCoords(position.latitude, position.longitude))) return
+      if (await succeeds(() => fetchWeatherByCoords(FALLBACK_LAT, FALLBACK_LON))) return
+      setWeatherError('Unable to load weather now.')
     } finally { setLoadingWeather(false) }
   }
 
+  // One request for every figure on the page. The server sums per crop in
+  // two grouped queries instead of the browser asking once per crop.
   const loadDashboard = async () => {
     try {
-      const cropsRes = await getCrops()
-      const cropList = cropsRes.data
-      setCrops(cropList)
-      loadCropWeather(cropList)
-      const plData = await Promise.all(
-        cropList.map(async (crop) => {
-          try {
-            const pl = await getProfitLoss(crop.id)
-            return {
-              cropId: crop.id, name: crop.name, fieldLocation: crop.fieldLocation,
-              expenses: Number(pl.data.totalExpenses), revenue: Number(pl.data.totalRevenue),
-              profit: Number(pl.data.netProfit), result: pl.data.result,
-            }
-          } catch {
-            return { cropId: crop.id, name: crop.name, fieldLocation: crop.fieldLocation, expenses: 0, revenue: 0, profit: 0, result: 'N/A' }
-          }
-        })
-      )
-      setProfitData(plData)
-      loadInsights(plData, cropList)
+      const { data } = await getDashboardSummary()
+      const rows = data.crops.map((crop) => ({
+        cropId: crop.cropId, name: crop.cropName, fieldLocation: crop.fieldLocation,
+        aiInsightsEnabled: crop.aiInsightsEnabled,
+        expenses: Number(crop.totalExpenses), revenue: Number(crop.totalRevenue),
+        profit: Number(crop.netProfit), result: crop.result,
+      }))
+      setTotals(data.totals)
+      setProfitData(rows)
+      setDueReminders(data.dueReminders)
+      loadCropWeather(rows)
+      loadInsights(rows)
     } catch (err) {
       console.error('Dashboard load failed:', err)
     } finally { setLoading(false) }
   }
 
-  const loadCropWeather = async (cropList) => {
+  const loadCropWeather = async (rows) => {
     const weatherEntries = await Promise.all(
-      cropList.map(async (crop) => {
-        if (!crop.fieldLocation?.trim()) return [crop.id, null]
-        try { const res = await getCurrentWeatherByLocation(crop.fieldLocation); return [crop.id, res.data] }
-        catch { return [crop.id, null] }
+      rows.map(async (crop) => {
+        if (!crop.fieldLocation?.trim()) return [crop.cropId, null]
+        try { const res = await getCurrentWeatherByLocation(crop.fieldLocation); return [crop.cropId, res.data] }
+        catch { return [crop.cropId, null] }
       })
     )
     setCropWeatherById(Object.fromEntries(weatherEntries))
@@ -143,22 +172,20 @@ export default function DashboardPage() {
   // The backend caches each insight against a fingerprint of the crop's
   // figures, so this is normally a plain database read. Only a crop whose
   // expenses, harvests or status actually changed costs any tokens.
-  const loadInsights = async (plData, cropList) => {
+  // Keyed by crop id: keying by name let two crops called "Paddy" overwrite
+  // each other's insight.
+  const loadInsights = async (rows) => {
     setLoadingInsights(true)
-    const cropMapByName = Object.fromEntries(cropList.map((c) => [c.name, c]))
 
     // Fetched together rather than one after another: the old sequential loop
     // made the dashboard wait for every crop in turn.
-    const entries = await Promise.all(plData.map(async (crop) => {
-      const meta = cropMapByName[crop.name]
-      if (meta && meta.aiInsightsEnabled === false) return [crop.name, '__AI_OFF__']
-      const cropId = meta?.id ?? crop.cropId
-      if (!cropId) return [crop.name, null]
+    const entries = await Promise.all(rows.map(async (crop) => {
+      if (crop.aiInsightsEnabled === false) return [crop.cropId, '__AI_OFF__']
       try {
-        const res = await getCropInsight(cropId)
-        return [crop.name, res.data.insights]
+        const res = await getCropInsight(crop.cropId)
+        return [crop.cropId, res.data.insights]
       } catch {
-        return [crop.name, null]
+        return [crop.cropId, null]
       }
     }))
 
@@ -166,6 +193,7 @@ export default function DashboardPage() {
     setLoadingInsights(false)
   }
 
+  // The card's Refresh button only needs the reminders, not the whole summary.
   const loadDueReminders = async () => {
     try { const res = await getDueReminders(); setDueReminders(res.data) }
     catch { setDueReminders([]) }
@@ -182,15 +210,12 @@ export default function DashboardPage() {
     }
   }
 
-  const totalRevenue = profitData.reduce((s, d) => s + d.revenue, 0)
-  const totalExpenses = profitData.reduce((s, d) => s + d.expenses, 0)
-  const netProfit = totalRevenue - totalExpenses
-  const activeCrops = crops.filter(c => c.status !== 'HARVESTED' && c.status !== 'FAILED').length
+  const totalRevenue = Number(totals?.totalRevenue ?? 0)
+  const totalExpenses = Number(totals?.totalExpenses ?? 0)
+  const netProfit = Number(totals?.netProfit ?? 0)
+  const activeCrops = totals?.activeCrops ?? 0
+  const totalCrops = totals?.totalCrops ?? 0
 
-  const weatherAlerts = []
-  if ((weatherCurrent?.temperatureC ?? 0) >= 34) weatherAlerts.push('High heat today. Check irrigation timing and mulch moisture retention.')
-  if ((weatherCurrent?.rainMm ?? 0) > 0) weatherAlerts.push('Rain has started. Avoid pesticide spraying until conditions clear.')
-  if (weatherForecast.some(f => (f.rainChancePercent ?? 0) >= 60)) weatherAlerts.push('Strong rain chance in forecast. Plan drainage and postpone field spraying.')
 
   const pieData = [
     { name: 'Revenue', value: totalRevenue },
@@ -239,8 +264,11 @@ export default function DashboardPage() {
         <StatCard title="Harvest Revenue" value={`Rs. ${totalRevenue.toLocaleString()}`} sub="All crops" color="green" icon="📦" />
         <StatCard title="Total Expenses"  value={`Rs. ${totalExpenses.toLocaleString()}`} sub="All crops" color="red" icon="💸" />
         <StatCard title="Net Profit"      value={`Rs. ${netProfit.toLocaleString()}`} sub={netProfit >= 0 ? 'Profitable ✓' : 'Loss'} color={netProfit >= 0 ? 'green' : 'red'} icon="📈" />
-        <StatCard title="Active Crops"    value={activeCrops} sub={`${crops.length} total`} color="blue" icon="🌾" />
+        <StatCard title="Active Crops"    value={activeCrops} sub={`${totalCrops} total`} color="blue" icon="🌾" />
       </div>
+
+      {/* Weather risks to planned tasks: above the charts, because they need acting on */}
+      <WeatherAlerts alerts={alerts} onMove={moveReminder} movingId={movingReminderId} />
 
       {/* Charts row */}
       <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '16px', marginBottom: '20px' }}>
@@ -314,22 +342,20 @@ export default function DashboardPage() {
 
               {weatherForecast.length > 0 && (
                 <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(weatherForecast.length, 5)}, 1fr)`, gap: '6px', marginBottom: '12px' }}>
-                  {weatherForecast.slice(0, 5).map((item, idx) => (
-                    <div key={idx} style={{ textAlign: 'center', background: 'var(--bg-input)', borderRadius: '10px', padding: '8px 4px', border: '1px solid var(--border)' }}>
-                      <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>{item.dateTime?.slice(5, 13) || '-'}</div>
-                      {item.iconUrl && <img src={item.iconUrl} alt="" style={{ width: 28, height: 28, margin: '0 auto 4px', display: 'block' }} />}
-                      <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{Math.round(item.temperatureC ?? 0)}°</div>
-                      <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '10px', color: '#60a5fa' }}>{item.rainChancePercent ?? 0}%</div>
+                  {weatherForecast.slice(0, 5).map((day) => (
+                    <div key={day.date} style={{ textAlign: 'center', background: 'var(--bg-input)', borderRadius: '10px', padding: '8px 4px', border: '1px solid var(--border)' }}>
+                      <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                        {new Date(`${day.date}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'short' })}
+                      </div>
+                      {day.iconUrl && <img src={day.iconUrl} alt={day.description || ''} style={{ width: 28, height: 28, margin: '0 auto 4px', display: 'block' }} />}
+                      <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {Math.round(day.maxTempC ?? 0)}° <span style={{ fontWeight: 400, color: 'var(--text-faint)' }}>{Math.round(day.minTempC ?? 0)}°</span>
+                      </div>
+                      <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '10px', color: '#60a5fa' }}>{day.rainChancePercent ?? 0}%</div>
                     </div>
                   ))}
                 </div>
               )}
-
-              {weatherAlerts.map((alert, idx) => (
-                <div key={idx} style={{ marginTop: '8px', padding: '10px 12px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '10px' }}>
-                  <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: '#f59e0b' }}>⚠ {alert}</span>
-                </div>
-              ))}
             </>
           ) : (
             <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)' }}>No weather data available.</p>
@@ -500,11 +526,11 @@ export default function DashboardPage() {
                   </div>
 
                   {/* Insight text */}
-                  {insights[crop.name] && insights[crop.name] !== '__AI_OFF__' ? (
+                  {insights[crop.cropId] && insights[crop.cropId] !== '__AI_OFF__' ? (
                     <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px' }}>
-                      {renderInsightContent(insights[crop.name])}
+                      {renderInsightContent(insights[crop.cropId])}
                     </div>
-                  ) : insights[crop.name] === '__AI_OFF__' ? (
+                  ) : insights[crop.cropId] === '__AI_OFF__' ? (
                     <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: '#f59e0b', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '8px', padding: '10px 12px', margin: 0 }}>
                       AI off by farmer for this crop.
                     </p>

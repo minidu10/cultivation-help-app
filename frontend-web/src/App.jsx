@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
+import { getAccessToken } from './api/session'
 import LandingPage from './pages/LandingPage'
 
 // Only the landing page is bundled up front - it is where most visitors
@@ -20,9 +21,11 @@ const SettingsPage       = lazy(() => import('./pages/SettingsPage'))
 const ProfilePage        = lazy(() => import('./pages/ProfilePage'))
 
 function PrivateRoute({ children }) {
-  const { user } = useAuth()
-  const token = localStorage.getItem('token')
-  return user && token ? children : <Navigate to="/" />
+  const { user, sessionExpired } = useAuth()
+  if (user && getAccessToken()) return children
+  return sessionExpired
+    ? <Navigate to="/login" replace state={{ message: 'Your session has ended. Please sign in again.' }} />
+    : <Navigate to="/" />
 }
 
 /** Shown only while a route chunk is downloading - usually a few hundred ms. */

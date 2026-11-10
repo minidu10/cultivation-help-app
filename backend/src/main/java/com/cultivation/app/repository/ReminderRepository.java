@@ -19,11 +19,30 @@ public interface ReminderRepository extends JpaRepository<Reminder, Long> {
 
     Optional<Reminder> findByIdAndCropUserId(Long reminderId, Long userId);
 
+    /** Scoped to the crop in the URL as well as the owner, so a path cannot name the wrong crop. */
+    Optional<Reminder> findByIdAndCropIdAndCropUserId(Long reminderId, Long cropId, Long userId);
+
+    /** Active reminders inside a window, for one farmer, soonest first. */
+    @Query("""
+           SELECT r FROM Reminder r
+             JOIN FETCH r.crop c
+            WHERE c.user.id = :userId
+              AND r.enabled = TRUE
+              AND r.completed = FALSE
+              AND r.reminderAt > :from
+              AND r.reminderAt <= :to
+            ORDER BY r.reminderAt ASC
+           """)
+    List<Reminder> findActiveForUserBetween(@Param("userId") Long userId,
+                                            @Param("from") java.time.LocalDateTime from,
+                                            @Param("to") java.time.LocalDateTime to);
+
     void deleteByCropIdAndCropUserId(Long cropId, Long userId);
 
     /**
-     * Active reminders falling inside the advance-notice window, oldest first,
-     * for farmers who have not switched reminder emails off in Settings.
+     * Active reminders falling inside the advance-notice window, oldest first.
+     * Farmers who switched reminder emails off are included: they may still
+     * get the same digest as a push notification on their phone.
      * Crop and user are fetched eagerly: the digest is grouped by owner and
      * would otherwise fire a query per reminder to find the email address.
      */
@@ -33,7 +52,6 @@ public interface ReminderRepository extends JpaRepository<Reminder, Long> {
              JOIN FETCH c.user u
             WHERE r.enabled = TRUE
               AND r.completed = FALSE
-              AND u.reminderEmailsEnabled = TRUE
               AND r.reminderAt >= :from
               AND r.reminderAt < :to
             ORDER BY r.reminderAt ASC

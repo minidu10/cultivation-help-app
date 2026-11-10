@@ -4,14 +4,26 @@ import java.time.LocalDateTime;
 
 import com.cultivation.app.entity.Reminder;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+
 public class ReminderRequest {
 
+    @NotBlank(groups = OnCreate.class, message = "Reminder title is required")
+    @Size(max = 150, message = "Title must be at most 150 characters")
     private String title;
+
     private Reminder.ReminderType type;
+
+    @NotNull(groups = OnCreate.class, message = "Reminder time is required")
     private LocalDateTime reminderAt;
+
     private Boolean enabled;
     private Boolean aiRecommended;
     private Boolean completed;
+
+    @Size(max = 400, message = "Note must be at most 400 characters")
     private String note;
 
     public String getTitle() { return title; }

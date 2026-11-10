@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.cultivation.app.dto.DailyForecastResponse;
 import com.cultivation.app.dto.WeatherCurrentResponse;
 import com.cultivation.app.dto.WeatherForecastResponse;
 import com.cultivation.app.service.WeatherService;
@@ -46,6 +47,20 @@ public class WeatherController {
             @RequestParam Double lon,
             @RequestParam(defaultValue = "5") Integer count) {
         return ResponseEntity.ok(weatherService.getForecast(lat, lon, count));
+    }
+
+    @GetMapping("/daily")
+    @Operation(summary = "Five-day forecast, one row per day, by coordinates")
+    public ResponseEntity<DailyForecastResponse> getDaily(
+            @RequestParam Double lat,
+            @RequestParam Double lon) {
+        return ResponseEntity.ok(weatherService.getDaily(lat, lon));
+    }
+
+    @GetMapping("/daily/by-location")
+    @Operation(summary = "Five-day forecast, one row per day, by location name")
+    public ResponseEntity<DailyForecastResponse> getDailyByLocation(@RequestParam String location) {
+        return ResponseEntity.ok(weatherService.getDailyByLocation(location));
     }
 
     @GetMapping("/forecast/by-location")

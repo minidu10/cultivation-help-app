@@ -14,6 +14,7 @@ import com.cultivation.app.dto.AuthResponse;
 import com.cultivation.app.dto.GoogleSignInRequest;
 import com.cultivation.app.dto.LoginRequest;
 import com.cultivation.app.dto.MessageResponse;
+import com.cultivation.app.dto.RefreshRequest;
 import com.cultivation.app.dto.RegisterRequest;
 import com.cultivation.app.dto.ResetPasswordRequest;
 import com.cultivation.app.dto.SendCodeRequest;
@@ -21,6 +22,7 @@ import com.cultivation.app.dto.VerifyCodeRequest;
 import com.cultivation.app.entity.EmailVerification.Purpose;
 import com.cultivation.app.exception.ApiException;
 import com.cultivation.app.repository.UserRepository;
+import com.cultivation.app.service.AuthTokenService;
 import com.cultivation.app.service.GoogleAuthService;
 import com.cultivation.app.service.UserService;
 import com.cultivation.app.service.VerificationService;
@@ -39,15 +41,18 @@ public class AuthController {
     private final UserService userService;
     private final VerificationService verificationService;
     private final GoogleAuthService googleAuthService;
+    private final AuthTokenService authTokenService;
     private final UserRepository userRepository;
 
     public AuthController(UserService userService,
                           VerificationService verificationService,
                           GoogleAuthService googleAuthService,
+                          AuthTokenService authTokenService,
                           UserRepository userRepository) {
         this.userService = userService;
         this.verificationService = verificationService;
         this.googleAuthService = googleAuthService;
+        this.authTokenService = authTokenService;
         this.userRepository = userRepository;
     }
 
@@ -95,9 +100,26 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Log in and receive a JWT")
+    @Operation(summary = "Log in and receive an access token and a refresh token")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(userService.login(request));
+    }
+
+    // ---------------------------------------------------------------- session
+
+    @PostMapping("/refresh")
+    @Operation(summary = "Exchange a refresh token for a new token pair (the old one is spent)")
+    public ResponseEntity<AuthResponse> refresh(@Valid @RequestBody RefreshRequest request) {
+        return ResponseEntity.ok(authTokenService.refresh(request.getRefreshToken()));
+    }
+
+    @PostMapping("/logout")
+    @Operation(summary = "Revoke a refresh token so it can no longer be used")
+    public ResponseEntity<Void> logout(@RequestBody(required = false) RefreshRequest request) {
+        // Always 204: logging out twice, or with a token that is already
+        // gone, is not an error the user can do anything about.
+        authTokenService.revoke(request == null ? null : request.getRefreshToken());
+        return ResponseEntity.noContent().build();
     }
 
     // ---------------------------------------------------------- password reset

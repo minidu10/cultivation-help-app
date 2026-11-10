@@ -26,4 +26,12 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    // Test helpers export render functions, not components; fast refresh
+    // never loads these files.
+    files: ['src/test/**', '**/*.test.{js,jsx}'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
+  },
 ])

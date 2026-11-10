@@ -3,6 +3,7 @@ package com.cultivation.app.dto;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import com.cultivation.app.entity.Expense;
 
@@ -15,6 +16,7 @@ public class ExpenseResponse {
     private LocalDate expenseDate;
     private String notes;
     private LocalDateTime createdAt;
+    private UUID clientRef;
 
     public static ExpenseResponse fromEntity(Expense expense) {
         ExpenseResponse response = new ExpenseResponse();
@@ -25,6 +27,7 @@ public class ExpenseResponse {
         response.setExpenseDate(expense.getExpenseDate());
         response.setNotes(expense.getNotes());
         response.setCreatedAt(expense.getCreatedAt());
+        response.setClientRef(expense.getClientRef());
         return response;
     }
 
@@ -48,4 +51,7 @@ public class ExpenseResponse {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public UUID getClientRef() { return clientRef; }
+    public void setClientRef(UUID clientRef) { this.clientRef = clientRef; }
 }

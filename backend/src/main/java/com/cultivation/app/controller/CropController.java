@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -17,12 +18,14 @@ import org.springframework.web.bind.annotation.RestController;
 import com.cultivation.app.dto.CropInsightResponse;
 import com.cultivation.app.dto.CropRequest;
 import com.cultivation.app.dto.CropResponse;
+import com.cultivation.app.dto.OnCreate;
 import com.cultivation.app.entity.User;
 import com.cultivation.app.service.CropInsightService;
 import com.cultivation.app.service.CropService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/crops")
@@ -40,7 +43,7 @@ public class CropController {
     @PostMapping
     @Operation(summary = "Create a new crop")
     public ResponseEntity<CropResponse> createCrop(
-            @RequestBody CropRequest request,
+            @Validated(OnCreate.class) @RequestBody CropRequest request,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(cropService.createCrop(request, currentUser));
     }
@@ -64,7 +67,7 @@ public class CropController {
     @Operation(summary = "Update a crop")
     public ResponseEntity<CropResponse> updateCrop(
             @PathVariable Long id,
-            @RequestBody CropRequest request,
+            @Valid @RequestBody CropRequest request,
             @AuthenticationPrincipal User currentUser) {
         return ResponseEntity.ok(cropService.updateCrop(id, request, currentUser));
     }

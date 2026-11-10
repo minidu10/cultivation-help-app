@@ -10,6 +10,7 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -46,7 +47,8 @@ public class CropInsightService {
     private final ExpenseRepository expenseRepository;
     private final HarvestRepository harvestRepository;
     private final CropInsightRepository insightRepository;
-    private final RestTemplate restTemplate = new RestTemplate();
+    private final AiAdvisorService aiAdvisorService;
+    private final RestTemplate restTemplate;
 
     private final String aiServiceUrl;
 
@@ -54,11 +56,15 @@ public class CropInsightService {
                               ExpenseRepository expenseRepository,
                               HarvestRepository harvestRepository,
                               CropInsightRepository insightRepository,
+                              AiAdvisorService aiAdvisorService,
+                              @Qualifier("aiRestTemplate") RestTemplate restTemplate,
                               @Value("${app.ai.service-url:http://ai-service:8000}") String aiServiceUrl) {
         this.cropRepository = cropRepository;
         this.expenseRepository = expenseRepository;
         this.harvestRepository = harvestRepository;
         this.insightRepository = insightRepository;
+        this.aiAdvisorService = aiAdvisorService;
+        this.restTemplate = restTemplate;
         this.aiServiceUrl = aiServiceUrl;
     }
 
@@ -84,6 +90,8 @@ public class CropInsightService {
                                            hit.getGeneratedAt(), false);
         }
 
+        // Only a real generation counts against the allowance; cache hits are free.
+        aiAdvisorService.checkQuota(currentUser);
         String text = generate(crop, expenses, revenue);
 
         CropInsight record = cached.orElseGet(() -> new CropInsight(cropId, fingerprint, text));

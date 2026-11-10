@@ -28,6 +28,8 @@ public class ReminderService {
     }
 
     public List<ReminderResponse> getReminders(Long cropId, User currentUser) {
+        // An unknown crop is a 404, not an empty list that looks like "no reminders yet".
+        findCrop(cropId, currentUser);
         return reminderRepository
             .findByCropIdAndCropUserIdOrderByReminderAtAsc(cropId, currentUser.getId())
             .stream()
@@ -47,16 +49,8 @@ public class ReminderService {
     }
 
     public ReminderResponse createReminder(Long cropId, ReminderRequest request, User currentUser) {
-        Crop crop = cropRepository
-            .findByIdAndUserId(cropId, currentUser.getId())
-            .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Crop not found"));
-
-        if (request.getTitle() == null || request.getTitle().isBlank()) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Reminder title is required");
-        }
-        if (request.getReminderAt() == null) {
-            throw new ApiException(HttpStatus.BAD_REQUEST, "Reminder time is required");
-        }
+        // Title and time are enforced by the OnCreate validation group.
+        Crop crop = findCrop(cropId, currentUser);
 
         Reminder reminder = new Reminder();
         reminder.setCrop(crop);
@@ -71,10 +65,8 @@ public class ReminderService {
         return new ReminderResponse(reminderRepository.save(reminder));
     }
 
-    public ReminderResponse updateReminder(Long reminderId, ReminderRequest request, User currentUser) {
-        Reminder reminder = reminderRepository
-            .findByIdAndCropUserId(reminderId, currentUser.getId())
-            .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Reminder not found"));
+    public ReminderResponse updateReminder(Long cropId, Long reminderId, ReminderRequest request, User currentUser) {
+        Reminder reminder = findReminder(cropId, reminderId, currentUser);
 
         if (request.getTitle() != null && !request.getTitle().isBlank()) {
             reminder.setTitle(request.getTitle().trim());
@@ -89,10 +81,19 @@ public class ReminderService {
         return new ReminderResponse(reminderRepository.save(reminder));
     }
 
-    public void deleteReminder(Long reminderId, User currentUser) {
-        Reminder reminder = reminderRepository
-            .findByIdAndCropUserId(reminderId, currentUser.getId())
+    public void deleteReminder(Long cropId, Long reminderId, User currentUser) {
+        reminderRepository.delete(findReminder(cropId, reminderId, currentUser));
+    }
+
+    private Crop findCrop(Long cropId, User currentUser) {
+        return cropRepository
+            .findByIdAndUserId(cropId, currentUser.getId())
+            .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Crop not found"));
+    }
+
+    private Reminder findReminder(Long cropId, Long reminderId, User currentUser) {
+        return reminderRepository
+            .findByIdAndCropIdAndCropUserId(reminderId, cropId, currentUser.getId())
             .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Reminder not found"));
-        reminderRepository.delete(reminder);
     }
 }

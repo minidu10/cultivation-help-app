@@ -16,11 +16,23 @@ export const getExpenses = (cropId) =>
 export const addExpense = (cropId, data) =>
   api.post(`/crops/${cropId}/expenses`, data)
 
+export const updateExpense = (cropId, expenseId, data) =>
+  api.put(`/crops/${cropId}/expenses/${expenseId}`, data)
+
+export const deleteExpense = (cropId, expenseId) =>
+  api.delete(`/crops/${cropId}/expenses/${expenseId}`)
+
 export const getHarvests = (cropId) =>
   api.get(`/crops/${cropId}/harvests`)
 
 export const addHarvest = (cropId, data) =>
   api.post(`/crops/${cropId}/harvests`, data)
+
+export const updateHarvest = (cropId, harvestId, data) =>
+  api.put(`/crops/${cropId}/harvests/${harvestId}`, data)
+
+export const deleteHarvest = (cropId, harvestId) =>
+  api.delete(`/crops/${cropId}/harvests/${harvestId}`)
 
 export const getProfitLoss = (cropId) =>
   api.get(`/crops/${cropId}/expenses/profit-loss`)
@@ -38,6 +50,10 @@ export const deleteCropReminder = (cropId, reminderId) =>
   api.delete(`/crops/${cropId}/reminders/${reminderId}`)
 
 export const getDueReminders = () => api.get('/reminders/due')
+
+// Totals, per-crop profit/loss and reminders in one round trip, instead of a
+// profit/loss request per crop added up in the browser.
+export const getDashboardSummary = () => api.get('/dashboard/summary')
 
 // Goes through the backend so the request is authenticated. The AI service is
 // not reachable from the browser at all.

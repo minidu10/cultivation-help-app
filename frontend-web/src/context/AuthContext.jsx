@@ -1,4 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
+import { logoutSession } from '../api/auth'
+import { clearTokens, getRefreshToken, onSessionExpired, saveTokens } from '../api/session'
 
 const AuthContext = createContext(null)
 
@@ -7,6 +9,15 @@ export function AuthProvider({ children }) {
     const saved = localStorage.getItem('user')
     return saved ? JSON.parse(saved) : null
   })
+  // Set when the server refused to renew the session, so the app can say why
+  // the user landed on the login page instead of silently dropping them there.
+  const [sessionExpired, setSessionExpired] = useState(false)
+
+  useEffect(() => onSessionExpired(() => {
+    localStorage.removeItem('user')
+    setUser(null)
+    setSessionExpired(true)
+  }), [])
 
   useEffect(() => {
     const media = window.matchMedia('(prefers-color-scheme: dark)')
@@ -32,14 +43,18 @@ export function AuthProvider({ children }) {
     return () => media.removeEventListener('change', applyTheme)
   }, [user])
 
-  const login = (userData, token) => {
-    localStorage.setItem('token', token)
+  const login = (userData, token, refreshToken) => {
+    saveTokens({ token, refreshToken })
     localStorage.setItem('user', JSON.stringify(userData))
     setUser(userData)
+    setSessionExpired(false)
   }
 
   const logout = () => {
-    localStorage.removeItem('token')
+    const refreshToken = getRefreshToken()
+    // Best effort: signing out locally must not wait on, or fail with, the network.
+    if (refreshToken) logoutSession(refreshToken).catch(() => {})
+    clearTokens()
     localStorage.removeItem('user')
     setUser(null)
   }
@@ -53,7 +68,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser, sessionExpired }}>
       {children}
     </AuthContext.Provider>
   )

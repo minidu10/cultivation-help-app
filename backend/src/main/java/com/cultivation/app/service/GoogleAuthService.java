@@ -2,7 +2,9 @@ package com.cultivation.app.service;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +17,6 @@ import com.cultivation.app.dto.AuthResponse;
 import com.cultivation.app.entity.User;
 import com.cultivation.app.exception.ApiException;
 import com.cultivation.app.repository.UserRepository;
-import com.cultivation.app.security.JwtUtil;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
@@ -36,23 +37,39 @@ public class GoogleAuthService {
     private static final Logger log = LoggerFactory.getLogger(GoogleAuthService.class);
 
     private final UserRepository userRepository;
-    private final JwtUtil jwtUtil;
+    private final AuthTokenService authTokenService;
     private final MailService mailService;
     private final String clientId;
     private final GoogleIdTokenVerifier verifier;
 
     public GoogleAuthService(UserRepository userRepository,
-                             JwtUtil jwtUtil,
+                             AuthTokenService authTokenService,
                              MailService mailService,
-                             @Value("${app.google.client-id:}") String clientId) {
+                             @Value("${app.google.client-id:}") String clientId,
+                             @Value("${app.google.mobile-client-ids:}") String mobileClientIds) {
         this.userRepository = userRepository;
-        this.jwtUtil = jwtUtil;
+        this.authTokenService = authTokenService;
         this.mailService = mailService;
         this.clientId = clientId;
         this.verifier = clientId.isBlank() ? null : new GoogleIdTokenVerifier.Builder(
                 new NetHttpTransport(), GsonFactory.getDefaultInstance())
-            .setAudience(Collections.singletonList(clientId))
+            .setAudience(audiences(clientId, mobileClientIds))
             .build();
+    }
+
+    /**
+     * The web client id, plus any Android/iOS client ids. A token is only
+     * accepted when it was minted for one of this app's own clients; a token
+     * Google issued to some other app must not sign anyone in here.
+     */
+    private static List<String> audiences(String webClientId, String mobileClientIds) {
+        List<String> audiences = new ArrayList<>();
+        audiences.add(webClientId);
+        Arrays.stream(mobileClientIds.split(","))
+            .map(String::trim)
+            .filter(id -> !id.isEmpty())
+            .forEach(audiences::add);
+        return audiences;
     }
 
     public String getClientId() {
@@ -103,15 +120,25 @@ public class GoogleAuthService {
             }
         }
 
-        String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponse(
-            token,
-            user.getEmail(),
-            user.getFullName(),
-            user.getCity(),
-            user.getThemePreference(),
-            user.getDesktopMode()
-        );
+        return authTokenService.issue(user);
+    }
+
+    /**
+     * Re-authentication for a Google-only account, which has no password to
+     * ask for: proves the person holding the session can still sign in to the
+     * Google account linked to it. Used before irreversible actions such as
+     * deleting the account.
+     */
+    public void verifyOwnership(User user, String idTokenString) {
+        if (verifier == null) {
+            throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE,
+                "Google Sign-In is not configured on this server");
+        }
+        Payload payload = verify(idTokenString);
+        if (user.getGoogleId() == null || !user.getGoogleId().equals(payload.getSubject())) {
+            throw new ApiException(HttpStatus.FORBIDDEN,
+                "That Google account is not the one linked to this profile");
+        }
     }
 
     private Payload verify(String idTokenString) {
