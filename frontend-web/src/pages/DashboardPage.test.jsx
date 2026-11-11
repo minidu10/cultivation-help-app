@@ -43,11 +43,11 @@ describe('DashboardPage', () => {
 
     renderWithApp(<DashboardPage />)
 
-    expect(await statValue('Harvest Revenue')).toBe('Rs. 2,000')
-    expect(await statValue('Total Expenses')).toBe('Rs. 1,800.5')
-    expect(await statValue('Net Profit')).toBe('Rs. 199.5')
-    expect(await statValue('Active Crops')).toBe('1')
-    expect(screen.getByText('2 total')).toBeInTheDocument()
+    expect(await statValue('Harvest income')).toBe('Rs. 2,000')
+    expect(await statValue('Total expenses')).toBe('Rs. 1,800.5')
+    expect(await statValue('Net profit')).toBe('Rs. 199.5')
+    expect(await statValue('Margin')).toBe('10.0%')
+    expect(screen.getByText('2 crops, 1 active')).toBeInTheDocument()
     expect(screen.getByText('Apply urea')).toBeInTheDocument()
     expect(profitLossCalls).toEqual([])
   })
@@ -64,7 +64,7 @@ describe('DashboardPage', () => {
     )
 
     renderWithApp(<DashboardPage />)
-    expect(await statValue('Total Expenses')).toBe('Rs. 1,800.5')
+    expect(await statValue('Total expenses')).toBe('Rs. 1,800.5')
 
     expect(insightCalls).toEqual([])
   })

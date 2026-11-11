@@ -1,4 +1,5 @@
 import { Component } from 'react'
+import logo from '../assets/logo.png'
 
 /**
  * Catches render errors anywhere below it.
@@ -39,11 +40,11 @@ export default class ErrorBoundary extends Component {
         <div style={{
           maxWidth: '420px',
           textAlign: 'center',
-          fontFamily: 'Inter, system-ui, sans-serif',
+          fontFamily: 'var(--font-body)',
         }}>
-          <div style={{ fontSize: '40px', marginBottom: '16px' }}>🌿</div>
+          <img src={logo} alt="" width="56" height="56" style={{ display: 'block', margin: '0 auto 16px' }} />
           <h1 style={{
-            fontFamily: 'Space Grotesk, Inter, sans-serif',
+            fontFamily: 'var(--font-body)',
             fontSize: '20px', fontWeight: 700,
             color: 'var(--text-primary, #e8f5e2)',
             margin: '0 0 8px',
@@ -61,11 +62,11 @@ export default class ErrorBoundary extends Component {
           <button
             onClick={() => window.location.reload()}
             style={{
-              background: 'linear-gradient(135deg, #4ade80, #16a34a)',
-              color: '#06210f',
+              background: 'var(--accent-lime)',
+              color: 'var(--on-accent)',
               border: 'none', borderRadius: '10px',
               padding: '11px 26px',
-              fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 600,
+              fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600,
               cursor: 'pointer',
             }}
           >

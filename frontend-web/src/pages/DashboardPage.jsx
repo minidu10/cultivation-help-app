@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell
+  Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from 'recharts'
 import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
@@ -14,7 +14,14 @@ import {
   getDailyForecast, getDailyForecastByLocation, getWeatherAlerts,
 } from '../api/weather'
 
-const CHART_COLORS = ['#4ade80', '#f87171', '#60a5fa', '#f59e0b', '#c084fc']
+// Recharts writes colours as SVG attributes, where CSS variables do not
+// resolve, so the theme's chart colours are read once and passed as values.
+const FALLBACK_CHART_COLORS = ['#2f8f46', '#f59e0b', '#3f7fae', '#4ade80', '#8b6f5a', '#3a8f8a']
+
+function readChartColors() {
+  const css = getComputedStyle(document.documentElement)
+  return FALLBACK_CHART_COLORS.map((fallback, i) => css.getPropertyValue(`--chart-${i + 1}`).trim() || fallback)
+}
 
 // Colombo, for when neither a saved city nor the browser's position works.
 const FALLBACK_LAT = 6.9271
@@ -36,33 +43,56 @@ async function succeeds(attempt) {
   try { await attempt(); return true } catch { return false }
 }
 
-const CUSTOM_TOOLTIP_STYLE = {
-  background: 'var(--bg-card)',
-  border: '1px solid rgba(74,222,128,0.2)',
-  borderRadius: '10px',
-  fontFamily: 'Inter, sans-serif',
-  fontSize: '13px',
-  color: 'var(--text-primary)',
-}
+const font = 'var(--font-body)'
+const rupees = (value) => `Rs. ${Number(value).toLocaleString()}`
+const shortRupees = (value) => (Math.abs(value) >= 1000 ? `${Math.round(value / 1000)}k` : `${value}`)
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload || !payload.length) return null
   return (
-    <div style={CUSTOM_TOOLTIP_STYLE}>
-      <p style={{ padding: '8px 12px 4px', fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, borderBottom: '1px solid rgba(74,222,128,0.1)', marginBottom: '4px' }}>{label}</p>
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 12px', fontFamily: font, fontSize: '13px', color: 'var(--text-primary)', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
+      {label && <p style={{ fontWeight: 600, margin: '0 0 2px' }}>{label}</p>}
       {payload.map((p, i) => (
-        <p key={i} style={{ padding: '2px 12px', color: p.color }}>
-          {p.name}: Rs. {Number(p.value).toLocaleString()}
-        </p>
+        <p key={i} style={{ margin: 0 }}>{p.name}: {rupees(p.value)}</p>
       ))}
-      <div style={{ height: 4 }} />
     </div>
+  )
+}
+
+const card = {
+  background: 'var(--bg-card)',
+  border: '1px solid var(--border)',
+  borderRadius: 'var(--radius-card)',
+  padding: '22px 24px',
+  minWidth: 0,
+}
+
+const cardTitle = { fontFamily: font, fontWeight: 700, fontSize: '17px', color: 'var(--text-primary)', margin: 0 }
+const cardSub = { fontFamily: font, fontSize: '14px', color: 'var(--text-muted)', margin: '2px 0 0' }
+const emptyText = { fontFamily: font, fontSize: '14px', color: 'var(--text-faint)', padding: '28px 0', textAlign: 'center' }
+const textButton = { background: 'none', border: 'none', color: 'var(--accent-lime)', cursor: 'pointer', fontFamily: font, fontSize: '13px', fontWeight: 600, padding: '4px 0' }
+
+/** A colour key with the amount and share, as a list under a chart. */
+function ShareList({ rows, colors, total }) {
+  return (
+    <ul style={{ listStyle: 'none', margin: '8px 0 0', padding: 0 }}>
+      {rows.map((row, i) => (
+        <li key={row.cropId} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 0', borderBottom: i < rows.length - 1 ? '1px solid var(--border)' : 'none', fontFamily: font, fontSize: '14px' }}>
+          <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: '3px', background: colors[i % colors.length], flexShrink: 0 }} />
+          <span style={{ flex: 1, minWidth: 0, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</span>
+          <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{rupees(row.value)}</span>
+          <span style={{ width: 44, textAlign: 'right', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{total > 0 ? `${Math.round((row.value / total) * 100)}%` : '0%'}</span>
+        </li>
+      ))}
+    </ul>
   )
 }
 
 export default function DashboardPage() {
   const { user } = useAuth()
   const isMobile = useIsMobile()
+  const isNarrow = useIsMobile(520)
+  const [chartColors] = useState(readChartColors)
   const [totals, setTotals] = useState(null)
   const [profitData, setProfitData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -215,347 +245,276 @@ export default function DashboardPage() {
   const netProfit = Number(totals?.netProfit ?? 0)
   const activeCrops = totals?.activeCrops ?? 0
   const totalCrops = totals?.totalCrops ?? 0
+  const margin = totalRevenue > 0 ? `${((netProfit / totalRevenue) * 100).toFixed(1)}%` : 'None yet'
 
-
-  const pieData = [
-    { name: 'Revenue', value: totalRevenue },
-    { name: 'Expenses', value: totalExpenses },
-  ]
-
-  const cardStyle = {
-    background: 'var(--bg-card)',
-    border: '1px solid var(--border)',
-    borderRadius: '16px',
-    backdropFilter: 'blur(12px)',
-    padding: '24px',
-  }
+  const incomeRows = profitData.filter((row) => row.revenue > 0).map((row) => ({ cropId: row.cropId, name: row.name, value: row.revenue }))
+  const expenseRows = profitData.filter((row) => row.expenses > 0).map((row) => ({ cropId: row.cropId, name: row.name, value: row.expenses }))
 
   const renderInsightContent = (rawInsight) => {
     const lines = rawInsight.split('\n').map(l => l.replace(/\*\*/g, '').trim()).filter(l => l.length > 0)
     return lines.map((line, idx) => {
       if (line.startsWith('* ')) return (
         <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '4px' }}>
-          <span style={{ color: '#4ade80', marginTop: '2px' }}>•</span>
-          <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.6, margin: 0 }}>{line.replace(/^\*\s+/, '')}</p>
+          <span aria-hidden="true" style={{ color: 'var(--accent-lime)', marginTop: '1px' }}>•</span>
+          <p style={{ fontFamily: font, fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.55, margin: 0 }}>{line.replace(/^\*\s+/, '')}</p>
         </div>
       )
       if (/^\d+\./.test(line)) return (
-        <p key={idx} style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: '6px 0 2px' }}>{line}</p>
+        <p key={idx} style={{ fontFamily: font, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: '6px 0 2px' }}>{line}</p>
       )
-      return <p key={idx} style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6, margin: '2px 0' }}>{line}</p>
+      return <p key={idx} style={{ fontFamily: font, fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.55, margin: '2px 0' }}>{line}</p>
     })
   }
 
   if (loading) {
     return (
-      <Layout>
+      <Layout title={null}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', flexDirection: 'column', gap: '16px' }}>
-          <div style={{ width: 40, height: 40, border: '3px solid rgba(74,222,128,0.2)', borderTopColor: '#4ade80', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', color: 'var(--text-muted)', fontSize: '14px' }}>Loading dashboard…</p>
+          <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: 'var(--accent-lime)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <p style={{ fontFamily: font, color: 'var(--text-muted)', fontSize: '14px' }}>Loading dashboard…</p>
         </div>
       </Layout>
     )
   }
 
   return (
-    <Layout>
-      {/* Stat cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)', gap: '12px', marginBottom: '20px' }}>
-        <StatCard title="Harvest Revenue" value={`Rs. ${totalRevenue.toLocaleString()}`} sub="All crops" color="green" icon="📦" />
-        <StatCard title="Total Expenses"  value={`Rs. ${totalExpenses.toLocaleString()}`} sub="All crops" color="red" icon="💸" />
-        <StatCard title="Net Profit"      value={`Rs. ${netProfit.toLocaleString()}`} sub={netProfit >= 0 ? 'Profitable ✓' : 'Loss'} color={netProfit >= 0 ? 'green' : 'red'} icon="📈" />
-        <StatCard title="Active Crops"    value={activeCrops} sub={`${totalCrops} total`} color="blue" icon="🌾" />
-      </div>
-
-      {/* Weather risks to planned tasks: above the charts, because they need acting on */}
+    <Layout title={null}>
+      {/* Weather risks to planned tasks come first, because they need acting on */}
       <WeatherAlerts alerts={alerts} onMove={moveReminder} movingId={movingReminderId} />
 
-      {/* Charts row */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '2fr 1fr', gap: '16px', marginBottom: '20px' }}>
-
-        {/* Bar chart */}
-        <div style={cardStyle}>
-          <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <div>
-              <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>Revenue vs Expenses</div>
-              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>Per crop · Rs.</div>
-            </div>
-            <div style={{ display: 'flex', gap: '16px' }}>
-              {[{ label: 'Revenue', color: '#4ade80' }, { label: 'Expenses', color: '#f87171' }].map(l => (
-                <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '2px', background: l.color }} />
-                  <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)' }}>{l.label}</span>
-                </div>
-              ))}
-            </div>
+      {/* ── Profit & loss ── */}
+      <section aria-labelledby="pl-title" style={{ ...card, marginBottom: '20px', padding: isMobile ? '20px 18px' : '26px 28px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px 24px', marginBottom: '20px' }}>
+          <div>
+            <h1 id="pl-title" style={{ ...cardTitle, fontSize: '22px' }}>Profit &amp; loss</h1>
+            <p style={cardSub}>Income and expenses for each crop, across all your records</p>
           </div>
-          {profitData.length === 0 ? (
-            <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)', textAlign: 'center', padding: '40px 0' }}>
-              No crop data yet — add crops and expenses to see charts
-            </p>
-          ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={profitData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(74,222,128,0.08)" />
-                <XAxis dataKey="name" tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fill: 'var(--text-muted)', fontSize: 11, fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif' }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} />
-                <Bar dataKey="revenue" name="Revenue" fill="#4ade80" radius={[4, 4, 0, 0]} opacity={0.85} />
-                <Bar dataKey="expenses" name="Expenses" fill="#f87171" radius={[4, 4, 0, 0]} opacity={0.75} />
-              </BarChart>
-            </ResponsiveContainer>
-          )}
+          <span style={{ fontFamily: font, fontSize: '14px', color: 'var(--text-muted)', padding: '6px 12px', border: '1px solid var(--border)', borderRadius: '8px' }}>
+            {`${totalCrops} crops, ${activeCrops} active`}
+          </span>
         </div>
 
-        {/* Weather widget */}
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-            <div>
-              <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '13px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px' }}>Weather</div>
-              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-faint)' }}>{user?.city || 'Current Location'}</div>
-            </div>
-            {!loadingWeather && weatherCurrent && (
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '36px', fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>
-                  {Math.round(weatherCurrent.temperatureC ?? 0)}°
-                </div>
-                <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--text-muted)' }}>{weatherCurrent.description || ''}</div>
-              </div>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isNarrow ? 1 : isMobile ? 2 : 4}, minmax(0, 1fr))`, gap: '12px', marginBottom: '28px' }}>
+          <StatCard title="Harvest income" value={rupees(totalRevenue)} sub="Sales from all crops" />
+          <StatCard title="Total expenses" value={rupees(totalExpenses)} sub="Costs across all crops" />
+          <StatCard title="Net profit" value={rupees(netProfit)} tone={netProfit >= 0 ? 'good' : 'bad'} sub={netProfit >= 0 ? 'Profit' : 'Loss'} subTone={netProfit >= 0 ? 'good' : 'bad'} />
+          <StatCard title="Margin" value={margin} tone={totalRevenue > 0 ? (netProfit >= 0 ? 'good' : 'bad') : 'neutral'} sub="of income kept" />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'repeat(2, minmax(0, 1fr))', gap: isMobile ? '32px' : '48px' }}>
+          <div style={{ minWidth: 0 }}>
+            <h2 style={{ ...cardTitle, fontSize: '16px' }}>Income by crop</h2>
+            {incomeRows.length === 0 ? (
+              <p style={emptyText}>No harvests sold yet</p>
+            ) : (
+              <>
+                <ResponsiveContainer width="100%" height={220}>
+                  <PieChart>
+                    <Pie data={incomeRows} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={62} outerRadius={92} paddingAngle={2} stroke="none">
+                      {incomeRows.map((row, i) => <Cell key={row.cropId} fill={chartColors[i % chartColors.length]} />)}
+                    </Pie>
+                    <Tooltip content={<CustomTooltip />} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <ShareList rows={incomeRows} colors={chartColors} total={totalRevenue} />
+              </>
             )}
-            <button onClick={loadWeather} style={{ background: 'none', border: 'none', color: '#4ade80', cursor: 'pointer', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px' }}>Refresh</button>
+          </div>
+
+          <div style={{ minWidth: 0 }}>
+            <h2 style={{ ...cardTitle, fontSize: '16px' }}>Expenses by crop</h2>
+            {expenseRows.length === 0 ? (
+              <p style={emptyText}>No expenses recorded yet</p>
+            ) : (
+              <>
+                <ResponsiveContainer width="100%" height={Math.max(160, expenseRows.length * 52 + 40)}>
+                  <BarChart data={expenseRows} layout="vertical" margin={{ top: 12, right: 16, bottom: 4, left: 8 }}>
+                    <CartesianGrid horizontal={false} stroke="var(--border)" />
+                    <XAxis type="number" tickFormatter={shortRupees} tick={{ fill: 'var(--text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
+                    <YAxis type="category" dataKey="name" width={96} tick={{ fill: 'var(--text-primary)', fontSize: 13 }} axisLine={false} tickLine={false} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--bg-row-hover)' }} />
+                    <Bar dataKey="value" name="Expenses" radius={[0, 4, 4, 0]} barSize={22}>
+                      {expenseRows.map((row, i) => <Cell key={row.cropId} fill={chartColors[i % chartColors.length]} />)}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <ShareList rows={expenseRows} colors={chartColors} total={totalExpenses} />
+              </>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Reminders and weather ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'repeat(2, minmax(0, 1fr))', gap: '20px', marginBottom: '20px' }}>
+        <section aria-labelledby="due-title" style={card}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
+            <h2 id="due-title" style={cardTitle}>Today's reminders</h2>
+            <button type="button" onClick={loadDueReminders} style={textButton}>Refresh</button>
+          </div>
+          {dueReminders.length === 0 ? (
+            <p style={emptyText}>No due reminders right now.</p>
+          ) : (
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+              {dueReminders.map((item, i) => (
+                <li key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '12px 0', borderBottom: i < dueReminders.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <p style={{ fontFamily: font, fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{item.title}</p>
+                    <p style={{ fontFamily: font, fontSize: '13px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                      {item.type?.replaceAll('_', ' ').toLowerCase()}, {item.reminderAt?.replace('T', ' ').slice(0, 16)}
+                    </p>
+                  </div>
+                  <button type="button" onClick={() => markReminderDone(item.id)} style={{ background: 'var(--bg-tile)', border: 'none', borderRadius: '8px', padding: '7px 12px', color: 'var(--accent-lime)', fontFamily: font, fontSize: '13px', fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
+                    Mark done
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        <section aria-labelledby="weather-title" style={card}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '12px', marginBottom: '12px' }}>
+            <div>
+              <h2 id="weather-title" style={cardTitle}>Weather</h2>
+              <p style={cardSub}>{weatherCurrent?.location || user?.city || 'Your location'}</p>
+            </div>
+            <button type="button" onClick={loadWeather} style={textButton}>Refresh</button>
           </div>
 
           {loadingWeather ? (
-            <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)', padding: '20px 0' }}>Loading weather…</p>
+            <p style={emptyText}>Loading weather…</p>
           ) : weatherError ? (
-            <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: '#f87171' }}>{weatherError}</p>
+            <p style={{ fontFamily: font, fontSize: '14px', color: 'var(--accent-red)', padding: '12px 0' }}>{weatherError}</p>
           ) : weatherCurrent ? (
             <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', padding: '12px', background: 'rgba(74,222,128,0.06)', borderRadius: '10px', border: '1px solid rgba(74,222,128,0.12)' }}>
-                {weatherCurrent.iconUrl && <img src={weatherCurrent.iconUrl} alt="" style={{ width: 40, height: 40 }} />}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px' }}>
-                  <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)' }}>Feels: {Math.round(weatherCurrent.feelsLikeC ?? 0)}°C</span>
-                  <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)' }}>Humidity: {weatherCurrent.humidity ?? 0}%</span>
-                  <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)' }}>Wind: {weatherCurrent.windSpeed ?? 0} m/s</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '16px' }}>
+                {weatherCurrent.iconUrl && <img src={weatherCurrent.iconUrl} alt="" style={{ width: 52, height: 52 }} />}
+                <div>
+                  <div style={{ fontFamily: font, fontSize: '34px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.1 }}>{Math.round(weatherCurrent.temperatureC ?? 0)}°C</div>
+                  <div style={{ fontFamily: font, fontSize: '14px', color: 'var(--text-muted)' }}>{weatherCurrent.description || ''}</div>
                 </div>
+                <dl style={{ marginLeft: 'auto', display: 'grid', gridTemplateColumns: 'auto auto', gap: '2px 12px', fontFamily: font, fontSize: '13px' }}>
+                  <dt style={{ color: 'var(--text-muted)' }}>Feels like</dt><dd style={{ margin: 0, color: 'var(--text-primary)' }}>{Math.round(weatherCurrent.feelsLikeC ?? 0)}°C</dd>
+                  <dt style={{ color: 'var(--text-muted)' }}>Humidity</dt><dd style={{ margin: 0, color: 'var(--text-primary)' }}>{weatherCurrent.humidity ?? 0}%</dd>
+                  <dt style={{ color: 'var(--text-muted)' }}>Wind</dt><dd style={{ margin: 0, color: 'var(--text-primary)' }}>{weatherCurrent.windSpeed ?? 0} m/s</dd>
+                </dl>
               </div>
 
               {weatherForecast.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(weatherForecast.length, 5)}, 1fr)`, gap: '6px', marginBottom: '12px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(weatherForecast.length, 5)}, minmax(0, 1fr))`, gap: '8px' }}>
                   {weatherForecast.slice(0, 5).map((day) => (
-                    <div key={day.date} style={{ textAlign: 'center', background: 'var(--bg-input)', borderRadius: '10px', padding: '8px 4px', border: '1px solid var(--border)' }}>
-                      <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '10px', color: 'var(--text-muted)', marginBottom: '4px' }}>
+                    <div key={day.date} style={{ textAlign: 'center', background: 'var(--bg-tile)', borderRadius: '10px', padding: '10px 4px' }}>
+                      <div style={{ fontFamily: font, fontSize: '12px', color: 'var(--text-muted)' }}>
                         {new Date(`${day.date}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'short' })}
                       </div>
-                      {day.iconUrl && <img src={day.iconUrl} alt={day.description || ''} style={{ width: 28, height: 28, margin: '0 auto 4px', display: 'block' }} />}
-                      <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        {Math.round(day.maxTempC ?? 0)}° <span style={{ fontWeight: 400, color: 'var(--text-faint)' }}>{Math.round(day.minTempC ?? 0)}°</span>
+                      {day.iconUrl && <img src={day.iconUrl} alt={day.description || ''} style={{ width: 32, height: 32, margin: '2px auto', display: 'block' }} />}
+                      <div style={{ fontFamily: font, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                        {Math.round(day.maxTempC ?? 0)}° <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>{Math.round(day.minTempC ?? 0)}°</span>
                       </div>
-                      <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '10px', color: '#60a5fa' }}>{day.rainChancePercent ?? 0}%</div>
+                      <div style={{ fontFamily: font, fontSize: '12px', color: 'var(--accent-blue)' }}>{day.rainChancePercent ?? 0}% rain</div>
                     </div>
                   ))}
                 </div>
               )}
             </>
           ) : (
-            <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)' }}>No weather data available.</p>
+            <p style={emptyText}>No weather data available.</p>
           )}
-        </div>
+        </section>
       </div>
 
-      {/* Reminders + Pie chart row */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
-
-        {/* Today's Reminders */}
-        <div style={cardStyle}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-            <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>Today's Reminders</div>
-            <button onClick={loadDueReminders} style={{ background: 'none', border: 'none', color: '#4ade80', cursor: 'pointer', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px' }}>Refresh</button>
-          </div>
-          {dueReminders.length === 0 ? (
-            <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)', padding: '16px 0' }}>No due reminders right now.</p>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {dueReminders.map(item => (
-                <div key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '10px 12px', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px' }}>
-                  <div>
-                    <p style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{item.title}</p>
-                    <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                      {item.type?.replaceAll('_', ' ')} · {item.reminderAt?.replace('T', ' ').slice(0, 16)}
-                    </p>
-                  </div>
-                  <button onClick={() => markReminderDone(item.id)} style={{
-                    background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.3)',
-                    borderRadius: '6px', padding: '4px 10px', color: '#4ade80',
-                    fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', cursor: 'pointer', flexShrink: 0,
-                  }}>Done ✓</button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Pie chart */}
-        <div style={cardStyle}>
-          <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', marginBottom: '4px' }}>Revenue vs Expenses</div>
-          <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '12px' }}>Overall overview</div>
-          {totalRevenue === 0 && totalExpenses === 0 ? (
-            <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)', textAlign: 'center', padding: '40px 0' }}>No financial data yet</p>
-          ) : (
-            <>
-              <ResponsiveContainer width="100%" height={180}>
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={78} paddingAngle={4} dataKey="value">
-                    {pieData.map((_, index) => (
-                      <Cell key={index} fill={CHART_COLORS[index]} opacity={0.9} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => `Rs. ${value.toLocaleString()}`} contentStyle={CUSTOM_TOOLTIP_STYLE} />
-                </PieChart>
-              </ResponsiveContainer>
-              {/* Legend below chart */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
-                {pieData.map((entry, index) => {
-                  const total = totalRevenue + totalExpenses
-                  const pct = total > 0 ? ((entry.value / total) * 100).toFixed(0) : 0
-                  return (
-                    <div key={entry.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: CHART_COLORS[index], flexShrink: 0 }} />
-                        <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)' }}>{entry.name}</span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-faint)' }}>{pct}%</span>
-                        <span style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '13px', fontWeight: 700, color: CHART_COLORS[index] }}>Rs. {entry.value.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Crop performance table */}
-      <div style={{ ...cardStyle, marginBottom: '20px' }}>
-        <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', marginBottom: '18px' }}>Crop Performance</div>
+      {/* ── Crop performance ── */}
+      <section aria-labelledby="crops-title" style={{ ...card, marginBottom: '28px' }}>
+        <h2 id="crops-title" style={{ ...cardTitle, marginBottom: '12px' }}>Crop performance</h2>
         {profitData.length === 0 ? (
-          <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)', textAlign: 'center', padding: '24px 0' }}>No crops added yet</p>
+          <p style={emptyText}>No crops added yet</p>
         ) : (
           <div className="table-scroll">
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '480px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid rgba(74,222,128,0.1)' }}>
-                {['Crop', 'Revenue', 'Expenses', 'Net Profit', 'Result'].map(h => (
-                  <th key={h} style={{ padding: '10px 14px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {profitData.map((row, i) => (
-                <tr key={i}
-                  style={{ borderBottom: i < profitData.length - 1 ? '1px solid rgba(74,222,128,0.06)' : 'none', transition: 'background 0.2s' }}
-                  onMouseEnter={e => e.currentTarget.style.background = 'rgba(74,222,128,0.04)'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  <td style={{ padding: '12px 14px', fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>{row.name}</td>
-                  <td style={{ padding: '12px 14px', fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '14px', color: '#4ade80' }}>Rs. {row.revenue.toLocaleString()}</td>
-                  <td style={{ padding: '12px 14px', fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '14px', color: '#f87171' }}>Rs. {row.expenses.toLocaleString()}</td>
-                  <td style={{ padding: '12px 14px', fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '14px', fontWeight: 700, color: row.profit >= 0 ? '#4ade80' : '#f87171' }}>Rs. {row.profit.toLocaleString()}</td>
-                  <td style={{ padding: '12px 14px' }}>
-                    <span className={row.result === 'PROFIT' ? 'badge-green' : row.result === 'LOSS' ? 'badge-red' : 'badge-gray'}>{row.result}</span>
-                  </td>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '520px', fontFamily: font, fontSize: '14px' }}>
+              <thead>
+                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                  {['Crop', 'Income', 'Expenses', 'Profit', 'Result'].map((h, i) => (
+                    <th key={h} scope="col" style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--text-muted)', textAlign: i === 0 || i === 4 ? 'left' : 'right' }}>{h}</th>
+                  ))}
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {profitData.map((row, i) => (
+                  <tr key={row.cropId} style={{ borderBottom: i < profitData.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                    <th scope="row" style={{ padding: '12px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'left' }}>{row.name}</th>
+                    <td style={{ padding: '12px', textAlign: 'right', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{rupees(row.revenue)}</td>
+                    <td style={{ padding: '12px', textAlign: 'right', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{rupees(row.expenses)}</td>
+                    <td style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: row.profit >= 0 ? 'var(--accent-lime)' : 'var(--accent-red)', fontVariantNumeric: 'tabular-nums' }}>{rupees(row.profit)}</td>
+                    <td style={{ padding: '12px' }}>
+                      <span className={row.result === 'PROFIT' ? 'badge-green' : row.result === 'LOSS' ? 'badge-red' : 'badge-gray'}>{row.result}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
-      </div>
+      </section>
 
-      {/* AI Insights */}
+      {/* ── AI insights ── */}
       {profitData.length > 0 && (
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: '8px',
-              background: 'linear-gradient(135deg, rgba(74,222,128,0.3), rgba(22,163,74,0.2))',
-              border: '1px solid rgba(74,222,128,0.4)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '16px', animation: 'pulse-glow 2s ease-in-out infinite',
-            }}>🤖</div>
-            <span style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)' }}>AI Insights</span>
-          </div>
+        <section aria-labelledby="insights-title">
+          <h2 id="insights-title" style={{ ...cardTitle, fontSize: '19px', marginBottom: '4px' }}>AI insights</h2>
+          <p style={{ ...cardSub, marginBottom: '14px' }}>Advice for each crop, based on its figures and the weather at the field</p>
 
           {loadingInsights ? (
-            <div style={{ ...cardStyle, textAlign: 'center', padding: '48px' }}>
-              <div style={{ width: 32, height: 32, border: '3px solid rgba(74,222,128,0.2)', borderTopColor: '#4ade80', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
-              <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)' }}>🤖 AI is analysing your crops…</p>
+            <div style={{ ...card, textAlign: 'center', padding: '40px' }}>
+              <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--accent-lime)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
+              <p style={{ fontFamily: font, fontSize: '14px', color: 'var(--text-muted)' }}>Reading your crops…</p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: isMobile || profitData.length === 1 ? '1fr' : '1fr 1fr', gap: '16px' }}>
-              {profitData.map((crop, i) => (
-                <div key={i} style={cardStyle}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
-                    <span style={{ fontSize: '18px' }}>🌾</span>
-                    <span style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>{crop.name}</span>
-                    <span className={crop.result === 'PROFIT' ? 'badge-green' : 'badge-red'} style={{ marginLeft: 'auto' }}>{crop.result}</span>
-                  </div>
-
-                  {/* Field weather */}
-                  <div style={{ marginBottom: '12px', padding: '10px 12px', background: 'rgba(96,165,250,0.08)', border: '1px solid rgba(96,165,250,0.15)', borderRadius: '10px' }}>
-                    <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: '#60a5fa', fontWeight: 600, marginBottom: '4px' }}>Field Weather</p>
-                    {cropWeatherById[crop.cropId] ? (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {cropWeatherById[crop.cropId].iconUrl && <img src={cropWeatherById[crop.cropId].iconUrl} alt="" style={{ width: 28, height: 28 }} />}
-                        <div>
-                          <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-primary)', margin: 0 }}>
-                            {Math.round(cropWeatherById[crop.cropId].temperatureC ?? 0)}°C {cropWeatherById[crop.cropId].description || ''}
-                          </p>
-                          <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                            {cropWeatherById[crop.cropId].location || crop.fieldLocation || 'Field location'}
-                          </p>
-                        </div>
-                      </div>
-                    ) : (
-                      <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'rgba(96,165,250,0.6)' }}>
-                        Weather not available for {crop.fieldLocation || 'this field location'}.
-                      </p>
-                    )}
-                  </div>
-
-                  {/* Insight text */}
-                  {insights[crop.cropId] && insights[crop.cropId] !== '__AI_OFF__' ? (
-                    <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px' }}>
-                      {renderInsightContent(insights[crop.cropId])}
+            <div style={{ display: 'grid', gridTemplateColumns: isMobile || profitData.length === 1 ? 'minmax(0, 1fr)' : 'repeat(2, minmax(0, 1fr))', gap: '20px' }}>
+              {profitData.map((crop) => {
+                const weather = cropWeatherById[crop.cropId]
+                return (
+                  <article key={crop.cropId} style={card}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                      <h3 style={{ ...cardTitle, fontSize: '16px' }}>{crop.name}</h3>
+                      <span className={crop.result === 'PROFIT' ? 'badge-green' : 'badge-red'} style={{ marginLeft: 'auto' }}>{crop.result}</span>
                     </div>
-                  ) : insights[crop.cropId] === '__AI_OFF__' ? (
-                    <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: '#f59e0b', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '8px', padding: '10px 12px', margin: 0 }}>
-                      AI off by farmer for this crop.
-                    </p>
-                  ) : (
-                    <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)' }}>No insights available</p>
-                  )}
 
-                  {/* Mini financials */}
-                  <div style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid rgba(74,222,128,0.08)', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', textAlign: 'center' }}>
-                    {[
-                      { label: 'Revenue', value: `Rs. ${crop.revenue.toLocaleString()}`, color: '#4ade80' },
-                      { label: 'Expenses', value: `Rs. ${crop.expenses.toLocaleString()}`, color: '#f87171' },
-                      { label: 'Profit', value: `Rs. ${crop.profit.toLocaleString()}`, color: crop.profit >= 0 ? '#4ade80' : '#f87171' },
-                    ].map(s => (
-                      <div key={s.label}>
-                        <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 2px' }}>{s.label}</p>
-                        <p style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '13px', fontWeight: 700, color: s.color, margin: 0 }}>{s.value}</p>
+                    <p style={{ fontFamily: font, fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+                      {weather
+                        ? `${weather.location || crop.fieldLocation || 'Field'}: ${Math.round(weather.temperatureC ?? 0)}°C, ${weather.description || ''}`
+                        : `Weather not available for ${crop.fieldLocation || 'this field location'}.`}
+                    </p>
+
+                    {insights[crop.cropId] && insights[crop.cropId] !== '__AI_OFF__' ? (
+                      <div style={{ background: 'var(--bg-tile)', borderRadius: '10px', padding: '12px 14px' }}>
+                        {renderInsightContent(insights[crop.cropId])}
                       </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                    ) : insights[crop.cropId] === '__AI_OFF__' ? (
+                      <p style={{ fontFamily: font, fontSize: '14px', color: 'var(--accent-amber)', margin: 0 }}>
+                        AI off by farmer for this crop.
+                      </p>
+                    ) : (
+                      <p style={{ fontFamily: font, fontSize: '14px', color: 'var(--text-faint)', margin: 0 }}>No insights available</p>
+                    )}
+
+                    <dl style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px', fontFamily: font }}>
+                      {[
+                        { label: 'Income', value: crop.revenue, color: 'var(--text-primary)' },
+                        { label: 'Expenses', value: crop.expenses, color: 'var(--text-primary)' },
+                        { label: 'Profit', value: crop.profit, color: crop.profit >= 0 ? 'var(--accent-lime)' : 'var(--accent-red)' },
+                      ].map(s => (
+                        <div key={s.label}>
+                          <dt style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{s.label}</dt>
+                          <dd style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: s.color, fontVariantNumeric: 'tabular-nums' }}>{rupees(s.value)}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  </article>
+                )
+              })}
             </div>
           )}
-        </div>
+        </section>
       )}
     </Layout>
   )

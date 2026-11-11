@@ -1,44 +1,21 @@
-const ICON_MAP = { green: '🌾', red: '💸', blue: '📈', amber: '⚠️' }
-const COLOR_MAP = { green: 'var(--accent-lime)', red: 'var(--accent-red)', blue: 'var(--accent-blue)', amber: 'var(--accent-amber)' }
+const TONE_COLOR = {
+  good: 'var(--accent-lime)',
+  bad: 'var(--accent-red)',
+  neutral: 'var(--text-primary)',
+}
 
-export default function StatCard({ title, value, sub, color = 'green', icon }) {
-  const accent = COLOR_MAP[color] || 'var(--accent-lime)'
-  const displayIcon = icon || ICON_MAP[color] || '📊'
-
+/** One figure on a tinted tile: label, value, and an optional line under it. */
+export default function StatCard({ title, value, sub, tone = 'neutral', subTone }) {
   return (
-    <div
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: '16px', padding: '24px',
-        backdropFilter: 'blur(12px)',
-        transition: 'all 0.3s', flex: 1,
-        cursor: 'default',
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.borderColor = 'var(--border-hover)'
-        e.currentTarget.style.transform = 'translateY(-2px)'
-        e.currentTarget.style.boxShadow = '0 8px 32px rgba(74,222,128,0.08)'
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.borderColor = 'var(--border)'
-        e.currentTarget.style.transform = 'translateY(0)'
-        e.currentTarget.style.boxShadow = 'none'
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-        <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>
-          {title}
-        </span>
-        <span style={{ fontSize: '20px' }}>{displayIcon}</span>
+    <div style={{ background: 'var(--bg-tile)', borderRadius: 'var(--radius-control)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '4px', minWidth: 0 }}>
+      <div>
+        <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{title}</span>
       </div>
-      <div style={{
-        fontFamily: 'Space Grotesk, sans-serif',
-        fontSize: '28px', fontWeight: 800,
-        color: accent, letterSpacing: '-1px', marginBottom: '8px',
-      }}>{value}</div>
+      <div style={{ fontSize: '28px', fontWeight: 700, lineHeight: 1.2, color: TONE_COLOR[tone] || TONE_COLOR.neutral, letterSpacing: '-0.01em', fontVariantNumeric: 'tabular-nums', overflowWrap: 'break-word' }}>
+        {value}
+      </div>
       {sub && (
-        <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-faint)' }}>{sub}</div>
+        <div style={{ fontSize: '13px', color: subTone ? TONE_COLOR[subTone] : 'var(--text-muted)' }}>{sub}</div>
       )}
     </div>
   )

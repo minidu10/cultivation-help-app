@@ -1,16 +1,20 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { useIsMobile } from '../hooks/useIsMobile'
+import logo from '../assets/logo.png'
 
 const LogoutIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{ flexShrink: 0 }}>
+  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 20 20" fill="currentColor" style={{ flexShrink: 0 }}>
     <path fillRule="evenodd" clipRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" />
   </svg>
 )
 
-const MenuIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
-    <path fillRule="evenodd" clipRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
+const MenuIcon = ({ open }) => (
+  <svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    {open
+      ? <><path d="M6 6l12 12" /><path d="M18 6L6 18" /></>
+      : <><path d="M4 7h16" /><path d="M4 12h16" /><path d="M4 17h16" /></>}
   </svg>
 )
 
@@ -26,184 +30,109 @@ const NAV_ITEMS = [
 const PAGE_LABELS = {
   '/dashboard': 'Dashboard', '/crops': 'My Crops', '/expenses': 'Expenses',
   '/harvests': 'Harvests', '/ai-advisor': 'AI Advisor',
-  '/settings': 'Settings',
+  '/settings': 'Settings', '/profile': 'Profile',
 }
 
-export default function Layout({ children }) {
-  const [open, setOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+const font = 'var(--font-body)'
+
+/**
+ * The signed-in shell: a top bar with the sections, then the page.
+ * `title` overrides the heading taken from the route; pass null for a page
+ * that renders its own.
+ */
+export default function Layout({ children, title }) {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const isMobile = useIsMobile(900)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
-  useEffect(() => {
-    const handler = () => setIsMobile(window.innerWidth < 768)
-    window.addEventListener('resize', handler)
-    return () => window.removeEventListener('resize', handler)
-  }, [])
-
-  const currentLabel = PAGE_LABELS[location.pathname] || 'Dashboard'
+  const heading = title === undefined ? (PAGE_LABELS[location.pathname] || 'Dashboard') : title
   const initials = (user?.fullName || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  const showLinks = !isMobile || menuOpen
+
+  const signOut = () => { logout(); navigate('/') }
 
   return (
-    <div className="grain" style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-primary)' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', fontFamily: font }}>
+      <header style={{ position: 'sticky', top: 0, zIndex: 10, background: 'var(--bg-header)', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '0 20px', minHeight: 64, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0 28px' }}>
+          <NavLink to="/dashboard" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: '21px', color: 'var(--text-primary)', textDecoration: 'none', padding: '14px 0' }}>
+            <img src={logo} alt="" width="32" height="32" style={{ display: 'block' }} />
+            <span>Agro<span style={{ color: 'var(--accent-lime)' }}>Master</span></span>
+          </NavLink>
 
-      {/* Mobile backdrop */}
-      {isMobile && open && (
-        <div
-          onClick={() => setOpen(false)}
-          style={{
-            position: 'fixed', inset: 0,
-            background: 'rgba(0,0,0,0.55)',
-            backdropFilter: 'blur(2px)',
-            zIndex: 9,
-          }}
-        />
-      )}
-
-      {/* ── Sidebar ── */}
-      <aside style={{
-        width: open ? '200px' : '0px',
-        minHeight: '100vh',
-        background: 'var(--bg-sidebar)',
-        borderRight: open ? '1px solid var(--border)' : 'none',
-        backdropFilter: 'blur(20px)',
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'width 0.25s ease',
-        position: isMobile ? 'fixed' : 'sticky',
-        top: 0,
-        left: 0,
-        alignSelf: 'flex-start',
-        height: '100vh',
-        zIndex: 10,
-        flexShrink: 0,
-        overflow: 'hidden',
-      }}>
-
-        {/* Brand */}
-        <div style={{
-          padding: '20px 20px',
-          display: 'flex', alignItems: 'center', gap: '10px',
-          borderBottom: '1px solid var(--border)',
-          minHeight: '64px', whiteSpace: 'nowrap',
-        }}>
-          <div style={{
-            width: 28, height: 28, borderRadius: '7px',
-            background: 'linear-gradient(135deg, #4ade80, #16a34a)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '14px', flexShrink: 0,
-            boxShadow: '0 0 12px rgba(74,222,128,0.4)',
-          }}>🌿</div>
-          <span style={{
-            fontFamily: 'Space Grotesk, sans-serif',
-            fontWeight: 800, fontSize: '16px',
-            color: 'var(--text-primary)', letterSpacing: '-0.3px',
-          }}>Agromaster</span>
-        </div>
-
-        {/* Nav */}
-        <nav style={{ flex: 1, padding: '14px 0', overflowY: 'auto' }}>
-          {NAV_ITEMS.map(item => (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              title={item.label}
-              onClick={() => setOpen(false)}
-              style={({ isActive }) => ({
-                display: 'block',
-                padding: '11px 20px',
-                whiteSpace: 'nowrap',
-                background: isActive ? 'rgba(74,222,128,0.1)' : 'transparent',
-                borderLeft: isActive ? '3px solid var(--accent-lime)' : '3px solid transparent',
-                textDecoration: 'none',
-                fontFamily: 'Inter, sans-serif',
-                fontSize: '14px',
-                fontWeight: isActive ? 600 : 400,
-                color: isActive ? 'var(--accent-lime)' : 'var(--text-muted)',
-                transition: 'all 0.15s',
-                letterSpacing: '0.01em',
-              })}
+          {isMobile && (
+            <button
+              type="button"
+              onClick={() => setMenuOpen(o => !o)}
+              aria-expanded={menuOpen}
+              aria-controls="app-nav"
+              aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+              style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-primary)', padding: 10, display: 'flex' }}
             >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
+              <MenuIcon open={menuOpen} />
+            </button>
+          )}
 
-        {/* Sign Out */}
-        <div style={{ padding: '14px 20px 20px', borderTop: '1px solid var(--border)' }}>
-          <button
-            onClick={() => { logout(); navigate('/') }}
-            title="Sign Out"
-            style={{
-              display: 'flex', alignItems: 'center', gap: '8px',
-              background: 'transparent', border: 'none',
-              cursor: 'pointer', color: 'var(--text-faint)',
-              fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px',
-              padding: '6px 0', borderRadius: '6px',
-              transition: 'all 0.2s', whiteSpace: 'nowrap',
-            }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--accent-red)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-faint)'}
-          >
-            <LogoutIcon />
-            Sign Out
-          </button>
-        </div>
-      </aside>
+          {showLinks && (
+            <nav
+              id="app-nav"
+              aria-label="Main"
+              style={{
+                display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: isMobile ? 2 : 4,
+                flex: isMobile ? '1 0 100%' : '1 1 auto', padding: isMobile ? '0 0 12px' : 0,
+              }}
+            >
+              {NAV_ITEMS.map(item => (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setMenuOpen(false)}
+                  style={({ isActive }) => ({
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    background: isActive ? 'var(--bg-tile)' : 'transparent',
+                    color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
+                    fontSize: '14px',
+                    fontWeight: isActive ? 600 : 500,
+                    textDecoration: 'none',
+                    whiteSpace: 'nowrap',
+                  })}
+                >
+                  {item.label}
+                </NavLink>
+              ))}
+            </nav>
+          )}
 
-      {/* ── Main ── */}
-      <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-
-        {/* Topbar */}
-        <header style={{
-          padding: isMobile ? '12px 14px' : '14px 28px',
-          background: 'var(--bg-header)',
-          backdropFilter: 'blur(16px)',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex', alignItems: 'center', gap: '12px',
-          position: 'sticky', top: 0, zIndex: 5,
-        }}>
-          {/* Hamburger */}
-          <button
-            onClick={() => setOpen(o => !o)}
-            style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--text-muted)', padding: '4px',
-              borderRadius: '6px', display: 'flex', alignItems: 'center',
-              transition: 'color 0.2s', flexShrink: 0,
-            }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--accent-lime)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
-          >
-            <MenuIcon />
-          </button>
-
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h1 style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: isMobile ? '16px' : '20px', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{currentLabel}</h1>
-            {!isMobile && (
-              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--text-faint)', marginTop: '1px' }}>
-                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          {showLinks && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: isMobile ? '0 0 14px' : 0, flex: isMobile ? '1 0 100%' : '0 0 auto' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span aria-hidden="true" style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bg-tile)', color: 'var(--accent-lime)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, flexShrink: 0 }}>{initials}</span>
+                <span style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.25 }}>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{user?.fullName || 'Farmer'}</span>
+                  {user?.city && <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{user.city}</span>}
+                </span>
               </div>
-            )}
-          </div>
-
-          {/* User badge */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: isMobile ? '6px 8px' : '6px 12px', flexShrink: 0 }}>
-            <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: 700, color: '#0a1a0f', fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', flexShrink: 0 }}>{initials}</div>
-            {!isMobile && (
-              <div>
-                <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{user?.fullName || 'User'}</div>
-                <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--text-muted)' }}>{user?.city || 'Agromaster Farm'}</div>
-              </div>
-            )}
-          </div>
-        </header>
-
-        {/* Content */}
-        <div className="page-content" style={{ flex: 1, padding: '28px 32px', overflowY: 'auto' }}>
-          {children}
+              <button
+                type="button"
+                onClick={signOut}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: '1px solid var(--border)', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', color: 'var(--text-muted)', fontFamily: font, fontSize: '13px' }}
+              >
+                <LogoutIcon />
+                Sign out
+              </button>
+            </div>
+          )}
         </div>
+      </header>
+
+      <main className="page-content" style={{ maxWidth: 1240, margin: '0 auto', padding: '28px 20px 56px' }}>
+        {heading && (
+          <h1 style={{ fontFamily: font, fontWeight: 700, fontSize: '24px', color: 'var(--text-primary)', margin: '0 0 20px' }}>{heading}</h1>
+        )}
+        {children}
       </main>
     </div>
   )

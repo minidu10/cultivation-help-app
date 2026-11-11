@@ -133,7 +133,7 @@ export default function RegisterPage() {
             onChange={e => setEmail(e.target.value)}
             placeholder="farmer@example.com"
           />
-          <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-faint)', margin: '10px 0 0', lineHeight: 1.6 }}>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-faint)', margin: '10px 0 0', lineHeight: 1.6 }}>
             We will email a verification code to this address. Reminders and
             account notifications are sent here too, so use one you check.
           </p>
@@ -160,14 +160,14 @@ export default function RegisterPage() {
               onClick={() => { setStep(1); setCode(''); setError(''); setNotice('') }}
               style={{
                 background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-                fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)',
+                fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)',
               }}
             >
               ← Change email
             </button>
             <ResendTimer seconds={cooldown} onResend={handleResend} />
           </div>
-          <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-faint)', margin: '14px 0 0', lineHeight: 1.6 }}>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-faint)', margin: '14px 0 0', lineHeight: 1.6 }}>
             The code expires in 10 minutes. After 5 incorrect attempts you will
             need to request a new one.
           </p>
@@ -183,11 +183,11 @@ export default function RegisterPage() {
           <div style={{
             display: 'flex', alignItems: 'center', gap: '8px',
             padding: '10px 14px', marginBottom: '16px',
-            background: 'rgba(74,222,128,0.06)',
-            border: '1px solid rgba(74,222,128,0.15)', borderRadius: '10px',
+            background: 'color-mix(in srgb, var(--accent-lime) 6%, transparent)',
+            border: '1px solid color-mix(in srgb, var(--accent-lime) 15%, transparent)', borderRadius: '10px',
           }}>
             <span style={{ color: 'var(--accent-lime)' }}>✓</span>
-            <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-primary)' }}>{email.trim()}</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-primary)' }}>{email.trim()}</span>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '12px' }}>
@@ -198,8 +198,8 @@ export default function RegisterPage() {
             <StyledInput label="Confirm Password *" type="password" name="confirmPassword" value={form.confirmPassword} onChange={handleChange} placeholder="Repeat password" required half />
           </div>
 
-          <div style={{ marginTop: '10px', padding: '10px 14px', background: 'rgba(74,222,128,0.05)', border: '1px solid rgba(74,222,128,0.12)', borderRadius: '8px' }}>
-            <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--text-faint)', margin: 0, lineHeight: 1.7 }}>
+          <div style={{ marginTop: '10px', padding: '10px 14px', background: 'color-mix(in srgb, var(--accent-lime) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-lime) 12%, transparent)', borderRadius: '8px' }}>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-faint)', margin: 0, lineHeight: 1.7 }}>
               Password must include: uppercase &amp; lowercase letters, a number, and a special character (e.g. !@#$%)
             </p>
           </div>

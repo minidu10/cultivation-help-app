@@ -2,16 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 import { deleteDiagnosis, diagnosePhoto, getDiagnoses, getThumbnail } from '../api/diagnoses'
 import { resizePhoto } from '../utils/resizePhoto'
 
-const font = 'Inter, system-ui, -apple-system, Segoe UI, sans-serif'
-const heading = 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif'
+const font = 'var(--font-body)'
+const heading = 'var(--font-body)'
 
-const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', backdropFilter: 'blur(12px)', padding: '24px', marginBottom: '20px' }
+const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', marginBottom: '20px' }
 
 const SEVERITY = {
-  none: { label: 'Healthy', color: '#4ade80' },
-  low: { label: 'Mild', color: '#a3e635' },
-  moderate: { label: 'Moderate', color: '#f59e0b' },
-  severe: { label: 'Severe', color: '#f87171' },
+  none: { label: 'Healthy', color: 'var(--accent-lime)' },
+  low: { label: 'Mild', color: 'var(--accent-lime)' },
+  moderate: { label: 'Moderate', color: 'var(--accent-amber)' },
+  severe: { label: 'Severe', color: 'var(--accent-red)' },
 }
 
 function apiMessage(err, fallback) {
@@ -64,8 +64,8 @@ function List({ title, items, tone }) {
 export function DiagnosisResult({ result }) {
   if (!result.isPlant) {
     return (
-      <div role="status" style={{ padding: '14px 16px', borderRadius: '12px', background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.3)' }}>
-        <div style={{ fontFamily: font, fontSize: '14px', fontWeight: 700, color: '#f59e0b' }}>We could not see a plant clearly</div>
+      <div role="status" style={{ padding: '14px 16px', borderRadius: '12px', background: 'color-mix(in srgb, var(--accent-amber) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber) 30%, transparent)' }}>
+        <div style={{ fontFamily: font, fontSize: '14px', fontWeight: 700, color: 'var(--accent-amber)' }}>We could not see a plant clearly</div>
         <ul style={{ margin: '6px 0 0', paddingLeft: '18px', fontFamily: font, fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
           <li>Fill the frame with one affected leaf or fruit</li>
           <li>Take it in daylight, without flash</li>
@@ -92,19 +92,19 @@ export function DiagnosisResult({ result }) {
         <div style={{ fontFamily: font, fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>Confidence {percent}%</div>
         <div role="meter" aria-label="Confidence" aria-valuenow={percent} aria-valuemin={0} aria-valuemax={100}
           style={{ height: '6px', borderRadius: '6px', background: 'var(--bg-input)', overflow: 'hidden' }}>
-          <div style={{ width: `${percent}%`, height: '100%', background: percent >= 70 ? '#4ade80' : percent >= 50 ? '#f59e0b' : '#f87171' }} />
+          <div style={{ width: `${percent}%`, height: '100%', background: percent >= 70 ? 'var(--accent-lime)' : percent >= 50 ? 'var(--accent-amber)' : 'var(--accent-red)' }} />
         </div>
       </div>
 
       {result.seeExpert && (
-        <div role="alert" style={{ marginTop: '12px', padding: '10px 12px', borderRadius: '10px', background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.35)', fontFamily: font, fontSize: '13px', color: '#60a5fa' }}>
+        <div role="alert" style={{ marginTop: '12px', padding: '10px 12px', borderRadius: '10px', background: 'color-mix(in srgb, var(--accent-blue) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-blue) 35%, transparent)', fontFamily: font, fontSize: '13px', color: 'var(--accent-blue)' }}>
           Show this to your local Agrarian Service Centre or agriculture extension officer before you spray anything.
         </div>
       )}
 
       <List title="What we see" items={result.symptoms} />
-      <List title="Organic treatment" items={result.treatmentOrganic} tone="#4ade80" />
-      <List title="Chemical options" items={result.treatmentChemical} tone="#f59e0b" />
+      <List title="Organic treatment" items={result.treatmentOrganic} tone="var(--accent-lime)" />
+      <List title="Chemical options" items={result.treatmentChemical} tone="var(--accent-amber)" />
       {result.treatmentChemical?.length > 0 && (
         <p style={{ fontFamily: font, fontSize: '11px', color: 'var(--text-faint)', margin: '4px 0 0' }}>
           Follow the product label for dose and waiting period, and wear gloves and a mask.
@@ -169,7 +169,7 @@ export default function CropDoctor({ cropId }) {
 
   return (
     <section aria-label="Crop doctor" style={cardStyle}>
-      <div style={{ fontFamily: heading, fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', marginBottom: '4px' }}>🩺 Crop doctor</div>
+      <div style={{ fontFamily: heading, fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', marginBottom: '4px' }}>Crop doctor</div>
       <p style={{ fontFamily: font, fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 14px' }}>
         Photograph a sick leaf, fruit or stem and get a likely cause with treatment options.
       </p>
@@ -193,7 +193,7 @@ export default function CropDoctor({ cropId }) {
           style={{ display: 'none' }}
         />
         <button type="button" className="agro-btn" disabled={busy} onClick={() => input.current?.click()} style={{ padding: '10px 18px', fontSize: '14px' }}>
-          {busy ? 'Checking the photo…' : '📷 Check a photo'}
+          {busy ? 'Checking the photo…' : 'Check a photo'}
         </button>
       </div>
 
@@ -203,7 +203,7 @@ export default function CropDoctor({ cropId }) {
         </p>
       )}
       {error && (
-        <div role="alert" style={{ marginTop: '12px', padding: '10px 12px', borderRadius: '10px', background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', fontFamily: font, fontSize: '13px', color: '#f87171' }}>
+        <div role="alert" style={{ marginTop: '12px', padding: '10px 12px', borderRadius: '10px', background: 'color-mix(in srgb, var(--accent-red) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-red) 30%, transparent)', fontFamily: font, fontSize: '13px', color: 'var(--accent-red)' }}>
           {error}
         </div>
       )}
@@ -234,7 +234,7 @@ export default function CropDoctor({ cropId }) {
                     </div>
                   </button>
                   <button type="button" onClick={() => remove(d)} aria-label={`Delete ${d.condition} check`}
-                    style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '8px', padding: '5px 10px', fontFamily: font, fontSize: '12px', color: '#f87171', cursor: 'pointer' }}>
+                    style={{ background: 'none', border: '1px solid var(--border)', borderRadius: '8px', padding: '5px 10px', fontFamily: font, fontSize: '12px', color: 'var(--accent-red)', cursor: 'pointer' }}>
                     Delete
                   </button>
                 </div>

@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import Layout from '../components/Layout'
 import { askAI, getAIHealth } from '../api/crops'
 import { useIsMobile } from '../hooks/useIsMobile'
+import logo from '../assets/logo.png'
 
 const SUGGESTED_QUESTIONS = [
   'What is the best fertilizer for rice cultivation?',
@@ -16,7 +17,6 @@ const cardStyle = {
   background: 'var(--bg-card)',
   border: '1px solid var(--border)',
   borderRadius: '16px',
-  backdropFilter: 'blur(12px)',
 }
 
 export default function AIAdvisorPage() {
@@ -24,7 +24,7 @@ export default function AIAdvisorPage() {
   const [messages, setMessages] = useState([
     {
       role: 'ai',
-      text: `Hello! 👋 I'm your AI farming advisor. I can help you with crop cultivation, fertilizers, pest control, harvest timing, and farm finances. What would you like to know?`,
+      text: `Hello! I'm your AI farming advisor. I can help you with crop cultivation, fertilizers, pest control, harvest timing, and farm finances. What would you like to know?`,
     },
   ])
   const [input, setInput] = useState('')
@@ -85,7 +85,7 @@ export default function AIAdvisorPage() {
     : !health.up
       ? { color: 'var(--accent-red)', label: 'Offline' }
       : !health.configured
-        ? { color: '#f59e0b', label: 'Not configured' }
+        ? { color: 'var(--accent-amber)', label: 'Not configured' }
         : { color: 'var(--accent-lime)', label: `Online · ${health.model}` }
 
   return (
@@ -98,33 +98,33 @@ export default function AIAdvisorPage() {
           {/* Status */}
           <div style={{ ...cardStyle, padding: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-              <div style={{ width: 40, height: 40, borderRadius: '10px', background: 'rgba(74,222,128,0.1)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🤖</div>
+              <div style={{ width: 40, height: 40, borderRadius: '10px', background: 'color-mix(in srgb, var(--accent-lime) 10%, transparent)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}><img src={logo} alt="" style={{ width: '80%', height: '80%' }} /></div>
               <div>
-                <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>AI Advisor</div>
+                <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>AI Advisor</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '2px' }}>
                   <div style={{
                     width: 6, height: 6, borderRadius: '50%',
-                    background: status.color, boxShadow: `0 0 6px ${status.color}`,
+                    background: status.color, boxShadow: 'none',
                   }} />
-                  <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: status.color }}>{status.label}</span>
+                  <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: status.color }}>{status.label}</span>
                 </div>
               </div>
             </div>
-            <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.6 }}>
               Ask about cultivation, pests, fertilizers, and farm finances.
             </p>
           </div>
 
           {/* Crop context */}
           <div style={{ ...cardStyle, padding: '20px' }}>
-            <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '11px', color: 'var(--accent-lime)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px' }}>Farm Context</div>
-            <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>Help AI give better advice by describing your farm</p>
+            <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '11px', color: 'var(--accent-lime)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px' }}>Farm Context</div>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '10px' }}>Help AI give better advice by describing your farm</p>
             <textarea
               value={cropContext}
               onChange={e => setCropContext(e.target.value)}
               rows={3}
               placeholder="e.g. Growing Samba rice, 2.5 acres, North Field"
-              style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-primary)', outline: 'none', resize: 'none', transition: 'border-color 0.2s' }}
+              style={{ width: '100%', boxSizing: 'border-box', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '8px', padding: '10px 12px', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-primary)', outline: 'none', resize: 'none', transition: 'border-color 0.2s' }}
               onFocus={e => e.target.style.borderColor = 'var(--border-hover)'}
               onBlur={e => e.target.style.borderColor = 'var(--border)'}
             />
@@ -132,14 +132,14 @@ export default function AIAdvisorPage() {
 
           {/* Suggested questions */}
           <div style={{ ...cardStyle, padding: '20px' }}>
-            <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '11px', color: 'var(--accent-lime)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '12px' }}>Try Asking</div>
+            <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '11px', color: 'var(--accent-lime)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '12px' }}>Try Asking</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {SUGGESTED_QUESTIONS.map((q, i) => (
                 <button
                   key={i}
                   onClick={() => sendMessage(q)}
                   disabled={loading}
-                  style={{ textAlign: 'left', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '8px', padding: '9px 12px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.2s', opacity: loading ? 0.4 : 1 }}
+                  style={{ textAlign: 'left', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '8px', padding: '9px 12px', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', cursor: 'pointer', transition: 'all 0.2s', opacity: loading ? 0.4 : 1 }}
                   onMouseEnter={e => { if (!loading) { e.currentTarget.style.borderColor = 'var(--border-hover)'; e.currentTarget.style.color = 'var(--text-primary)' } }}
                   onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-muted)' }}
                 >
@@ -155,10 +155,10 @@ export default function AIAdvisorPage() {
 
           {/* Header */}
           <div style={{ padding: '18px 24px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', boxShadow: '0 0 12px rgba(74,222,128,0.3)', flexShrink: 0 }}>🌾</div>
+            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', boxShadow: 'none', flexShrink: 0 }}><img src={logo} alt="" style={{ width: '80%', height: '80%' }} /></div>
             <div>
-              <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>AgroMaster AI</div>
-              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)' }}>Expert farming advisor for Sri Lanka</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)' }}>AgroMaster AI</div>
+              <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)' }}>Expert farming advisor for Sri Lanka</div>
             </div>
           </div>
 
@@ -167,7 +167,7 @@ export default function AIAdvisorPage() {
             {messages.map((msg, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start', alignItems: 'flex-start', gap: '10px' }}>
                 {msg.role === 'ai' && (
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', flexShrink: 0, boxShadow: '0 0 8px rgba(74,222,128,0.25)' }}>🌾</div>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', flexShrink: 0, boxShadow: 'none' }}><img src={logo} alt="" style={{ width: '80%', height: '80%' }} /></div>
                 )}
                 <div style={{
                   maxWidth: '70%',
@@ -176,11 +176,11 @@ export default function AIAdvisorPage() {
                   background: msg.role === 'user'
                     ? 'var(--accent-lime)'
                     : msg.error
-                    ? 'rgba(248,113,113,0.1)'
+                    ? 'color-mix(in srgb, var(--accent-red) 10%, transparent)'
                     : 'var(--bg-input)',
-                  border: msg.role === 'user' ? 'none' : msg.error ? '1px solid rgba(248,113,113,0.3)' : '1px solid var(--border)',
-                  color: msg.role === 'user' ? '#0a1a0f' : msg.error ? 'var(--accent-red)' : 'var(--text-primary)',
-                  fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif',
+                  border: msg.role === 'user' ? 'none' : msg.error ? '1px solid color-mix(in srgb, var(--accent-red) 30%, transparent)' : '1px solid var(--border)',
+                  color: msg.role === 'user' ? 'var(--on-accent)' : msg.error ? 'var(--accent-red)' : 'var(--text-primary)',
+                  fontFamily: 'var(--font-body)',
                   fontSize: '14px',
                   lineHeight: 1.6,
                 }}>
@@ -188,13 +188,13 @@ export default function AIAdvisorPage() {
                     <span key={j}>{line}{j < msg.text.split('\n').length - 1 && <br />}</span>
                   ))}
                   {msg.model && (
-                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border)', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--text-muted)' }}>
+                    <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid var(--border)', fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-muted)' }}>
                       Answered by {msg.model}
                     </div>
                   )}
                 </div>
                 {msg.role === 'user' && (
-                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(74,222,128,0.12)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', flexShrink: 0 }}>👤</div>
+                  <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'color-mix(in srgb, var(--accent-lime) 12%, transparent)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', flexShrink: 0 }}><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21a8 8 0 0 1 16 0" /></svg></div>
                 )}
               </div>
             ))}
@@ -202,7 +202,7 @@ export default function AIAdvisorPage() {
             {/* Typing indicator */}
             {loading && (
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', flexShrink: 0 }}>🌾</div>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--bg-card)', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '15px', flexShrink: 0 }}><img src={logo} alt="" style={{ width: '80%', height: '80%' }} /></div>
                 <div style={{ background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '18px 18px 18px 4px', padding: '14px 18px' }}>
                   <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
                     {[0, 150, 300].map(delay => (
@@ -225,7 +225,7 @@ export default function AIAdvisorPage() {
                 rows={2}
                 disabled={loading}
                 placeholder="Ask a farming question… (Enter to send)"
-                style={{ flex: 1, background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', padding: '10px 14px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '14px', color: 'var(--text-primary)', outline: 'none', resize: 'none', transition: 'border-color 0.2s', opacity: loading ? 0.5 : 1 }}
+                style={{ flex: 1, background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '12px', padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-primary)', outline: 'none', resize: 'none', transition: 'border-color 0.2s', opacity: loading ? 0.5 : 1 }}
                 onFocus={e => e.target.style.borderColor = 'var(--border-hover)'}
                 onBlur={e => e.target.style.borderColor = 'var(--border)'}
               />
@@ -238,7 +238,7 @@ export default function AIAdvisorPage() {
                 {loading ? '…' : 'Send'}
               </button>
             </div>
-            <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--text-faint)', marginTop: '8px' }}>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-faint)', marginTop: '8px' }}>
               Press Enter to send · Shift+Enter for new line
             </p>
           </div>

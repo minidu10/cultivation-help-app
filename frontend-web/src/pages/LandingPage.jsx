@@ -1,365 +1,320 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
+import logo from '../assets/logo.png'
+import farmerPhoto from '../assets/photos/farmer-ambanpola.jpg'
+import fieldsPhoto from '../assets/photos/fields-matara-aerial.jpg'
+import rainPhoto from '../assets/photos/paddy-rain-clouds.jpg'
 
-// ── Scroll-reveal hook ─────────────────────────────────────────
+// ── Palette and type ───────────────────────────────────────────
+// The landing page keeps one light look whatever theme the app is set to.
+const C = {
+  paper: '#f7f3ea',
+  card: '#fffdf8',
+  ink: '#22261f',
+  muted: '#5c6157',
+  line: '#e2dccb',
+  green: '#3f6b3a',
+  greenDark: '#2f5530',
+  greenSoft: '#e3ecdf',
+  rust: '#a84b25',
+  amberSoft: '#f4e6c3',
+  amberInk: '#6f5210',
+  roseSoft: '#f6dcd5',
+  roseInk: '#8a3324',
+}
+const SERIF = "'Fraunces', Georgia, 'Times New Roman', serif"
+const SANS = "'Work Sans', 'Segoe UI', Roboto, Arial, sans-serif"
+
+const GITHUB_URL = 'https://github.com/minidu10/cultivation-help-app'
+const APK_URL = `${GITHUB_URL}/releases`
+
+// ── Scroll reveal ──────────────────────────────────────────────
 function useInView(threshold = 0.15) {
   const ref = useRef(null)
-  const [inView, setInView] = useState(false)
+  // Without IntersectionObserver there is nothing to wait for: show it.
+  const [inView, setInView] = useState(() => typeof IntersectionObserver === 'undefined')
   useEffect(() => {
+    if (inView || !ref.current) return undefined
     const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) setInView(true) }, { threshold })
-    if (ref.current) obs.observe(ref.current)
+    obs.observe(ref.current)
     return () => obs.disconnect()
-  }, [])
+  }, [inView, threshold])
   return [ref, inView]
 }
 
-function FadeUp({ children, delay = 0 }) {
+function FadeUp({ children, delay = 0, style, className }) {
   const [ref, inView] = useInView()
   return (
-    <div ref={ref} style={{
+    <div ref={ref} className={className} style={{
       opacity: inView ? 1 : 0,
-      transform: inView ? 'translateY(0)' : 'translateY(40px)',
-      transition: `opacity 0.7s ease ${delay}ms, transform 0.7s ease ${delay}ms`,
+      transform: inView ? 'translateY(0)' : 'translateY(24px)',
+      transition: `opacity 0.6s ease ${delay}ms, transform 0.6s ease ${delay}ms`,
+      ...style,
     }}>
       {children}
     </div>
   )
 }
 
-// ── Static data ────────────────────────────────────────────────
+// ── Content ────────────────────────────────────────────────────
+const FACTS = [
+  { value: '5-day', label: 'forecast for every field' },
+  { value: '5', label: 'weather checks on planned jobs' },
+  { value: '10', label: 'photo checks a day for each farmer' },
+  { value: '1', label: 'account on the web and on Android' },
+]
+
 const FEATURES = [
-  { icon: '🌾', title: 'Crop Management',    desc: 'Track every crop from seed to harvest with smart status monitoring and growth milestones.' },
-  { icon: '💰', title: 'Expense Tracking',   desc: 'Log seeds, fertilizer, labor and equipment costs. Never lose track of where your money goes.' },
-  { icon: '📦', title: 'Harvest Records',    desc: 'Record yield quantities and revenue with timestamped entries and historical comparisons.' },
-  { icon: '📊', title: 'Profit Analytics',   desc: 'Real-time P&L charts with seasonal breakdowns and per-crop profitability scores.' },
-  { icon: '🤖', title: 'AI Advisor',         desc: 'Get personalized crop recommendations and cost optimizations powered by advanced AI.' },
-  { icon: '🌦️', title: 'Weather Integration',desc: 'Live weather, a 5-day forecast per field, and warnings when rain or wind threatens a planned task.' },
+  { title: 'Profit for every crop', desc: 'Each expense and each sale is recorded against a crop, so at harvest you can see which one paid and which one lost money.' },
+  { title: 'Weather checks on your plans', desc: 'Planned a fertilizer round or a spray? It is checked against the 5-day forecast for that field, with a one-tap move to a safer day.' },
+  { title: 'A crop doctor in your pocket', desc: 'Photograph a sick leaf to get the likely disease or pest, treatments with and without chemicals, and when to see the Agrarian Service Centre.' },
+  { title: 'An advisor that knows your farm', desc: 'Ask in plain words. The AI advisor already has your crop list, so the answer starts from your fields and your figures.' },
+  { title: 'Reminders that arrive on time', desc: 'One email at 7 in the morning with what is due, and a notification on your phone for each reminder.' },
+  { title: 'Records without signal', desc: 'In the Android app, expenses and harvests you save offline are sent when you are back in coverage, and only once.' },
+]
+
+const WEATHER_RULES = [
+  'Rain within a day of fertilizer or a spray',
+  'Wind strong enough to make a spray drift',
+  'Irrigation booked just before heavy rain',
+  'Rain on the day you planned to harvest',
+  'Heat over 35 °C on your fields',
 ]
 
 const STEPS = [
-  { num: '01', title: 'Register Your Farm',      desc: 'Create your free account and set up your farm profile in under 2 minutes.' },
-  { num: '02', title: 'Log Your Activity',        desc: 'Add your crops, expenses, and harvests through our intuitive dashboard.' },
-  { num: '03', title: 'Grow With AI Insights',    desc: 'Let AgroMaster analyze your data and guide you to higher yields and profits.' },
+  { title: 'Register your farm', desc: 'Create a free account and add your crops, fields and sizes. It takes a few minutes.' },
+  { title: 'Log your activity', desc: 'Record expenses, harvests and reminders as they happen, on the web or on your phone.' },
+  { title: 'Grow with AI insights', desc: 'AgroMaster works out the profit for each crop, checks your plans against the weather and suggests what to do next.' },
 ]
 
-const STATS = [
-  { value: '500+',   label: 'Active Farmers' },
-  { value: 'LKR 2M+',label: 'Revenue Tracked' },
-  { value: '94%',    label: 'Profit Improvement' },
-  { value: '12',     label: 'Crop Types Supported' },
+const FAQ = [
+  { q: 'Is AgroMaster free?', a: 'Yes. Create an account and use everything, on the web and in the Android app.' },
+  { q: 'What happens out in the field with no signal?', a: 'The Android app shows what it last loaded and keeps new expenses and harvests on the phone. They are sent when the phone reconnects, without making duplicates.' },
+  { q: 'Where does the weather come from?', a: 'From the OpenWeather forecast for each field’s location. It looks five days ahead and refreshes every 30 minutes.' },
+  { q: 'How far can I trust the crop doctor?', a: 'It gives the most likely cause and how confident it is. When it is unsure, or the problem looks serious, it tells you to show the plant to an officer at your Agrarian Service Centre.' },
+  { q: 'Can I use it in Sinhala or Tamil?', a: 'Not yet. AgroMaster is in English for now.' },
 ]
 
-const TESTIMONIALS = [
-  { name: 'Nimal Perera',    location: 'Anuradhapura', crop: 'Paddy farmer, 8 acres',  quote: 'AgroMaster helped me cut fertilizer costs by 30% in one season. I never knew data could be this powerful.' },
-  { name: 'Kumari Silva',    location: 'Kurunegala',   crop: 'Coconut & Banana',        quote: 'The AI advisor told me exactly when to harvest. My coconut yield was the best in 5 years.' },
-  { name: 'Ruwan Fernando',  location: 'Matale',       crop: 'Vegetable grower',        quote: 'Finally I can see profit and loss in real time. No more guessing at the end of the season.' },
+// ── Record cards floating over the hero photo ──────────────────
+const RECORDS = [
+  { meta: 'Tue · 7:10 AM · North field', text: 'Sold 4,800 kg of BG 300 paddy to the rice mill', tag: 'Harvest · Rs 566,400', tagBg: C.greenSoft, tagInk: C.greenDark, tilt: -1.5 },
+  { meta: 'Thu · 6:30 AM · East plot', text: 'Compost and NPK mix for the green chilli', tag: 'Expense · Rs 19,800', tagBg: C.amberSoft, tagInk: C.amberInk, tilt: 1.5 },
+  { meta: 'Thu 13 Nov · Dambulla', text: '18 mm of rain expected. Move the fungicide spray to Friday?', tag: 'Weather warning', tagBg: C.roseSoft, tagInk: C.roseInk, tilt: -1 },
 ]
 
-// ── Hero background (always dark) ─────────────────────────────
-// Fixed decoration with no inputs, so it is built once at module load.
-// Generating it inside the component re-randomised the whole field on every
-// render and made the hero visibly flicker.
-const STARS = Array.from({ length: 30 }, (_, i) => ({
-  top: `${3 + Math.random() * 45}%`,
-  left: `${Math.random() * 100}%`,
-  size: i % 5 === 0 ? 3 : 2,
-  opacity: 0.15 + Math.random() * 0.4,
-}))
-
-function HeroBackground() {
-  const stars = STARS
-
+function RecordCard({ record, index }) {
   return (
-    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0 }}>
-      <style>{`
-        @keyframes lp-sway  { 0%,100%{transform:rotate(-4deg) translateX(0)} 50%{transform:rotate(4deg) translateX(3px)} }
-        @keyframes lp-sway2 { 0%,100%{transform:rotate(3deg)} 50%{transform:rotate(-5deg)} }
-        @keyframes lp-spin  { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @keyframes lp-spin-slow { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
-        @keyframes lp-cloud  { 0%{transform:translateX(0)} 100%{transform:translateX(120px)} }
-        @keyframes lp-cloud2 { 0%{transform:translateX(0)} 100%{transform:translateX(-80px)} }
-        .lp-stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:40px; }
-        .lp-features-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
-        .lp-steps-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:48px; }
-        .lp-testimonials-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
-        .lp-footer-inner { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
-        @media(max-width:768px){
-          .lp-stats-grid { grid-template-columns:repeat(2,1fr); gap:20px; }
-          .lp-features-grid { grid-template-columns:1fr; }
-          .lp-steps-grid { grid-template-columns:1fr; gap:32px; }
-          .lp-testimonials-grid { grid-template-columns:1fr; }
-          .lp-footer-inner { flex-direction:column; text-align:center; }
-          .lp-section { padding:72px 20px !important; }
-          .lp-hero-title { font-size:clamp(36px,10vw,72px) !important; letter-spacing:-1px !important; }
-          .lp-windmill-left { display:none; }
-          .lp-windmill-right { display:none; }
-        }
-      `}</style>
+    <div className={`lp-record lp-record-${index}`} style={{ transform: `rotate(${record.tilt}deg)` }}>
+      <div className="lp-float" style={{
+        animationDelay: `${index * 0.8}s`,
+        background: C.card, border: `1px solid ${C.line}`, borderRadius: 14,
+        padding: '16px 18px', boxShadow: '0 12px 30px rgba(40, 32, 18, 0.16)',
+        display: 'flex', flexDirection: 'column', gap: 6,
+      }}>
+        <span style={{ fontSize: 13, color: C.muted }}>{record.meta}</span>
+        <span style={{ fontSize: 16, fontWeight: 600, color: C.ink, lineHeight: 1.35 }}>{record.text}</span>
+        <span style={{ alignSelf: 'flex-start', background: record.tagBg, color: record.tagInk, borderRadius: 999, padding: '3px 10px', fontSize: 13, fontWeight: 600 }}>{record.tag}</span>
+      </div>
+    </div>
+  )
+}
 
-      {/* Sky */}
-      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, #020a05 0%, #041208 40%, #0a2010 70%, #0d2b1a 100%)' }} />
+// ── Paddy along the bottom of the hero ─────────────────────────
+// Fixed geometry, built once at module load so a re-render never reshuffles it.
+const STALKS = Array.from({ length: 64 }, (_, i) => {
+  const x = (i / 63) * 1440
+  return {
+    x,
+    h: 34 + Math.abs(Math.sin(i * 1.7)) * 30,
+    lean: Math.sin(i * 0.9) * 5,
+    delay: `${(i % 9) * 0.21}s`,
+    duration: `${2.4 + Math.abs(Math.cos(i)) * 1.2}s`,
+    back: i % 2 === 0,
+  }
+})
 
-      {/* Stars */}
-      {stars.map((s, i) => (
-        <div key={i} style={{ position: 'absolute', top: s.top, left: s.left, width: s.size, height: s.size, borderRadius: '50%', background: '#e8f5e2', opacity: s.opacity }} />
+function PaddyStrip() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 1440 90" preserveAspectRatio="xMidYMax slice" style={{ display: 'block', width: '100%', height: 90 }}>
+      {STALKS.map((s, i) => (
+        <g key={i} className="lp-sway" style={{ transformOrigin: `${s.x}px 90px`, animationDelay: s.delay, animationDuration: s.duration }}>
+          <path d={`M${s.x} 90 Q ${s.x + s.lean / 2} ${90 - s.h / 2} ${s.x + s.lean} ${90 - s.h}`} stroke={s.back ? '#9db58f' : C.green} strokeWidth={s.back ? 1.6 : 2.2} fill="none" strokeLinecap="round" />
+          <ellipse cx={s.x + s.lean} cy={90 - s.h} rx="3.2" ry="8" fill={s.back ? '#c9b26b' : '#b59a4a'} opacity="0.85" />
+        </g>
       ))}
-
-      {/* Moon */}
-      <div style={{ position: 'absolute', top: '8%', right: '12%', width: 48, height: 48, borderRadius: '50%', background: 'radial-gradient(circle at 35% 35%, #fffbe8, #d4c97a)', boxShadow: '0 0 40px rgba(255,240,160,0.25), 0 0 80px rgba(255,240,160,0.1)' }} />
-
-      {/* Drifting clouds */}
-      <svg style={{ position: 'absolute', top: '12%', left: 0, width: '100%', height: '120px', opacity: 0.12 }} viewBox="0 0 1440 120">
-        <g style={{ animation: 'lp-cloud 40s linear infinite' }}>
-          <ellipse cx="200" cy="60" rx="120" ry="30" fill="#e8f5e2" />
-          <ellipse cx="260" cy="50" rx="80"  ry="25" fill="#e8f5e2" />
-          <ellipse cx="150" cy="65" rx="70"  ry="22" fill="#e8f5e2" />
-        </g>
-        <g style={{ animation: 'lp-cloud2 55s linear infinite' }}>
-          <ellipse cx="900" cy="70" rx="100" ry="26" fill="#e8f5e2" />
-          <ellipse cx="970" cy="58" rx="70"  ry="22" fill="#e8f5e2" />
-          <ellipse cx="840" cy="72" rx="60"  ry="18" fill="#e8f5e2" />
-        </g>
-      </svg>
-
-      {/* Glow */}
-      <div style={{ position: 'absolute', top: 0, right: '8%', width: 500, height: 400, background: 'radial-gradient(ellipse, rgba(255,240,160,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
-      <div style={{ position: 'absolute', bottom: '25%', left: '50%', transform: 'translateX(-50%)', width: 900, height: 300, background: 'radial-gradient(ellipse, rgba(74,222,128,0.1) 0%, transparent 70%)', pointerEvents: 'none' }} />
-
-      {/* Windmill left */}
-      <svg viewBox="0 0 160 320" style={{ position: 'absolute', left: '5%', bottom: '16%', width: 110, height: 220, opacity: 0.92 }}>
-        <polygon points="74,300 86,300 83,122 77,122" fill="white" opacity="0.88" />
-        <polygon points="79,300 81,300 80.5,122 79.5,122" fill="white" opacity="0.25" />
-        <rect x="68" y="113" width="26" height="11" rx="4" fill="white" opacity="0.92" />
-        <g style={{ transformOrigin: '80px 118px', animation: 'lp-spin 4s linear infinite' }}>
-          <path d="M80,118 C83,108 85,82 83,40 C82,35 78,35 77,40 C75,82 77,108 80,118 Z" fill="white" opacity="0.92" />
-          <path d="M80,118 C83,108 85,82 83,40 C82,35 78,35 77,40 C75,82 77,108 80,118 Z" fill="white" opacity="0.92" transform="rotate(120,80,118)" />
-          <path d="M80,118 C83,108 85,82 83,40 C82,35 78,35 77,40 C75,82 77,108 80,118 Z" fill="white" opacity="0.92" transform="rotate(240,80,118)" />
-        </g>
-        <circle cx="80" cy="118" r="13" fill="white" />
-        <circle cx="80" cy="118" r="13" fill="none" stroke="#111" strokeWidth="3" />
-        <circle cx="80" cy="118" r="4" fill="#111" />
-      </svg>
-
-      {/* Windmill right — smaller, slower */}
-      <svg viewBox="0 0 160 320" style={{ position: 'absolute', right: '8%', bottom: '18%', width: 72, height: 144, opacity: 0.78 }}>
-        <polygon points="74,300 86,300 83,122 77,122" fill="white" opacity="0.82" />
-        <polygon points="79,300 81,300 80.5,122 79.5,122" fill="white" opacity="0.2" />
-        <rect x="68" y="113" width="26" height="11" rx="4" fill="white" opacity="0.85" />
-        <g style={{ transformOrigin: '80px 118px', animation: 'lp-spin-slow 7s linear infinite' }}>
-          <path d="M80,118 C83,108 85,82 83,40 C82,35 78,35 77,40 C75,82 77,108 80,118 Z" fill="white" opacity="0.85" />
-          <path d="M80,118 C83,108 85,82 83,40 C82,35 78,35 77,40 C75,82 77,108 80,118 Z" fill="white" opacity="0.85" transform="rotate(120,80,118)" />
-          <path d="M80,118 C83,108 85,82 83,40 C82,35 78,35 77,40 C75,82 77,108 80,118 Z" fill="white" opacity="0.85" transform="rotate(240,80,118)" />
-        </g>
-        <circle cx="80" cy="118" r="13" fill="white" />
-        <circle cx="80" cy="118" r="13" fill="none" stroke="#111" strokeWidth="3" />
-        <circle cx="80" cy="118" r="4" fill="#111" />
-      </svg>
-
-      {/* Paddy field */}
-      <svg viewBox="0 0 1440 320" preserveAspectRatio="xMidYMax slice" style={{ position: 'absolute', bottom: 0, width: '100%', height: 320 }}>
-        <defs>
-          <linearGradient id="lp-fieldGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="#4ade80" stopOpacity="0.5" />
-            <stop offset="100%" stopColor="#0d2b1a" stopOpacity="1" />
-          </linearGradient>
-          <linearGradient id="lp-waterGrad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%"   stopColor="rgba(74,222,128,0.08)" />
-            <stop offset="100%" stopColor="rgba(13,43,26,0.6)" />
-          </linearGradient>
-        </defs>
-        <path d="M0,220 Q360,170 720,200 Q1080,230 1440,180 L1440,320 L0,320 Z" fill="url(#lp-fieldGrad)" opacity="0.4" />
-        <path d="M0,260 Q300,230 600,250 Q900,270 1200,240 Q1350,228 1440,245 L1440,320 L0,320 Z" fill="#0d2b1a" opacity="0.9" />
-        <rect x="0" y="280" width="1440" height="15" fill="url(#lp-waterGrad)" />
-        <rect x="0" y="300" width="1440" height="20" fill="rgba(13,43,26,0.95)" />
-
-        {/* Swaying stalks — back row */}
-        {Array.from({ length: 55 }, (_, i) => {
-          const x = (i / 54) * 1440
-          const h = 45 + Math.sin(i * 1.9) * 18
-          const y = 268 + Math.cos(i * 1.4) * 8
-          const delay = `${(i % 8) * 0.18}s`
-          const anim = i % 2 === 0 ? 'lp-sway' : 'lp-sway2'
-          return (
-            <g key={`b${i}`} style={{ transformOrigin: `${x}px ${y}px`, animation: `${anim} ${1.8 + Math.sin(i) * 0.6}s ease-in-out ${delay} infinite` }}>
-              <line x1={x} y1={y} x2={x + Math.sin(i) * 4} y2={y - h} stroke="#4ade80" strokeWidth="1.8" strokeLinecap="round" opacity="0.55" />
-              <ellipse cx={x + Math.sin(i) * 4} cy={y - h} rx="4.5" ry="11" fill="#4ade80" opacity="0.5" />
-            </g>
-          )
-        })}
-        {/* Front row */}
-        {Array.from({ length: 30 }, (_, i) => {
-          const x = (i / 29) * 1440 + 22
-          const h = 30 + Math.sin(i * 2.5) * 12
-          const delay = `${(i % 6) * 0.22}s`
-          return (
-            <g key={`f${i}`} style={{ transformOrigin: `${x}px 290px`, animation: `lp-sway ${2.2 + Math.cos(i) * 0.5}s ease-in-out ${delay} infinite` }}>
-              <line x1={x} y1={290} x2={x} y2={290 - h} stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" opacity="0.7" />
-              <ellipse cx={x} cy={290 - h} rx="5" ry="13" fill="#22c55e" opacity="0.65" />
-            </g>
-          )
-        })}
-      </svg>
-    </div>
+    </svg>
   )
 }
 
-// ── How-it-works connecting line ───────────────────────────────
-function HowItWorksLine() {
-  const [ref, inView] = useInView(0.3)
+// ── How it works: the line between the steps draws itself ─────
+function StepsLine() {
+  const [ref, inView] = useInView(0.4)
   return (
-    <div ref={ref} style={{ position: 'absolute', top: 40, left: 'calc(16.6% + 30px)', right: 'calc(16.6% + 30px)', height: 2, background: 'rgba(74,222,128,0.15)', zIndex: 0 }}>
-      <div style={{ height: '100%', background: 'linear-gradient(90deg, #4ade80, #16a34a)', width: inView ? '100%' : '0%', transition: 'width 1.2s ease 0.3s', boxShadow: '0 0 8px rgba(74,222,128,0.5)' }} />
+    <div ref={ref} aria-hidden="true" className="lp-steps-line" style={{ position: 'absolute', top: 27, left: '16.6%', right: '16.6%', height: 2, background: C.line }}>
+      <div style={{ height: '100%', background: C.green, width: inView ? '100%' : '0%', transition: 'width 1.2s ease 0.2s' }} />
     </div>
   )
 }
 
-// ── Navbar ─────────────────────────────────────────────────────
-function NavBar({ onSignIn, onGetStarted }) {
+function PlusIcon() {
+  return (
+    <svg className="lp-plus" aria-hidden="true" width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <path d="M9 3v12M3 9h12" />
+    </svg>
+  )
+}
+
+function CheckIcon() {
+  return (
+    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={C.green} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: 4 }}>
+      <path d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  )
+}
+
+const pillPrimary = {
+  background: C.green, color: '#ffffff', borderRadius: 999, padding: '14px 26px',
+  fontWeight: 600, fontSize: 16, textDecoration: 'none', display: 'inline-block',
+}
+
+const sectionTitle = { fontFamily: SERIF, fontWeight: 600, fontSize: 'clamp(32px, 4vw, 46px)', lineHeight: 1.1, margin: 0, textWrap: 'balance' }
+
+// ── Page ───────────────────────────────────────────────────────
+export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40)
-    const onResize = () => setIsMobile(window.innerWidth < 768)
+    const onScroll = () => setScrolled(window.scrollY > 8)
     window.addEventListener('scroll', onScroll)
-    window.addEventListener('resize', onResize)
-    return () => { window.removeEventListener('scroll', onScroll); window.removeEventListener('resize', onResize) }
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   return (
-    <>
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        background: scrolled || menuOpen ? 'rgba(10,26,15,0.97)' : 'transparent',
-        backdropFilter: scrolled || menuOpen ? 'blur(16px)' : 'none',
-        borderBottom: scrolled || menuOpen ? '1px solid rgba(74,222,128,0.1)' : 'none',
-        transition: 'all 0.3s ease',
-        padding: isMobile ? '0 20px' : '0 40px',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        height: 64,
+    <div style={{ background: C.paper, color: C.ink, fontFamily: SANS, fontSize: 17, lineHeight: 1.6, minHeight: '100vh', overflowX: 'hidden' }}>
+      <style>{`
+        @keyframes lp-float { 0%, 100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+        @keyframes lp-sway { 0%, 100% { transform: rotate(-3deg) } 50% { transform: rotate(3deg) } }
+        .lp-float { animation: lp-float 6s ease-in-out infinite; }
+        .lp-sway { animation-name: lp-sway; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
+        .lp-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 72px; align-items: center; }
+        .lp-hero-photo { position: relative; margin: 0 40px 0 56px; }
+        .lp-record { position: absolute; width: 290px; z-index: 1; }
+        .lp-record-0 { top: 28px; left: -64px; }
+        .lp-record-1 { top: 44%; right: -48px; }
+        .lp-record-2 { bottom: 28px; left: -40px; }
+        .lp-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
+        .lp-features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+        .lp-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; align-items: center; }
+        .lp-steps { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; text-align: center; }
+        .lp-nav-links { display: flex; align-items: center; gap: 28px; }
+        .lp-nav-links a { white-space: nowrap; }
+        .lp-link { color: ${C.ink}; text-decoration: none; font-weight: 500; }
+        .lp-link:hover { color: ${C.green}; }
+        .lp-cta:hover { background: ${C.greenDark} !important; }
+        .lp-faq summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 20px 0; font-weight: 600; }
+        .lp-faq summary::-webkit-details-marker { display: none; }
+        .lp-faq .lp-plus { flex-shrink: 0; color: ${C.green}; transition: transform 0.2s ease; }
+        .lp-faq details[open] .lp-plus { transform: rotate(45deg); }
+        @media (max-width: 960px) {
+          .lp-hero, .lp-split { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+          .lp-hero-photo { margin: 0; }
+          .lp-record { position: static; width: auto; margin-top: 12px; }
+          .lp-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .lp-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 640px) {
+          .lp-features, .lp-steps { grid-template-columns: minmax(0, 1fr); }
+          .lp-steps-line { display: none; }
+          .lp-nav-links { gap: 10px; }
+          .lp-nav-links .lp-hide-sm { display: none; }
+          .lp-bar { padding: 12px 16px !important; gap: 10px !important; }
+          .lp-bar .lp-logo { width: 30px; height: 30px; }
+          .lp-bar .lp-wordmark { font-size: 18px !important; }
+          .lp-nav-links .lp-cta { padding: 8px 12px !important; font-size: 14px !important; }
+        }
+      `}</style>
+
+      {/* ── Nav ── */}
+      <header style={{
+        position: 'sticky', top: 0, zIndex: 20, background: C.paper,
+        borderBottom: `1px solid ${scrolled ? C.line : 'transparent'}`, transition: 'border-color 0.2s',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>🌿</div>
-          <span style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 20, color: '#e8f5e2', letterSpacing: '-0.5px' }}>AgroMaster</span>
+        <div className="lp-bar" style={{ maxWidth: 1180, margin: '0 auto', padding: '14px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 8, textDecoration: 'none', flexShrink: 0 }}>
+            <img src={logo} alt="" width="38" height="38" className="lp-logo" style={{ display: 'block' }} />
+            <span className="lp-wordmark" style={{ fontFamily: SERIF, fontWeight: 700, fontSize: 24, color: C.ink }}>
+              Agro<span style={{ color: C.green }}>Master</span>
+            </span>
+          </Link>
+          <nav aria-label="Main" className="lp-nav-links">
+            <a href="#features" className="lp-link lp-hide-sm">Features</a>
+            <a href="#how-it-works" className="lp-link lp-hide-sm">How it works</a>
+            <a href="#questions" className="lp-link lp-hide-sm">Questions</a>
+            <Link to="/login" className="lp-link">Sign in</Link>
+            <Link to="/register" className="lp-cta" style={{ ...pillPrimary, padding: '10px 20px', fontSize: 15 }}>Try AgroMaster</Link>
+          </nav>
         </div>
+      </header>
 
-        {isMobile ? (
-          <button onClick={() => setMenuOpen(o => !o)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#e8f5e2', padding: 4, display: 'flex', alignItems: 'center' }}>
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              {menuOpen ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></> : <><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></>}
-            </svg>
-          </button>
-        ) : (
-          <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
-            {['Features', 'How It Works', 'Testimonials'].map(item => (
-              <a key={item} href={`#${item.toLowerCase().replace(/ /g, '-')}`} style={{ color: 'rgba(232,245,226,0.7)', fontFamily: 'Inter, sans-serif', fontSize: 14, textDecoration: 'none', transition: 'color 0.2s' }}
-                onMouseEnter={e => e.currentTarget.style.color = '#4ade80'}
-                onMouseLeave={e => e.currentTarget.style.color = 'rgba(232,245,226,0.7)'}
-              >{item}</a>
-            ))}
-            <button onClick={onSignIn} style={{ background: 'transparent', color: '#e8f5e2', border: '1px solid rgba(232,245,226,0.25)', borderRadius: 8, padding: '8px 20px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(74,222,128,0.5)'; e.currentTarget.style.color = '#4ade80' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(232,245,226,0.25)'; e.currentTarget.style.color = '#e8f5e2' }}
-            >Sign In</button>
-            <button onClick={onGetStarted} style={{ background: '#4ade80', color: '#0a1a0f', border: 'none', borderRadius: 8, padding: '8px 20px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer', boxShadow: '0 0 20px rgba(74,222,128,0.4)', transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.background = '#86efac'; e.currentTarget.style.boxShadow = '0 0 30px rgba(74,222,128,0.6)' }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#4ade80'; e.currentTarget.style.boxShadow = '0 0 20px rgba(74,222,128,0.4)' }}
-            >Get Started Free</button>
-          </div>
-        )}
-      </nav>
+      {/* ── Hero ── */}
+      <section>
+        <div className="lp-hero" style={{ maxWidth: 1180, margin: '0 auto', padding: '48px 24px 40px' }}>
+          <FadeUp style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
+            <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.rust }}>AI-powered farm records for Sri Lanka</span>
+            <h1 style={{ fontFamily: SERIF, fontWeight: 600, fontSize: 'clamp(42px, 5.6vw, 70px)', lineHeight: 1.04, letterSpacing: '-0.01em', margin: 0, textWrap: 'balance' }}>
+              Write it down in the field. <em style={{ color: C.green, fontStyle: 'italic' }}>Know what it earned</em> at harvest.
+            </h1>
+            <p style={{ margin: 0, fontSize: 19, color: C.muted, maxWidth: 560 }}>
+              AgroMaster keeps the expenses, harvests and reminders for each of your crops, on your phone and on the web. It warns you when rain or wind will spoil a job you planned, checks photos of sick leaves, and shows the profit or loss for every crop.
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '14px 24px' }}>
+              <Link to="/register" className="lp-cta" style={pillPrimary}>Create a free account</Link>
+              <Link to="/login" style={{ color: C.ink, fontWeight: 500 }}>I already have an account</Link>
+            </div>
+            <span style={{ fontSize: 14, color: C.muted }}>On the web and on Android, with the same account.</span>
+          </FadeUp>
 
-      {/* Mobile dropdown menu */}
-      {isMobile && menuOpen && (
-        <div style={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: 99, background: 'rgba(10,26,15,0.97)', backdropFilter: 'blur(16px)', borderBottom: '1px solid rgba(74,222,128,0.1)', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {['Features', 'How It Works', 'Testimonials'].map(item => (
-            <a key={item} href={`#${item.toLowerCase().replace(/ /g, '-')}`} onClick={() => setMenuOpen(false)} style={{ color: 'rgba(232,245,226,0.8)', fontFamily: 'Inter, sans-serif', fontSize: 15, textDecoration: 'none', padding: '8px 0', borderBottom: '1px solid rgba(74,222,128,0.08)' }}>{item}</a>
-          ))}
-          <button onClick={() => { setMenuOpen(false); onSignIn() }} style={{ background: 'transparent', color: '#e8f5e2', border: '1px solid rgba(232,245,226,0.25)', borderRadius: 8, padding: '10px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600, fontSize: 14, cursor: 'pointer', marginTop: 4 }}>Sign In</button>
-          <button onClick={() => { setMenuOpen(false); onGetStarted() }} style={{ background: '#4ade80', color: '#0a1a0f', border: 'none', borderRadius: 8, padding: '10px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>Get Started Free</button>
+          <FadeUp delay={150}>
+            <div className="lp-hero-photo">
+              <img
+                src={farmerPhoto}
+                alt="A paddy farmer near Ambanpola standing in his rice field"
+                fetchPriority="high"
+                style={{ display: 'block', width: '100%', aspectRatio: '4 / 5', objectFit: 'cover', objectPosition: '52% 40%', borderRadius: 22 }}
+              />
+              {RECORDS.map((record, i) => <RecordCard key={record.text} record={record} index={i} />)}
+            </div>
+          </FadeUp>
         </div>
-      )}
-    </>
-  )
-}
-
-// ── Main page ──────────────────────────────────────────────────
-export default function LandingPage() {
-  const navigate = useNavigate()
-
-  return (
-    <div style={{ background: '#080f0a', minHeight: '100vh', color: '#e8f5e2', overflowX: 'hidden' }}>
-      <NavBar onSignIn={() => navigate('/login')} onGetStarted={() => navigate('/register')} />
-
-      {/* ── HERO ── */}
-      <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', paddingTop: 64 }}>
-        <HeroBackground />
-        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: 900, padding: '0 24px' }}>
-          <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: 100, padding: '6px 16px', marginBottom: 32, fontSize: 13, color: '#4ade80', fontFamily: 'Inter, sans-serif' }}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ade80', display: 'inline-block', boxShadow: '0 0 8px #4ade80' }} />
-            AI-powered precision farming for Sri Lanka
-          </div>
-          <h1 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 'clamp(48px, 8vw, 96px)', fontWeight: 800, lineHeight: 1.0, color: '#e8f5e2', letterSpacing: '-3px', marginBottom: 24 }}>
-            GROW SMARTER.<br />
-            <span style={{ color: '#4ade80', textShadow: '0 0 40px rgba(74,222,128,0.5)' }}>HARVEST MORE.</span>
-          </h1>
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 18, lineHeight: 1.7, color: 'rgba(232,245,226,0.65)', maxWidth: 540, margin: '0 auto 48px' }}>
-            AgroMaster combines real-time AI insights with expense tracking, crop analytics, and weather data — built for Sri Lankan farmers.
-          </p>
-          <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={() => navigate('/register')} style={{ background: '#4ade80', color: '#0a1a0f', border: 'none', borderRadius: 10, padding: '16px 36px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 16, cursor: 'pointer', boxShadow: '0 0 40px rgba(74,222,128,0.5)', transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 0 60px rgba(74,222,128,0.7)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(74,222,128,0.5)' }}
-            >Get Started Free</button>
-            <button onClick={() => navigate('/login')} style={{ background: 'transparent', color: '#e8f5e2', border: '1px solid rgba(232,245,226,0.25)', borderRadius: 10, padding: '16px 36px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 600, fontSize: 16, cursor: 'pointer', transition: 'all 0.2s' }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(74,222,128,0.5)'; e.currentTarget.style.color = '#4ade80' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(232,245,226,0.25)'; e.currentTarget.style.color = '#e8f5e2' }}
-            >Sign In</button>
-          </div>
-          {/* Scroll cue */}
-          <div style={{ marginTop: 80, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, opacity: 0.5 }}>
-            <div style={{ width: 1, height: 32, background: 'linear-gradient(#4ade80, transparent)' }} />
-            <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
-              <path d="M9 3v10M4 9l5 5 5-5" stroke="#4ade80" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-        </div>
+        <PaddyStrip />
       </section>
 
-      {/* ── STATS ── */}
-      <section className="lp-section" style={{ padding: '80px 40px', background: 'rgba(74,222,128,0.04)', borderTop: '1px solid rgba(74,222,128,0.08)', borderBottom: '1px solid rgba(74,222,128,0.08)' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }} className="lp-stats-grid">
-          {STATS.map((s, i) => (
-            <FadeUp key={i} delay={i * 100}>
-              <div style={{ textAlign: 'center' }}>
-                <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 'clamp(32px,4vw,52px)', fontWeight: 800, color: '#4ade80', textShadow: '0 0 30px rgba(74,222,128,0.4)', letterSpacing: '-2px' }}>{s.value}</div>
-                <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, color: 'rgba(232,245,226,0.5)', marginTop: 8 }}>{s.label}</div>
-              </div>
+      {/* ── Facts ── */}
+      <section aria-label="AgroMaster in numbers" style={{ borderTop: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}`, background: C.card }}>
+        <div className="lp-facts" style={{ maxWidth: 1180, margin: '0 auto', padding: '40px 24px' }}>
+          {FACTS.map((f, i) => (
+            <FadeUp key={f.label} delay={i * 90} style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: SERIF, fontWeight: 600, fontSize: 'clamp(34px, 4vw, 46px)', color: C.green, lineHeight: 1.1 }}>{f.value}</div>
+              <div style={{ fontSize: 15, color: C.muted, marginTop: 6 }}>{f.label}</div>
             </FadeUp>
           ))}
         </div>
       </section>
 
-      {/* ── FEATURES ── */}
-      <section id="features" style={{ padding: '120px 40px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          <FadeUp>
-            <div style={{ textAlign: 'center', marginBottom: 72 }}>
-              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: 12, letterSpacing: '3px', textTransform: 'uppercase', color: '#4ade80', marginBottom: 16 }}>Everything you need</div>
-              <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 'clamp(32px,5vw,56px)', fontWeight: 800, color: '#e8f5e2', letterSpacing: '-2px', margin: 0 }}>Built for the field.</h2>
-            </div>
+      {/* ── Features ── */}
+      <section id="features">
+        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '96px 24px', display: 'flex', flexDirection: 'column', gap: 44 }}>
+          <FadeUp style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 700, margin: '0 auto', textAlign: 'center' }}>
+            <h2 style={sectionTitle}>Your exercise book has the numbers. AgroMaster does the sums.</h2>
+            <p style={{ margin: 0, color: C.muted, fontSize: 18 }}>Keep writing things down the way you already do, just on your phone. This is what you get back.</p>
           </FadeUp>
-          <div className="lp-features-grid">
+          <div className="lp-features">
             {FEATURES.map((f, i) => (
-              <FadeUp key={i} delay={i * 80}>
-                <div style={{ background: 'rgba(13,43,26,0.5)', border: '1px solid rgba(74,222,128,0.12)', borderRadius: 16, padding: 32, backdropFilter: 'blur(12px)', transition: 'all 0.3s', cursor: 'default', height: '100%' }}
-                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(74,222,128,0.4)'; e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 0 40px rgba(74,222,128,0.1)' }}
-                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(74,222,128,0.12)'; e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = 'none' }}
-                >
-                  <div style={{ fontSize: 32, marginBottom: 16 }}>{f.icon}</div>
-                  <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 18, color: '#e8f5e2', margin: '0 0 12px' }}>{f.title}</h3>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, lineHeight: 1.7, color: 'rgba(232,245,226,0.55)', margin: 0 }}>{f.desc}</p>
+              <FadeUp key={f.title} delay={(i % 3) * 90} style={{ height: '100%' }}>
+                <div style={{ background: C.card, border: `1px solid ${C.line}`, borderRadius: 14, padding: '26px 24px', height: '100%', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <span style={{ fontFamily: SERIF, fontSize: 15, fontWeight: 600, color: C.rust }}>{String(i + 1).padStart(2, '0')}</span>
+                  <h3 style={{ fontFamily: SERIF, fontWeight: 600, fontSize: 22, lineHeight: 1.2, margin: 0 }}>{f.title}</h3>
+                  <p style={{ margin: 0, color: C.muted, fontSize: 16 }}>{f.desc}</p>
                 </div>
               </FadeUp>
             ))}
@@ -367,85 +322,109 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ── HOW IT WORKS ── */}
-      <section id="how-it-works" style={{ padding: '120px 40px', background: 'rgba(26,15,7,0.3)' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+      {/* ── Weather spotlight ── */}
+      <section style={{ maxWidth: 1180, margin: '0 auto', padding: '0 24px 96px' }}>
+        <div className="lp-split">
           <FadeUp>
-            <div style={{ textAlign: 'center', marginBottom: 80 }}>
-              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: 12, letterSpacing: '3px', textTransform: 'uppercase', color: '#f59e0b', marginBottom: 16 }}>Simple process</div>
-              <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 'clamp(32px,5vw,56px)', fontWeight: 800, color: '#e8f5e2', letterSpacing: '-2px', margin: 0 }}>How It Works</h2>
+            <div style={{ position: 'relative' }}>
+              <img src={rainPhoto} alt="Young rice in a flooded field under heavy rain clouds" loading="lazy" style={{ display: 'block', width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', borderRadius: 20 }} />
+              <div style={{ position: 'absolute', left: 20, right: 20, bottom: 20, background: C.card, borderRadius: 14, padding: '14px 16px', boxShadow: '0 12px 30px rgba(40, 32, 18, 0.18)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 14, fontWeight: 700, color: C.roseInk }}>Rain may wash it off</span>
+                <span style={{ fontSize: 15, color: C.ink }}>18 mm expected on Thursday. The fungicide spray on the big onion can move to Friday, which looks dry.</span>
+              </div>
             </div>
           </FadeUp>
-          <div style={{ position: 'relative' }} className="lp-steps-grid">
-            <HowItWorksLine />
+          <FadeUp delay={120} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <h2 style={sectionTitle}>Rain on the way? <em style={{ color: C.green }}>You’ll know before you spray.</em></h2>
+            <p style={{ margin: 0, color: C.muted, fontSize: 18 }}>Every reminder you set for the next five days is checked against the forecast for that field. When the weather puts a job at risk, AgroMaster says why and offers a safer day, which you can accept in one tap.</p>
+            <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {WEATHER_RULES.map((rule) => (
+                <li key={rule} style={{ display: 'flex', gap: 10, fontSize: 16 }}><CheckIcon />{rule}</li>
+              ))}
+            </ul>
+          </FadeUp>
+        </div>
+      </section>
+
+      {/* ── How it works ── */}
+      <section id="how-it-works" style={{ background: C.card, borderTop: `1px solid ${C.line}`, borderBottom: `1px solid ${C.line}` }}>
+        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '96px 24px', display: 'flex', flexDirection: 'column', gap: 52 }}>
+          <FadeUp style={{ textAlign: 'center', maxWidth: 640, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <h2 style={sectionTitle}>How AgroMaster works</h2>
+            <p style={{ margin: 0, color: C.muted, fontSize: 18 }}>Three steps from an empty account to knowing what each crop earned.</p>
+          </FadeUp>
+          <div className="lp-steps">
+            <StepsLine />
             {STEPS.map((s, i) => (
-              <FadeUp key={i} delay={i * 150}>
-                <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
-                  <div style={{ width: 64, height: 64, borderRadius: '50%', margin: '0 auto 24px', background: 'rgba(13,43,26,0.8)', border: '2px solid #4ade80', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 800, fontSize: 20, color: '#4ade80', boxShadow: '0 0 24px rgba(74,222,128,0.3)' }}>{s.num}</div>
-                  <h3 style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 20, color: '#e8f5e2', margin: '0 0 12px' }}>{s.title}</h3>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 14, lineHeight: 1.7, color: 'rgba(232,245,226,0.55)', margin: 0 }}>{s.desc}</p>
-                </div>
+              <FadeUp key={s.title} delay={i * 150} style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                <span style={{ width: 56, height: 56, borderRadius: '50%', background: C.card, border: `2px solid ${C.green}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: SERIF, fontWeight: 600, fontSize: 22, color: C.green }}>{i + 1}</span>
+                <h3 style={{ fontFamily: SERIF, fontWeight: 600, fontSize: 22, margin: 0 }}>{s.title}</h3>
+                <p style={{ margin: 0, color: C.muted, fontSize: 16, maxWidth: 320 }}>{s.desc}</p>
               </FadeUp>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ── */}
-      <section id="testimonials" style={{ padding: '120px 40px' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
           <FadeUp>
-            <div style={{ textAlign: 'center', marginBottom: 72 }}>
-              <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: 12, letterSpacing: '3px', textTransform: 'uppercase', color: '#4ade80', marginBottom: 16 }}>Farmer stories</div>
-              <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 'clamp(32px,5vw,56px)', fontWeight: 800, color: '#e8f5e2', letterSpacing: '-2px', margin: 0 }}>Trusted across Sri Lanka</h2>
-            </div>
+            <figure style={{ margin: 0 }}>
+              <img src={fieldsPhoto} alt="Rice fields and village houses near Matara, seen from above" loading="lazy" style={{ display: 'block', width: '100%', height: 'clamp(220px, 32vw, 380px)', objectFit: 'cover', borderRadius: 20 }} />
+              <figcaption style={{ fontSize: 14, color: C.muted, marginTop: 10, textAlign: 'center' }}>Rice fields near Matara. Photo: oleks film, Unsplash.</figcaption>
+            </figure>
           </FadeUp>
-          <div className="lp-testimonials-grid">
-            {TESTIMONIALS.map((t, i) => (
-              <FadeUp key={i} delay={i * 100}>
-                <div style={{ background: 'rgba(13,43,26,0.4)', border: '1px solid rgba(74,222,128,0.12)', borderRadius: 16, padding: 32, backdropFilter: 'blur(12px)' }}>
-                  <div style={{ fontSize: 32, color: '#4ade80', fontFamily: 'Georgia, serif', marginBottom: 16, opacity: 0.6 }}>"</div>
-                  <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 15, lineHeight: 1.8, color: 'rgba(232,245,226,0.75)', margin: '0 0 24px', fontStyle: 'italic' }}>{t.quote}</p>
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <div style={{ width: 40, height: 40, borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, fontWeight: 700, color: '#0a1a0f', fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', flexShrink: 0 }}>{t.name[0]}</div>
-                    <div>
-                      <div style={{ fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 14, color: '#e8f5e2' }}>{t.name}</div>
-                      <div style={{ fontFamily: 'Inter, sans-serif', fontSize: 12, color: 'rgba(232,245,226,0.4)' }}>{t.location} · {t.crop}</div>
-                    </div>
-                  </div>
-                </div>
-              </FadeUp>
-            ))}
-          </div>
         </div>
       </section>
 
-      {/* ── CTA BANNER ── */}
-      <section style={{ padding: '80px 40px', textAlign: 'center', background: 'linear-gradient(135deg, rgba(74,222,128,0.08), rgba(22,163,74,0.05))', borderTop: '1px solid rgba(74,222,128,0.1)', borderBottom: '1px solid rgba(74,222,128,0.1)' }}>
+      {/* ── A real season ── */}
+      <section style={{ maxWidth: 1180, margin: '0 auto', padding: '96px 24px 0' }}>
         <FadeUp>
-          <h2 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: 'clamp(28px,4vw,48px)', fontWeight: 800, color: '#e8f5e2', letterSpacing: '-1.5px', margin: '0 0 16px' }}>Ready to transform your farm?</h2>
-          <p style={{ fontFamily: 'Inter, sans-serif', fontSize: 16, color: 'rgba(232,245,226,0.55)', margin: '0 0 40px' }}>Join 500+ Sri Lankan farmers already growing smarter.</p>
-          <button onClick={() => navigate('/register')} style={{ background: '#4ade80', color: '#0a1a0f', border: 'none', borderRadius: 10, padding: '18px 48px', fontFamily: 'Space Grotesk, sans-serif', fontWeight: 700, fontSize: 18, cursor: 'pointer', boxShadow: '0 0 50px rgba(74,222,128,0.5)', transition: 'all 0.2s' }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 0 70px rgba(74,222,128,0.7)' }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 0 50px rgba(74,222,128,0.5)' }}
-          >Start Growing Free</button>
+          <figure style={{ margin: 0, background: C.green, color: '#ffffff', borderRadius: 18, padding: 'clamp(28px, 5vw, 56px)', display: 'flex', flexDirection: 'column', gap: 18 }}>
+            <blockquote style={{ margin: 0, fontFamily: SERIF, fontWeight: 500, fontSize: 'clamp(24px, 3vw, 34px)', lineHeight: 1.3, textWrap: 'balance' }}>
+              Paddy made Rs 402,650 this Maha season. The big onion lost Rs 298,200 to downy mildew. The farm still finished Rs 64,850 ahead.
+            </blockquote>
+            <figcaption style={{ fontSize: 15, color: '#dfe9da' }}>The demo farm in AgroMaster: four crops in Polonnaruwa and Dambulla, 35 expenses and 5 harvests.</figcaption>
+          </figure>
         </FadeUp>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer style={{ padding: '48px 40px', background: 'rgba(10,16,12,0.9)', borderTop: '1px solid rgba(74,222,128,0.06)' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }} className="lp-footer-inner">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{ width: 28, height: 28, borderRadius: 7, background: 'linear-gradient(135deg, #4ade80, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🌿</div>
-            <span style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: 16, color: '#e8f5e2' }}>AgroMaster</span>
-          </div>
-          <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: 13, color: 'rgba(232,245,226,0.3)' }}>© 2026 AgroMaster · Built for Sri Lankan Farmers 🌿</div>
-          <div style={{ display: 'flex', gap: 24 }}>
-            {['Privacy', 'Terms', 'Contact'].map(l => (
-              <a key={l} href="#" style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: 13, color: 'rgba(232,245,226,0.4)', textDecoration: 'none' }}>{l}</a>
+      {/* ── Questions ── */}
+      <section id="questions" style={{ maxWidth: 1180, margin: '0 auto', padding: '96px 24px 0' }}>
+        <FadeUp style={{ display: 'flex', flexDirection: 'column', gap: 22, maxWidth: 760, margin: '0 auto' }}>
+          <h2 style={{ ...sectionTitle, textAlign: 'center' }}>Questions farmers ask first</h2>
+          <div className="lp-faq" style={{ borderTop: `1px solid ${C.line}` }}>
+            {FAQ.map((item) => (
+              <details key={item.q} style={{ borderBottom: `1px solid ${C.line}` }}>
+                <summary>{item.q}<PlusIcon /></summary>
+                <p style={{ margin: 0, padding: '0 0 20px', color: C.muted }}>{item.a}</p>
+              </details>
             ))}
           </div>
+        </FadeUp>
+      </section>
+
+      {/* ── Closing call ── */}
+      <section style={{ maxWidth: 1180, margin: '0 auto', padding: '112px 24px 96px', textAlign: 'center' }}>
+        <FadeUp style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+          <h2 style={{ ...sectionTitle, fontSize: 'clamp(34px, 5vw, 56px)', maxWidth: 760 }}>Start this season’s records today.</h2>
+          <p style={{ margin: 0, color: C.muted, maxWidth: 520 }}>Add your crops in a few minutes, then log costs and sales as they happen. At harvest, the profit for each crop is already worked out.</p>
+          <Link to="/register" className="lp-cta" style={pillPrimary}>Create a free account</Link>
+          <a href={APK_URL} style={{ color: C.ink, fontSize: 15 }}>Or download the Android app</a>
+        </FadeUp>
+      </section>
+
+      {/* ── Footer ── */}
+      <footer style={{ borderTop: `1px solid ${C.line}` }}>
+        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '28px 24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 16, fontSize: 14, color: C.muted }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <img src={logo} alt="" width="28" height="28" style={{ display: 'block' }} />
+            <span>© 2026 AgroMaster. Made by Minidu Dhananjana.</span>
+          </div>
+          <nav aria-label="Footer" style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
+            <a href={APK_URL} style={{ color: C.muted }}>Android app</a>
+            <a href={GITHUB_URL} style={{ color: C.muted }}>Source on GitHub</a>
+            <Link to="/login" style={{ color: C.muted }}>Sign in</Link>
+          </nav>
         </div>
+        <p style={{ maxWidth: 1180, margin: '0 auto', padding: '0 24px 28px', fontSize: 13, color: C.muted }}>
+          Photos from Unsplash: Indika Sriyan (farmer near Ambanpola), oleks film (fields near Matara), Sadek Husein (rain over rice).
+        </p>
       </footer>
     </div>
   )
