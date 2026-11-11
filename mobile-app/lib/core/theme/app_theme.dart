@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 /// Colours taken from the web app so the two read as one product: a deep
 /// paddy green for surfaces and the lime accent used for highlights.
@@ -16,6 +17,18 @@ abstract final class AppTheme {
 
   static ThemeData dark() => _build(Brightness.dark);
 
+  /// Status and navigation bar icons that contrast with the theme. Left to
+  /// itself, a transparent app bar is read as dark and gets white icons,
+  /// which vanish on the light theme.
+  static SystemUiOverlayStyle systemBars(ThemeData theme) {
+    final light = theme.brightness == Brightness.light;
+    return (light ? SystemUiOverlayStyle.dark : SystemUiOverlayStyle.light).copyWith(
+      statusBarColor: Colors.transparent,
+      systemNavigationBarColor: theme.scaffoldBackgroundColor,
+      systemNavigationBarIconBrightness: light ? Brightness.dark : Brightness.light,
+    );
+  }
+
   static ThemeData _build(Brightness brightness) {
     final scheme = ColorScheme.fromSeed(
       seedColor: Brand.leaf,
@@ -23,13 +36,15 @@ abstract final class AppTheme {
       tertiary: Brand.lime,
     );
     final base = ThemeData(colorScheme: scheme, useMaterial3: true, brightness: brightness);
+    final scaffold = brightness == Brightness.dark ? const Color(0xFF0B1A10) : scheme.surface;
 
     return base.copyWith(
-      scaffoldBackgroundColor: brightness == Brightness.dark ? const Color(0xFF0B1A10) : scheme.surface,
+      scaffoldBackgroundColor: scaffold,
       appBarTheme: AppBarTheme(
         centerTitle: false,
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
+        systemOverlayStyle: systemBars(base.copyWith(scaffoldBackgroundColor: scaffold)),
         titleTextStyle: base.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700, color: scheme.onSurface),
       ),
       cardTheme: CardThemeData(
