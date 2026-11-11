@@ -43,7 +43,6 @@ function mockDashboard(alerts, { onPut } = {}) {
   server.use(
     http.get('/api/dashboard/summary', () => HttpResponse.json(EMPTY_SUMMARY)),
     http.get('/api/alerts', () => HttpResponse.json(current)),
-    http.get('/api/reminders/due', () => HttpResponse.json([])),
     http.put('/api/crops/:cropId/reminders/:reminderId', async ({ params, request }) => {
       onPut?.({ ...params, body: await request.json() })
       current = current.filter((a) => String(a.reminderId) !== params.reminderId)

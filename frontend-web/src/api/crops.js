@@ -49,8 +49,6 @@ export const updateCropReminder = (cropId, reminderId, data) =>
 export const deleteCropReminder = (cropId, reminderId) =>
   api.delete(`/crops/${cropId}/reminders/${reminderId}`)
 
-export const getDueReminders = () => api.get('/reminders/due')
-
 // Totals, per-crop profit/loss and reminders in one round trip, instead of a
 // profit/loss request per crop added up in the browser.
 export const getDashboardSummary = () => api.get('/dashboard/summary')
