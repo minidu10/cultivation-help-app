@@ -1,6 +1,13 @@
 package com.cultivation.app.controller;
 
+import java.io.IOException;
+import java.time.Duration;
+
+import org.springframework.http.CacheControl;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -45,6 +52,29 @@ public class UserController {
             @AuthenticationPrincipal User currentUser,
             @Valid @RequestBody UserUpdateRequest request) {
         return ResponseEntity.ok(userService.updateMe(currentUser, request));
+    }
+
+    @PostMapping(value = "/me/photo", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Set my profile picture (JPEG or PNG, up to 5 MB)")
+    public ResponseEntity<UserResponse> setPhoto(
+            @AuthenticationPrincipal User currentUser,
+            @RequestPart("image") MultipartFile image) throws IOException {
+        return ResponseEntity.ok(userService.setAvatar(currentUser, image.getBytes()));
+    }
+
+    @GetMapping(value = "/me/photo", produces = MediaType.IMAGE_JPEG_VALUE)
+    @Operation(summary = "My profile picture")
+    public ResponseEntity<byte[]> getPhoto(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok()
+            .cacheControl(CacheControl.maxAge(Duration.ofDays(7)).cachePrivate())
+            .contentType(MediaType.IMAGE_JPEG)
+            .body(userService.getAvatar(currentUser));
+    }
+
+    @DeleteMapping("/me/photo")
+    @Operation(summary = "Remove my profile picture")
+    public ResponseEntity<UserResponse> removePhoto(@AuthenticationPrincipal User currentUser) {
+        return ResponseEntity.ok(userService.removeAvatar(currentUser));
     }
 
     @PostMapping("/me/password")

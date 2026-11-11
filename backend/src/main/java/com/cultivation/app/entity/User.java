@@ -59,6 +59,10 @@ public class User {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    /** When the profile picture last changed; null when there is none. */
+    @Column(name = "avatar_updated_at")
+    private LocalDateTime avatarUpdatedAt;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
@@ -102,4 +106,7 @@ public class User {
     public void setReminderEmailsEnabled(Boolean reminderEmailsEnabled) { this.reminderEmailsEnabled = reminderEmailsEnabled; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
+
+    public LocalDateTime getAvatarUpdatedAt() { return avatarUpdatedAt; }
+    public void setAvatarUpdatedAt(LocalDateTime avatarUpdatedAt) { this.avatarUpdatedAt = avatarUpdatedAt; }
 }

@@ -22,6 +22,7 @@ import com.cultivation.app.dto.DiagnosisResponse;
 import com.cultivation.app.entity.Crop;
 import com.cultivation.app.entity.CropDiagnosis;
 import com.cultivation.app.entity.CropDiagnosisThumbnail;
+import com.cultivation.app.storage.MediaStorage;
 import com.cultivation.app.entity.User;
 import com.cultivation.app.exception.ApiException;
 import com.cultivation.app.repository.CropDiagnosisRepository;
@@ -50,6 +51,7 @@ public class DiagnosisService {
     private final CropDiagnosisRepository diagnosisRepository;
     private final CropDiagnosisThumbnailRepository thumbnailRepository;
     private final PhotoProcessor photoProcessor;
+    private final MediaStorage mediaStorage;
     private final AiAdvisorService aiAdvisorService;
     private final RestTemplate restTemplate;
     private final TransactionTemplate transaction;
@@ -60,6 +62,7 @@ public class DiagnosisService {
                             CropDiagnosisRepository diagnosisRepository,
                             CropDiagnosisThumbnailRepository thumbnailRepository,
                             PhotoProcessor photoProcessor,
+                            MediaStorage mediaStorage,
                             AiAdvisorService aiAdvisorService,
                             @Qualifier("aiRestTemplate") RestTemplate restTemplate,
                             TransactionTemplate transaction,
@@ -69,6 +72,7 @@ public class DiagnosisService {
         this.diagnosisRepository = diagnosisRepository;
         this.thumbnailRepository = thumbnailRepository;
         this.photoProcessor = photoProcessor;
+        this.mediaStorage = mediaStorage;
         this.aiAdvisorService = aiAdvisorService;
         this.restTemplate = restTemplate;
         this.transaction = transaction;
@@ -114,7 +118,7 @@ public class DiagnosisService {
             d.setNote(cleanNote);
             d.setModel(truncate(ai.model(), 100));
             CropDiagnosis row = diagnosisRepository.save(d);
-            thumbnailRepository.save(new CropDiagnosisThumbnail(row.getId(), photo.thumbnail()));
+            mediaStorage.put(thumbnailKey(user, row.getId()), photo.thumbnail(), "image/jpeg");
             return row;
         });
         log.info("Diagnosed crop {} for user {}: {} ({})", crop.getId(), user.getId(), ai.condition(), ai.confidence());
@@ -134,9 +138,15 @@ public class DiagnosisService {
 
     public byte[] thumbnail(Long cropId, Long diagnosisId, User user) {
         CropDiagnosis diagnosis = find(cropId, diagnosisId, user);
+        // Thumbnails saved before photo storage existed are still in the database.
         return thumbnailRepository.findById(diagnosis.getId())
             .map(CropDiagnosisThumbnail::getImage)
+            .or(() -> mediaStorage.get(thumbnailKey(user, diagnosis.getId())))
             .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Photo not found"));
+    }
+
+    private static String thumbnailKey(User user, Long diagnosisId) {
+        return "diagnoses/" + user.getId() + "/" + diagnosisId + ".jpg";
     }
 
     public void delete(Long cropId, Long diagnosisId, User user) {
@@ -145,6 +155,7 @@ public class DiagnosisService {
             thumbnailRepository.deleteById(diagnosis.getId());
             diagnosisRepository.delete(diagnosis);
         });
+        mediaStorage.delete(thumbnailKey(user, diagnosis.getId()));
     }
 
     // -------------------------------------------------------------- AI call

@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import Avatar from '../components/Avatar'
 import Layout from '../components/Layout'
 import { useAuth } from '../context/AuthContext'
-import { getMyProfile, updateMyProfile } from '../api/users'
+import { getMyProfile, removeMyPhoto, updateMyProfile, uploadMyPhoto } from '../api/users'
+import { resizePhoto } from '../utils/resizePhoto'
 import { useIsMobile } from '../hooks/useIsMobile'
 
 const inputStyle = {
@@ -21,7 +23,7 @@ const labelStyle = {
 
 export default function ProfilePage() {
   const isMobile = useIsMobile()
-  const { updateUser } = useAuth()
+  const { user, updateUser } = useAuth()
   const [form, setForm] = useState({ fullName: '', email: '', phone: '', city: '' })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -64,7 +66,34 @@ export default function ProfilePage() {
     }
   }
 
-  const initials = (form.fullName || 'U').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+  const fileRef = useRef(null)
+  const [photoBusy, setPhotoBusy] = useState(false)
+  const [photoError, setPhotoError] = useState('')
+
+  const choosePhoto = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setPhotoBusy(true)
+    setPhotoError('')
+    try {
+      const res = await uploadMyPhoto(await resizePhoto(file, 512))
+      updateUser({ avatarVersion: res.data.avatarVersion })
+    } catch (err) {
+      setPhotoError(err.response?.data?.message || 'Could not save the photo. Try another one.')
+    } finally { setPhotoBusy(false) }
+  }
+
+  const removePhoto = async () => {
+    setPhotoBusy(true)
+    setPhotoError('')
+    try {
+      await removeMyPhoto()
+      updateUser({ avatarVersion: null })
+    } catch {
+      setPhotoError('Could not remove the photo.')
+    } finally { setPhotoBusy(false) }
+  }
 
   return (
     <Layout>
@@ -72,16 +101,12 @@ export default function ProfilePage() {
 
         {/* Profile avatar + name header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '28px' }}>
-          <div style={{
-            width: 56, height: 56, borderRadius: '50%',
-            background: 'var(--accent-lime)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '20px', fontWeight: 700, color: 'var(--on-accent)',
-            fontFamily: 'var(--font-body)', flexShrink: 0,
-            boxShadow: 'none',
-          }}>
-            {initials}
-          </div>
+          <Avatar
+            name={form.fullName}
+            version={user?.avatarVersion}
+            size={72}
+            style={{ background: 'var(--accent-lime)', color: 'var(--on-accent)', fontFamily: 'var(--font-body)' }}
+          />
           <div>
             <h1 style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: '22px', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px' }}>
               {form.fullName || 'Your Profile'}
@@ -89,6 +114,18 @@ export default function ProfilePage() {
             <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-faint)', marginTop: '2px' }}>
               {form.email}
             </p>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+              <input ref={fileRef} type="file" accept="image/jpeg,image/png" hidden onChange={choosePhoto} />
+              <button type="button" className="ghost-btn" style={{ padding: '6px 14px', fontSize: '13px' }}
+                disabled={photoBusy} onClick={() => fileRef.current?.click()}>
+                {photoBusy ? 'Saving…' : user?.avatarVersion ? 'Change photo' : 'Add photo'}
+              </button>
+              {user?.avatarVersion && (
+                <button type="button" className="ghost-btn" style={{ padding: '6px 14px', fontSize: '13px' }}
+                  disabled={photoBusy} onClick={removePhoto}>Remove</button>
+              )}
+            </div>
+            {photoError && <p role="alert" style={{ fontSize: '13px', color: 'var(--loss)', margin: '6px 0 0' }}>{photoError}</p>}
           </div>
         </div>
 
