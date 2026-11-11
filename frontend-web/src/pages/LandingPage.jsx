@@ -96,10 +96,12 @@ const FAQ = [
 ]
 
 // ── Record cards floating over the hero photo ──────────────────
+// Top left, middle right and bottom left, with a clear gap between each, so
+// no card covers another or the farmer's face.
 const RECORDS = [
-  { meta: 'Tue · 7:10 AM · North field', text: 'Sold 4,800 kg of BG 300 paddy to the rice mill', tag: 'Harvest · Rs 566,400', tagBg: C.greenSoft, tagInk: C.greenDark, tilt: -1.5 },
+  { meta: 'Tue · 7:10 AM · North field', text: 'Sold 4,800 kg of BG 300 paddy to the rice mill', tag: 'Harvest · Rs 566,400', tagBg: C.greenSoft, tagInk: C.greenDark, tilt: -2 },
   { meta: 'Thu · 6:30 AM · East plot', text: 'Compost and NPK mix for the green chilli', tag: 'Expense · Rs 19,800', tagBg: C.amberSoft, tagInk: C.amberInk, tilt: 1.5 },
-  { meta: 'Thu 13 Nov · Dambulla', text: '18 mm of rain expected. Move the fungicide spray to Friday?', tag: 'Weather warning', tagBg: C.roseSoft, tagInk: C.roseInk, tilt: -1 },
+  { meta: 'Thu 13 Nov · Dambulla', text: '18 mm of rain expected. Move the fungicide spray to Friday?', tag: 'Weather warning', tagBg: C.roseSoft, tagInk: C.roseInk, tilt: -1.5 },
 ]
 
 function RecordCard({ record, index }) {
@@ -108,11 +110,11 @@ function RecordCard({ record, index }) {
       <div className="lp-float" style={{
         animationDelay: `${index * 0.8}s`,
         background: C.card, border: `1px solid ${C.line}`, borderRadius: 14,
-        padding: '16px 18px', boxShadow: '0 12px 30px rgba(40, 32, 18, 0.16)',
+        padding: '14px 16px', boxShadow: '0 10px 28px rgba(40, 32, 18, 0.14)',
         display: 'flex', flexDirection: 'column', gap: 6,
       }}>
         <span style={{ fontSize: 13, color: C.muted }}>{record.meta}</span>
-        <span style={{ fontSize: 16, fontWeight: 600, color: C.ink, lineHeight: 1.35 }}>{record.text}</span>
+        <span style={{ fontSize: 15, fontWeight: 600, color: C.ink, lineHeight: 1.35 }}>{record.text}</span>
         <span style={{ alignSelf: 'flex-start', background: record.tagBg, color: record.tagInk, borderRadius: 999, padding: '3px 10px', fontSize: 13, fontWeight: 600 }}>{record.tag}</span>
       </div>
     </div>
@@ -196,12 +198,12 @@ export default function LandingPage() {
         @keyframes lp-sway { 0%, 100% { transform: rotate(-3deg) } 50% { transform: rotate(3deg) } }
         .lp-float { animation: lp-float 6s ease-in-out infinite; }
         .lp-sway { animation-name: lp-sway; animation-timing-function: ease-in-out; animation-iteration-count: infinite; }
-        .lp-hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 72px; align-items: center; }
+        .lp-hero { display: grid; grid-template-columns: minmax(0, 1fr) 530px; gap: 72px; align-items: center; }
         .lp-hero-photo { position: relative; margin: 0 40px 0 56px; }
-        .lp-record { position: absolute; width: 290px; z-index: 1; }
-        .lp-record-0 { top: 28px; left: -64px; }
-        .lp-record-1 { top: 44%; right: -48px; }
-        .lp-record-2 { bottom: 28px; left: -40px; }
+        .lp-record { position: absolute; width: 250px; z-index: 1; }
+        .lp-record-0 { top: 3%; left: -56px; }
+        .lp-record-1 { top: calc(50% - 62px); right: -44px; }
+        .lp-record-2 { bottom: 3%; left: -32px; }
         .lp-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; }
         .lp-features { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
         .lp-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; align-items: center; }
@@ -215,14 +217,18 @@ export default function LandingPage() {
         .lp-faq summary::-webkit-details-marker { display: none; }
         .lp-faq .lp-plus { flex-shrink: 0; color: ${C.green}; transition: transform 0.2s ease; }
         .lp-faq details[open] .lp-plus { transform: rotate(45deg); }
+        @media (max-width: 1040px) {
+          .lp-hero { grid-template-columns: minmax(0, 1fr); gap: 48px; }
+          .lp-hero-photo { margin: 0 auto; max-width: 460px; }
+        }
         @media (max-width: 960px) {
-          .lp-hero, .lp-split { grid-template-columns: minmax(0, 1fr); gap: 40px; }
-          .lp-hero-photo { margin: 0; }
-          .lp-record { position: static; width: auto; margin-top: 12px; }
+          .lp-split { grid-template-columns: minmax(0, 1fr); gap: 40px; }
           .lp-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .lp-features { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         }
         @media (max-width: 640px) {
+          .lp-hero-photo { max-width: none; }
+          .lp-record { position: static; width: auto; margin-top: 20px; }
           .lp-features, .lp-steps { grid-template-columns: minmax(0, 1fr); }
           .lp-steps-line { display: none; }
           .lp-nav-links { gap: 10px; }
@@ -364,10 +370,7 @@ export default function LandingPage() {
             ))}
           </div>
           <FadeUp>
-            <figure style={{ margin: 0 }}>
-              <img src={fieldsPhoto} alt="Rice fields and village houses near Matara, seen from above" loading="lazy" style={{ display: 'block', width: '100%', height: 'clamp(220px, 32vw, 380px)', objectFit: 'cover', borderRadius: 20 }} />
-              <figcaption style={{ fontSize: 14, color: C.muted, marginTop: 10, textAlign: 'center' }}>Rice fields near Matara. Photo: oleks film, Unsplash.</figcaption>
-            </figure>
+            <img src={fieldsPhoto} alt="Rice fields and village houses near Matara, seen from above" loading="lazy" style={{ display: 'block', width: '100%', height: 'clamp(220px, 32vw, 380px)', objectFit: 'cover', borderRadius: 20 }} />
           </FadeUp>
         </div>
       </section>
@@ -414,7 +417,7 @@ export default function LandingPage() {
         <div style={{ maxWidth: 1180, margin: '0 auto', padding: '28px 24px', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 16, fontSize: 14, color: C.muted }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src={logo} alt="" width="28" height="28" style={{ display: 'block' }} />
-            <span>© 2026 AgroMaster. Made by Minidu Dhananjana.</span>
+            <span>© 2026 AgroMaster</span>
           </div>
           <nav aria-label="Footer" style={{ display: 'flex', flexWrap: 'wrap', gap: 20 }}>
             <a href={APK_URL} style={{ color: C.muted }}>Android app</a>
@@ -422,9 +425,6 @@ export default function LandingPage() {
             <Link to="/login" style={{ color: C.muted }}>Sign in</Link>
           </nav>
         </div>
-        <p style={{ maxWidth: 1180, margin: '0 auto', padding: '0 24px 28px', fontSize: 13, color: C.muted }}>
-          Photos from Unsplash: Indika Sriyan (farmer near Ambanpola), oleks film (fields near Matara), Sadek Husein (rain over rice).
-        </p>
       </footer>
     </div>
   )
