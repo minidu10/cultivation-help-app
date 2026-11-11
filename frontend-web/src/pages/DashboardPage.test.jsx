@@ -43,11 +43,12 @@ describe('DashboardPage', () => {
 
     renderWithApp(<DashboardPage />)
 
-    expect(await statValue('Harvest income')).toBe('Rs. 2,000')
+    expect(await statValue('Harvest revenue')).toBe('Rs. 2,000')
     expect(await statValue('Total expenses')).toBe('Rs. 1,800.5')
     expect(await statValue('Net profit')).toBe('Rs. 199.5')
-    expect(await statValue('Margin')).toBe('10.0%')
-    expect(screen.getByText('2 crops, 1 active')).toBeInTheDocument()
+    expect(screen.getByText('Profit, 10.0% of revenue')).toBeInTheDocument()
+    expect(await statValue('Active crops')).toBe('1')
+    expect(screen.getByText('of 2 crops')).toBeInTheDocument()
     expect(screen.getByText('Apply urea')).toBeInTheDocument()
     expect(profitLossCalls).toEqual([])
   })

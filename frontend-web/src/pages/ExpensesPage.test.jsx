@@ -73,13 +73,13 @@ describe('ExpensesPage', () => {
     renderWithApp(<ExpensesPage />)
     await userEvent.click(await screen.findByRole('button', { name: 'Edit Urea 50kg' }))
 
-    const dialog = screen.getByRole('heading', { name: /Edit Expense/ }).closest('.modal-card')
+    const dialog = screen.getByRole('dialog', { name: 'Edit expense' })
     const amount = within(dialog).getByPlaceholderText('e.g. 3500')
     expect(amount).toHaveValue(4500)
 
     await userEvent.clear(amount)
     await userEvent.type(amount, '4750.50')
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Save Changes' }))
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Save changes' }))
 
     await waitFor(() => expect(updates).toHaveLength(1))
     expect(updates[0].id).toBe('1')
@@ -94,7 +94,7 @@ describe('ExpensesPage', () => {
 
     renderWithApp(<ExpensesPage />)
     await userEvent.click(await screen.findByRole('button', { name: 'Edit Urea 50kg' }))
-    await userEvent.click(screen.getByRole('button', { name: 'Save Changes' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Save changes' }))
 
     expect(await screen.findByText('Amount must be greater than zero')).toBeInTheDocument()
   })

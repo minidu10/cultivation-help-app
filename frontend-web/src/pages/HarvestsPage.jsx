@@ -1,20 +1,23 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
+import StatCard from '../components/StatCard'
+import { Alert } from '../components/AuthUI'
+import { BoxIcon, PaymentsIcon, TagIcon } from '../components/Icons'
+import {
+  AddButton, CropPicker, EmptyState, Field, FormActions, Modal, RecordList, RecordRow, Tiles, Toolbar,
+} from '../components/RecordUI'
+import { card } from '../components/surfaces'
 import { getCrops, getHarvests, addHarvest, updateHarvest, deleteHarvest } from '../api/crops'
-import { useIsMobile } from '../hooks/useIsMobile'
-import logo from '../assets/logo.png'
+import { formatDate, rupees, unitLabel } from '../utils/format'
 
 const UNITS = ['KG', 'TONNE', 'BUSHEL', 'POUND', 'LITER']
 
-const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }
-const inputStyle = { width: '100%', boxSizing: 'border-box', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }
-const labelStyle = { display: 'block', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 500 }
-const actionBtnStyle = { background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '8px', padding: '5px 10px', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', cursor: 'pointer' }
-
 const EMPTY_FORM = { harvestDate: '', quantity: '', unit: 'KG', pricePerUnit: '', buyerName: '', notes: '' }
 
+const revenueOf = (h) => Number(h.quantity) * Number(h.pricePerUnit)
+
 export default function HarvestsPage() {
-  const isMobile = useIsMobile()
   const [crops, setCrops] = useState([])
   const [selectedCrop, setSelectedCrop] = useState('')
   const [harvests, setHarvests] = useState([])
@@ -44,13 +47,14 @@ export default function HarvestsPage() {
     finally { setLoading(false) }
   }
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
-  const openAdd = () => { setEditingId(null); setForm(EMPTY_FORM); setShowForm(true) }
+  const openAdd = () => { setEditingId(null); setForm(EMPTY_FORM); setError(''); setShowForm(true) }
   const openEdit = (h) => {
     setEditingId(h.id)
     setForm({ harvestDate: h.harvestDate, quantity: String(h.quantity), unit: h.unit, pricePerUnit: String(h.pricePerUnit), buyerName: h.buyerName || '', notes: h.notes || '' })
+    setError('')
     setShowForm(true)
   }
-  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM) }
+  const closeForm = useCallback(() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM) }, [])
   const handleSubmit = async (e) => {
     e.preventDefault(); setSubmitting(true); setError('')
     const payload = { ...form, quantity: Number(form.quantity), pricePerUnit: Number(form.pricePerUnit) }
@@ -63,7 +67,7 @@ export default function HarvestsPage() {
     finally { setSubmitting(false) }
   }
   const handleDelete = async (h) => {
-    if (!window.confirm(`Delete the ${h.harvestDate} harvest of ${Number(h.quantity).toLocaleString()} ${h.unit}?`)) return
+    if (!window.confirm(`Delete the ${formatDate(h.harvestDate)} harvest of ${Number(h.quantity).toLocaleString()} ${unitLabel(h.unit)}?`)) return
     setError('')
     try {
       await deleteHarvest(selectedCrop, h.id)
@@ -71,164 +75,115 @@ export default function HarvestsPage() {
     } catch (err) { setError(err?.response?.data?.message || 'Failed to delete harvest') }
   }
 
-  const totalRevenue = harvests.reduce((sum, h) => sum + (Number(h.quantity) * Number(h.pricePerUnit)), 0)
+  const totalRevenue = harvests.reduce((sum, h) => sum + revenueOf(h), 0)
+  // Quantities only add up when every harvest uses the same unit.
+  const unit = harvests.length > 0 && harvests.every((h) => h.unit === harvests[0].unit) ? harvests[0].unit : null
+  const totalQuantity = unit ? harvests.reduce((sum, h) => sum + Number(h.quantity), 0) : 0
+  const averagePrice = unit && totalQuantity > 0 ? Math.round((totalRevenue / totalQuantity) * 100) / 100 : null
+  const newestFirst = [...harvests].sort((a, b) => (b.harvestDate || '').localeCompare(a.harvestDate || ''))
   const estimatedRevenue = form.quantity && form.pricePerUnit ? Number(form.quantity) * Number(form.pricePerUnit) : 0
+  const count = `${harvests.length} ${harvests.length === 1 ? 'harvest' : 'harvests'}`
 
   return (
     <Layout>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 14px' }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Select Crop:</span>
-            {crops.length === 0 ? (
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-faint)' }}>No crops yet</span>
-            ) : (
-              <select value={selectedCrop} onChange={e => setSelectedCrop(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600, outline: 'none', cursor: 'pointer' }}>
-                {crops.map(crop => <option key={crop.id} value={crop.id}>{crop.name}{crop.variety ? ` (${crop.variety})` : ''}</option>)}
-              </select>
-            )}
-          </div>
-          {harvests.length > 0 && (
-            <div style={{ background: 'color-mix(in srgb, var(--accent-lime) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-lime) 20%, transparent)', borderRadius: '10px', padding: '8px 14px' }}>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'color-mix(in srgb, var(--accent-lime) 70%, transparent)' }}>Total Revenue</div>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: '16px', fontWeight: 700, color: 'var(--accent-lime)' }}>Rs. {totalRevenue.toLocaleString()}</div>
-            </div>
-          )}
-        </div>
-        <button onClick={() => (showForm ? closeForm() : openAdd())} disabled={!selectedCrop} className="agro-btn" style={{ padding: '9px 20px', fontSize: '14px', opacity: !selectedCrop ? 0.5 : 1 }}>
-          {showForm ? '× Cancel' : '+ Add Harvest'}
-        </button>
-      </div>
+      {!showForm && <Alert>{error}</Alert>}
 
-      {/* Error */}
-      {error && <div style={{ background: 'color-mix(in srgb, var(--accent-red) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-red) 30%, transparent)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--accent-red)', marginBottom: '16px' }}>{error}</div>}
-
-      {/* Add harvest modal */}
-      {showForm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="modal-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-hover)', borderRadius: '20px', padding: '36px', width: '520px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '20px', color: 'var(--text-primary)', margin: 0 }}>{editingId ? 'Edit Harvest' : 'Record Harvest'}</h2>
-              <button onClick={closeForm} aria-label="Close" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '22px' }}>×</button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={labelStyle}>Harvest Date *</label>
-                  <input name="harvestDate" type="date" value={form.harvestDate} onChange={handleChange} required style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Quantity *</label>
-                  <input name="quantity" type="number" step="0.001" value={form.quantity} onChange={handleChange} required placeholder="e.g. 500" style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Unit *</label>
-                  <select name="unit" value={form.unit} onChange={handleChange} style={inputStyle}>
-                    {UNITS.map(u => <option key={u} value={u}>{u}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle}>Price per Unit (Rs.) *</label>
-                  <input name="pricePerUnit" type="number" step="0.01" value={form.pricePerUnit} onChange={handleChange} required placeholder="e.g. 85" style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Buyer Name</label>
-                  <input name="buyerName" value={form.buyerName} onChange={handleChange} placeholder="e.g. Colombo Market" style={inputStyle} />
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={labelStyle}>Notes</label>
-                  <input name="notes" value={form.notes} onChange={handleChange} placeholder="Optional notes..." style={inputStyle} />
-                </div>
-                {estimatedRevenue > 0 && (
-                  <div style={{ gridColumn: '1 / -1', background: 'color-mix(in srgb, var(--accent-lime) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-lime) 20%, transparent)', borderRadius: '10px', padding: '12px 16px' }}>
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--accent-lime)' }}>
-                      Estimated revenue: <strong>Rs. {estimatedRevenue.toLocaleString()}</strong>
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '20px' }}>
-                <button type="button" onClick={closeForm} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '14px', padding: '8px 16px' }}>Cancel</button>
-                <button type="submit" disabled={submitting} className="agro-btn">{submitting ? 'Saving…' : editingId ? 'Save Changes' : 'Save Harvest'}</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Harvests list */}
-      {loading ? (
-        <div style={{ ...cardStyle, textAlign: 'center', padding: '60px' }}>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-faint)' }}>Loading harvests…</p>
-        </div>
-      ) : harvests.length === 0 ? (
-        <div style={{ ...cardStyle, textAlign: 'center', padding: '80px' }}>
-          <img src={logo} alt="" width="56" height="56" style={{ display: 'block', margin: '0 auto 12px' }} />
-          <p style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '18px', color: 'var(--text-muted)', marginBottom: '6px' }}>No harvests yet</p>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-faint)' }}>Record your first harvest above</p>
-        </div>
+      {!loading && crops.length === 0 ? (
+        <EmptyState
+          title="Add a crop first"
+          text="Harvests are recorded against a crop. Add your first crop, then come back here to record what you sold."
+          action={<Link to="/crops" className="agro-btn" style={{ display: 'inline-block', textDecoration: 'none' }}>Go to My Crops</Link>}
+        />
       ) : (
         <>
-          {/* Summary */}
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(3,1fr)', gap: '16px', marginBottom: '20px' }}>
-            {[
-              { label: 'Total Revenue', value: `Rs. ${totalRevenue.toLocaleString()}`, color: 'var(--accent-lime)' },
-              { label: 'Total Records', value: harvests.length, color: 'var(--accent-blue)' },
-              { label: 'Avg per Harvest', value: `Rs. ${Math.round(totalRevenue / harvests.length).toLocaleString()}`, color: 'var(--accent-amber)' },
-            ].map(s => (
-              <div key={s.label} style={{ ...cardStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '4px' }}>{s.label}</div>
-                  <div style={{ fontFamily: 'var(--font-body)', fontSize: '24px', fontWeight: 800, color: s.color, letterSpacing: '-0.5px' }}>{s.value}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <Toolbar>
+            <CropPicker crops={crops} value={selectedCrop} onChange={setSelectedCrop} />
+            <AddButton onClick={openAdd} disabled={!selectedCrop}>Add harvest</AddButton>
+          </Toolbar>
 
-          {/* Timeline */}
-          <div style={{ position: 'relative', paddingLeft: '28px' }}>
-            <div style={{ position: 'absolute', left: '10px', top: 0, bottom: 0, width: '2px', background: 'var(--accent-lime)' }} />
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {harvests.map((h) => {
-                const revenue = Number(h.quantity) * Number(h.pricePerUnit)
-                return (
-                  <div key={h.id} style={{ position: 'relative' }}>
-                    <div style={{ position: 'absolute', left: '-22px', top: '20px', width: 12, height: 12, borderRadius: '50%', background: 'var(--accent-lime)', border: '2px solid var(--bg-primary)', boxShadow: '0 0 8px var(--accent-lime)' }} />
-                    <div style={{ ...cardStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.2s' }}
-                      onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-hover)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-                      onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.transform = 'none' }}
-                    >
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', marginBottom: '4px' }}>
-                          {Number(h.quantity).toLocaleString()} {h.unit}
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)' }}>
-                          {h.harvestDate}
-                          {h.buyerName && ` · ${h.buyerName}`}
-                          {h.notes && ` · ${h.notes}`}
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-faint)', marginTop: '2px' }}>
-                          Rs. {Number(h.pricePerUnit).toLocaleString()} / {h.unit}
-                        </div>
-                      </div>
-                      <div style={{ textAlign: 'right', flexShrink: 0, marginLeft: '20px' }}>
-                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '20px', fontWeight: 800, color: 'var(--accent-lime)', letterSpacing: '-0.5px' }}>
-                          Rs. {revenue.toLocaleString()}
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-faint)', marginTop: '2px' }}>Revenue</div>
-                        <div style={{ marginTop: '8px', whiteSpace: 'nowrap' }}>
-                          <button type="button" onClick={() => openEdit(h)} aria-label={`Edit harvest of ${h.harvestDate}`} style={{ ...actionBtnStyle, marginRight: '6px' }}>Edit</button>
-                          <button type="button" onClick={() => handleDelete(h)} aria-label={`Delete harvest of ${h.harvestDate}`} style={{ ...actionBtnStyle, color: 'var(--accent-red)' }}>Delete</button>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
+          {loading ? (
+            <div style={{ ...card, padding: '48px', textAlign: 'center', fontSize: '14px', color: 'var(--text-muted)' }}>Loading harvests…</div>
+          ) : harvests.length === 0 ? (
+            <EmptyState
+              title="No harvests recorded yet"
+              text="Record each sale as it happens. AgroMaster adds up the revenue and works out the profit for this crop."
+              action={<AddButton onClick={openAdd}>Add harvest</AddButton>}
+            />
+          ) : (
+            <>
+              <Tiles>
+                <StatCard title="Harvest revenue" value={rupees(totalRevenue)} tone="good" icon={<PaymentsIcon />} sub={`From ${count}`} />
+                <StatCard
+                  title="Harvested"
+                  value={unit ? `${totalQuantity.toLocaleString()} ${unitLabel(unit)}` : count}
+                  tone="brand"
+                  icon={<BoxIcon />}
+                  sub={unit ? count : 'In more than one unit'}
+                />
+                <StatCard
+                  title="Average price"
+                  value={averagePrice !== null ? rupees(averagePrice) : rupees(Math.round(totalRevenue / harvests.length))}
+                  icon={<TagIcon />}
+                  sub={averagePrice !== null ? `per ${unitLabel(unit)}` : 'per harvest'}
+                />
+              </Tiles>
+
+              <RecordList title="Harvests" aside="Newest first">
+                {newestFirst.map((h) => (
+                  <RecordRow
+                    key={h.id}
+                    icon={<BoxIcon />}
+                    title={`${Number(h.quantity).toLocaleString()} ${unitLabel(h.unit)}`}
+                    details={[formatDate(h.harvestDate), `${rupees(h.pricePerUnit)} per ${unitLabel(h.unit)}`, h.buyerName].filter(Boolean).join(' · ')}
+                    note={h.notes}
+                    amount={rupees(revenueOf(h))}
+                    amountTone="good"
+                    editLabel={`Edit harvest of ${formatDate(h.harvestDate)}`}
+                    deleteLabel={`Delete harvest of ${formatDate(h.harvestDate)}`}
+                    onEdit={() => openEdit(h)}
+                    onDelete={() => handleDelete(h)}
+                  />
+                ))}
+              </RecordList>
+            </>
+          )}
         </>
+      )}
+
+      {showForm && (
+        <Modal title={editingId ? 'Edit harvest' : 'Add harvest'} onClose={closeForm}>
+          <Alert>{error}</Alert>
+          <form onSubmit={handleSubmit}>
+            <div className="form-grid">
+              <Field label="Harvest date" wide>
+                <input name="harvestDate" type="date" value={form.harvestDate} onChange={handleChange} required className="agro-input" />
+              </Field>
+              <Field label="Quantity">
+                <input name="quantity" type="number" step="0.001" min="0" value={form.quantity} onChange={handleChange} required placeholder="e.g. 500" className="agro-input" />
+              </Field>
+              <Field label="Unit">
+                <select name="unit" value={form.unit} onChange={handleChange} className="agro-input">
+                  {UNITS.map((u) => <option key={u} value={u}>{unitLabel(u)}</option>)}
+                </select>
+              </Field>
+              <Field label="Price per unit (Rs.)">
+                <input name="pricePerUnit" type="number" step="0.01" min="0" value={form.pricePerUnit} onChange={handleChange} required placeholder="e.g. 85" className="agro-input" />
+              </Field>
+              <Field label="Buyer">
+                <input name="buyerName" value={form.buyerName} onChange={handleChange} placeholder="e.g. Polonnaruwa rice mill" className="agro-input" />
+              </Field>
+              <Field label="Notes" wide>
+                <input name="notes" value={form.notes} onChange={handleChange} placeholder="Optional" className="agro-input" />
+              </Field>
+              {estimatedRevenue > 0 && (
+                <p className="span-2" style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: 'var(--profit)' }}>
+                  Estimated revenue: {rupees(estimatedRevenue)}
+                </p>
+              )}
+            </div>
+            <FormActions submitting={submitting} submitLabel={editingId ? 'Save changes' : 'Save harvest'} onCancel={closeForm} />
+          </form>
+        </Modal>
       )}
     </Layout>
   )

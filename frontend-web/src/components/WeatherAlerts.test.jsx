@@ -93,7 +93,7 @@ describe('weather alerts on the dashboard', () => {
     mockDashboard([])
 
     renderWithApp(<DashboardPage />)
-    await screen.findByText('Harvest income')
+    await screen.findByText('Harvest revenue')
 
     expect(screen.queryByRole('region', { name: 'Weather alerts' })).not.toBeInTheDocument()
   })
@@ -105,6 +105,6 @@ describe('weather alerts on the dashboard', () => {
 
     renderWithApp(<DashboardPage />)
 
-    expect(await screen.findByText('Harvest income')).toBeInTheDocument()
+    expect(await screen.findByText('Harvest revenue')).toBeInTheDocument()
   })
 })

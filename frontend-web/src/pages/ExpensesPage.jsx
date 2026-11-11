@@ -1,21 +1,61 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Layout from '../components/Layout'
+import StatCard from '../components/StatCard'
+import { Alert } from '../components/AuthUI'
+import { DotsIcon, ListIcon, PieIcon, ReceiptIcon } from '../components/Icons'
+import { CATEGORY_ICONS } from '../components/iconMaps'
+import {
+  AddButton, CropPicker, EmptyState, Field, FormActions, Modal, RecordList, RecordRow, Tiles, Toolbar,
+} from '../components/RecordUI'
+import { card } from '../components/surfaces'
 import { getCrops, getExpenses, addExpense, updateExpense, deleteExpense } from '../api/crops'
-import { useIsMobile } from '../hooks/useIsMobile'
-import logo from '../assets/logo.png'
+import { formatDate, humanize, rupees } from '../utils/format'
 
 const CATEGORIES = ['FERTILIZER', 'LABOR', 'TRANSPORT', 'EQUIPMENT', 'SEEDS', 'PESTICIDES', 'IRRIGATION', 'MISCELLANEOUS']
-const CAT_COLORS = { FERTILIZER: 'var(--accent-amber)', LABOR: 'var(--accent-blue)', TRANSPORT: 'var(--accent-blue)', EQUIPMENT: 'var(--text-muted)', SEEDS: 'var(--accent-lime)', PESTICIDES: 'var(--accent-red)', IRRIGATION: 'var(--accent-blue)', MISCELLANEOUS: 'var(--text-muted)' }
-
-const cardStyle = { background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px' }
-const inputStyle = { width: '100%', boxSizing: 'border-box', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: '10px 14px', fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-primary)', outline: 'none' }
-const labelStyle = { display: 'block', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 500 }
-const actionBtnStyle = { background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '8px', padding: '5px 10px', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', cursor: 'pointer' }
 
 const EMPTY_FORM = { category: 'FERTILIZER', description: '', amount: '', expenseDate: '', notes: '' }
 
+function CategoryIcon({ category, size }) {
+  const Icon = CATEGORY_ICONS[category] || DotsIcon
+  return <Icon size={size} />
+}
+
+/** [category, amount] pairs, largest first. */
+function byCategory(expenses) {
+  const sums = {}
+  for (const exp of expenses) sums[exp.category] = (sums[exp.category] || 0) + Number(exp.amount)
+  return Object.entries(sums).sort((a, b) => b[1] - a[1])
+}
+
+/** Each category's share of the crop's spending. */
+function CategoryBreakdown({ rows, total }) {
+  return (
+    <section style={{ ...card, padding: '18px 20px' }} aria-labelledby="breakdown-title">
+      <h2 id="breakdown-title" style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 6px' }}>Where the money went</h2>
+      <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+        {rows.map(([category, amount]) => {
+          const share = total > 0 ? Math.round((amount / total) * 100) : 0
+          return (
+            <li key={category} style={{ padding: '11px 0', borderTop: '1px solid var(--border)', fontSize: '14px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ color: 'var(--text-muted)' }}><CategoryIcon category={category} size={18} /></span>
+                <span style={{ flex: 1, color: 'var(--text-primary)' }}>{humanize(category)}</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{rupees(amount)}</span>
+                <span style={{ width: '40px', textAlign: 'right', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{share}%</span>
+              </div>
+              <div aria-hidden="true" style={{ height: '5px', borderRadius: '3px', background: 'var(--bg-tile)', marginTop: '8px', overflow: 'hidden' }}>
+                <div style={{ width: `${share}%`, height: '100%', background: 'var(--accent-lime)', borderRadius: '3px' }} />
+              </div>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
 export default function ExpensesPage() {
-  const isMobile = useIsMobile()
   const [crops, setCrops] = useState([])
   const [selectedCrop, setSelectedCrop] = useState('')
   const [expenses, setExpenses] = useState([])
@@ -45,13 +85,14 @@ export default function ExpensesPage() {
     finally { setLoading(false) }
   }
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value })
-  const openAdd = () => { setEditingId(null); setForm(EMPTY_FORM); setShowForm(true) }
+  const openAdd = () => { setEditingId(null); setForm(EMPTY_FORM); setError(''); setShowForm(true) }
   const openEdit = (exp) => {
     setEditingId(exp.id)
     setForm({ category: exp.category, description: exp.description, amount: String(exp.amount), expenseDate: exp.expenseDate, notes: exp.notes || '' })
+    setError('')
     setShowForm(true)
   }
-  const closeForm = () => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM) }
+  const closeForm = useCallback(() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM) }, [])
   const handleSubmit = async (e) => {
     e.preventDefault(); setSubmitting(true); setError('')
     const payload = { ...form, amount: Number(form.amount) }
@@ -64,7 +105,7 @@ export default function ExpensesPage() {
     finally { setSubmitting(false) }
   }
   const handleDelete = async (exp) => {
-    if (!window.confirm(`Delete "${exp.description}" (Rs. ${Number(exp.amount).toLocaleString()})?`)) return
+    if (!window.confirm(`Delete "${exp.description}" (${rupees(exp.amount)})?`)) return
     setError('')
     try {
       await deleteExpense(selectedCrop, exp.id)
@@ -73,140 +114,97 @@ export default function ExpensesPage() {
   }
 
   const totalExpenses = expenses.reduce((sum, e) => sum + Number(e.amount), 0)
-  const selectedCropName = crops.find(c => c.id === Number(selectedCrop))?.name || ''
+  const newestFirst = [...expenses].sort((a, b) => (b.expenseDate || '').localeCompare(a.expenseDate || ''))
+  const oldest = newestFirst[newestFirst.length - 1]
+  const categories = byCategory(expenses)
+  const [topCategory, topAmount] = categories[0] || ['', 0]
+  const count = `${expenses.length} ${expenses.length === 1 ? 'expense' : 'expenses'}`
 
   return (
     <Layout>
-      {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-          {/* Crop selector */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 14px' }}>
-            <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Select Crop:</span>
-            {crops.length === 0 ? (
-              <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-faint)' }}>No crops yet</span>
-            ) : (
-              <select value={selectedCrop} onChange={e => setSelectedCrop(e.target.value)} style={{ background: 'transparent', border: 'none', color: 'var(--text-primary)', fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600, outline: 'none', cursor: 'pointer' }}>
-                {crops.map(crop => <option key={crop.id} value={crop.id}>{crop.name}{crop.variety ? ` (${crop.variety})` : ''}</option>)}
-              </select>
-            )}
-          </div>
-          {expenses.length > 0 && (
-            <div style={{ background: 'color-mix(in srgb, var(--accent-red) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-red) 20%, transparent)', borderRadius: '10px', padding: '8px 14px' }}>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'color-mix(in srgb, var(--accent-red) 70%, transparent)' }}>Total Spent</div>
-              <div style={{ fontFamily: 'var(--font-body)', fontSize: '16px', fontWeight: 700, color: 'var(--accent-red)' }}>Rs. {totalExpenses.toLocaleString()}</div>
-            </div>
+      {!showForm && <Alert>{error}</Alert>}
+
+      {!loading && crops.length === 0 ? (
+        <EmptyState
+          title="Add a crop first"
+          text="Expenses are recorded against a crop. Add your first crop, then come back here to record what you spend on it."
+          action={<Link to="/crops" className="agro-btn" style={{ display: 'inline-block', textDecoration: 'none' }}>Go to My Crops</Link>}
+        />
+      ) : (
+        <>
+          <Toolbar>
+            <CropPicker crops={crops} value={selectedCrop} onChange={setSelectedCrop} />
+            <AddButton onClick={openAdd} disabled={!selectedCrop}>Add expense</AddButton>
+          </Toolbar>
+
+          {loading ? (
+            <div style={{ ...card, padding: '48px', textAlign: 'center', fontSize: '14px', color: 'var(--text-muted)' }}>Loading expenses…</div>
+          ) : expenses.length === 0 ? (
+            <EmptyState
+              title="No expenses recorded yet"
+              text="Record seed, fertilizer, labour and other costs as you pay them, so the profit for this crop is right at harvest."
+              action={<AddButton onClick={openAdd}>Add expense</AddButton>}
+            />
+          ) : (
+            <>
+              <Tiles>
+                <StatCard title="Total spent" value={rupees(totalExpenses)} tone="bad" icon={<ReceiptIcon />} sub={count} />
+                <StatCard title="Biggest cost" value={humanize(topCategory)} icon={<PieIcon />} sub={`${Math.round((topAmount / totalExpenses) * 100)}% of the spending`} />
+                <StatCard title="Spending since" value={formatDate(oldest.expenseDate)} icon={<ListIcon />} sub={`Latest on ${formatDate(newestFirst[0].expenseDate)}`} />
+              </Tiles>
+
+              <div className="split">
+                <RecordList title="Expenses" aside="Newest first">
+                  {newestFirst.map((exp) => (
+                    <RecordRow
+                      key={exp.id}
+                      icon={<CategoryIcon category={exp.category} />}
+                      tone="bad"
+                      title={exp.description}
+                      details={`${humanize(exp.category)} · ${formatDate(exp.expenseDate)}`}
+                      note={exp.notes}
+                      amount={rupees(exp.amount)}
+                      amountTone="bad"
+                      editLabel={`Edit ${exp.description}`}
+                      deleteLabel={`Delete ${exp.description}`}
+                      onEdit={() => openEdit(exp)}
+                      onDelete={() => handleDelete(exp)}
+                    />
+                  ))}
+                </RecordList>
+                <CategoryBreakdown rows={categories} total={totalExpenses} />
+              </div>
+            </>
           )}
-        </div>
-        <button onClick={() => (showForm ? closeForm() : openAdd())} disabled={!selectedCrop} className="agro-btn" style={{ padding: '9px 20px', fontSize: '14px', opacity: !selectedCrop ? 0.5 : 1 }}>
-          {showForm ? '× Cancel' : '+ Add Expense'}
-        </button>
-      </div>
-
-      {/* Error */}
-      {error && <div style={{ background: 'color-mix(in srgb, var(--accent-red) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-red) 30%, transparent)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--accent-red)', marginBottom: '16px' }}>{error}</div>}
-
-      {/* Add expense modal */}
-      {showForm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
-          <div className="modal-card" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-hover)', borderRadius: '20px', padding: '36px', width: '520px', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '20px', color: 'var(--text-primary)', margin: 0 }}>{editingId ? 'Edit Expense' : 'Add Expense'} — {selectedCropName}</h2>
-              <button onClick={closeForm} aria-label="Close" style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '22px' }}>×</button>
-            </div>
-            <form onSubmit={handleSubmit}>
-              <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>
-                <div>
-                  <label style={labelStyle}>Category *</label>
-                  <select name="category" value={form.category} onChange={handleChange} style={inputStyle}>
-                    {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label style={labelStyle}>Amount (Rs.) *</label>
-                  <input name="amount" type="number" step="0.01" value={form.amount} onChange={handleChange} required placeholder="e.g. 3500" style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Description *</label>
-                  <input name="description" value={form.description} onChange={handleChange} required placeholder="e.g. Urea fertilizer 50kg" style={inputStyle} />
-                </div>
-                <div>
-                  <label style={labelStyle}>Date *</label>
-                  <input name="expenseDate" type="date" value={form.expenseDate} onChange={handleChange} required style={inputStyle} />
-                </div>
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={labelStyle}>Notes</label>
-                  <input name="notes" value={form.notes} onChange={handleChange} placeholder="Optional notes..." style={inputStyle} />
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '20px' }}>
-                <button type="button" onClick={closeForm} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '14px', padding: '8px 16px' }}>Cancel</button>
-                <button type="submit" disabled={submitting} className="agro-btn">{submitting ? 'Saving…' : editingId ? 'Save Changes' : 'Save Expense'}</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        </>
       )}
 
-      {/* Main content */}
-      {loading ? (
-        <div style={{ ...cardStyle, textAlign: 'center', padding: '60px' }}>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-faint)' }}>Loading expenses…</p>
-        </div>
-      ) : expenses.length === 0 ? (
-        <div style={{ ...cardStyle, textAlign: 'center', padding: '80px' }}>
-          <img src={logo} alt="" width="56" height="56" style={{ display: 'block', margin: '0 auto 12px' }} />
-          <p style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '18px', color: 'var(--text-muted)', marginBottom: '6px' }}>No expenses yet</p>
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-faint)' }}>Click "+ Add Expense" to record a cost</p>
-        </div>
-      ) : (
-        <div style={cardStyle}>
-          <div className="table-scroll">
-          <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '550px' }}>
-            <thead>
-              <tr style={{ borderBottom: '1px solid color-mix(in srgb, var(--accent-lime) 10%, transparent)' }}>
-                {['Category', 'Description', 'Date', 'Notes', 'Amount', 'Actions'].map(h => (
-                  <th key={h} style={{ padding: '12px 14px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textAlign: h === 'Amount' || h === 'Actions' ? 'right' : 'left', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {expenses.map((exp, i) => {
-                const color = CAT_COLORS[exp.category] || 'var(--text-muted)'
-                return (
-                  <tr key={exp.id}
-                    style={{ borderBottom: i < expenses.length - 1 ? '1px solid color-mix(in srgb, var(--accent-lime) 6%, transparent)' : 'none', transition: 'background 0.2s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'color-mix(in srgb, var(--accent-lime) 4%, transparent)'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                  >
-                    <td style={{ padding: '13px 14px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        
-                        <span style={{ background: `${color}20`, border: `1px solid ${color}50`, borderRadius: '100px', padding: '2px 8px', fontFamily: 'var(--font-body)', fontSize: '11px', fontWeight: 600, color }}>{exp.category}</span>
-                      </div>
-                    </td>
-                    <td style={{ padding: '13px 14px', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-primary)' }}>{exp.description}</td>
-                    <td style={{ padding: '13px 14px', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)' }}>{exp.expenseDate}</td>
-                    <td style={{ padding: '13px 14px', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)', fontStyle: 'italic' }}>{exp.notes || '—'}</td>
-                    <td style={{ padding: '13px 14px', fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 700, color: 'var(--accent-red)', textAlign: 'right' }}>Rs. {Number(exp.amount).toLocaleString()}</td>
-                    <td style={{ padding: '13px 14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
-                      <button type="button" onClick={() => openEdit(exp)} aria-label={`Edit ${exp.description}`} style={{ ...actionBtnStyle, marginRight: '6px' }}>Edit</button>
-                      <button type="button" onClick={() => handleDelete(exp)} aria-label={`Delete ${exp.description}`} style={{ ...actionBtnStyle, color: 'var(--accent-red)' }}>Delete</button>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-            <tfoot>
-              <tr style={{ borderTop: '1px solid color-mix(in srgb, var(--accent-lime) 12%, transparent)', background: 'color-mix(in srgb, var(--accent-lime) 4%, transparent)' }}>
-                <td colSpan={4} style={{ padding: '14px', fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Total Expenses</td>
-                <td style={{ padding: '14px', textAlign: 'right', fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: '18px', color: 'var(--accent-red)' }}>Rs. {totalExpenses.toLocaleString()}</td>
-                <td />
-              </tr>
-            </tfoot>
-          </table>
-          </div>
-        </div>
+      {showForm && (
+        <Modal title={editingId ? 'Edit expense' : 'Add expense'} onClose={closeForm}>
+          <Alert>{error}</Alert>
+          <form onSubmit={handleSubmit}>
+            <div className="form-grid">
+              <Field label="Category">
+                <select name="category" value={form.category} onChange={handleChange} className="agro-input">
+                  {CATEGORIES.map((cat) => <option key={cat} value={cat}>{humanize(cat)}</option>)}
+                </select>
+              </Field>
+              <Field label="Amount (Rs.)">
+                <input name="amount" type="number" step="0.01" min="0" value={form.amount} onChange={handleChange} required placeholder="e.g. 3500" className="agro-input" />
+              </Field>
+              <Field label="Description">
+                <input name="description" value={form.description} onChange={handleChange} required placeholder="e.g. Urea fertilizer 50kg" className="agro-input" />
+              </Field>
+              <Field label="Date">
+                <input name="expenseDate" type="date" value={form.expenseDate} onChange={handleChange} required className="agro-input" />
+              </Field>
+              <Field label="Notes" wide>
+                <input name="notes" value={form.notes} onChange={handleChange} placeholder="Optional" className="agro-input" />
+              </Field>
+            </div>
+            <FormActions submitting={submitting} submitLabel={editingId ? 'Save changes' : 'Save expense'} onCancel={closeForm} />
+          </form>
+        </Modal>
       )}
     </Layout>
   )

@@ -1,26 +1,36 @@
 import { useEffect, useState } from 'react'
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, PieChart, Pie, Cell
-} from 'recharts'
+import { Link } from 'react-router-dom'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
 import WeatherAlerts from '../components/WeatherAlerts'
+import {
+  BellIcon, CheckCircleIcon, PaymentsIcon, ReceiptIcon, SproutIcon, TrendDownIcon, TrendUpIcon,
+} from '../components/Icons'
+import { REMINDER_ICONS } from '../components/iconMaps'
+import { card } from '../components/surfaces'
 import { useAuth } from '../context/AuthContext'
 import { useIsMobile } from '../hooks/useIsMobile'
-import { getDashboardSummary, getDueReminders, updateCropReminder, getCropInsight } from '../api/crops'
+import { getDashboardSummary, updateCropReminder, getCropInsight } from '../api/crops'
 import {
   getCurrentWeather, getCurrentWeatherByLocation,
   getDailyForecast, getDailyForecastByLocation, getWeatherAlerts,
 } from '../api/weather'
+import { formatDateTime, humanize, rupees } from '../utils/format'
 
 // Recharts writes colours as SVG attributes, where CSS variables do not
-// resolve, so the theme's chart colours are read once and passed as values.
-const FALLBACK_CHART_COLORS = ['#2f8f46', '#f59e0b', '#3f7fae', '#4ade80', '#8b6f5a', '#3a8f8a']
+// resolve, so the theme's colours are read once and passed as values.
+const FALLBACK_COLORS = { profit: '#15803d', loss: '#dc2626', muted: '#424940', grid: '#d7ddd3' }
 
 function readChartColors() {
   const css = getComputedStyle(document.documentElement)
-  return FALLBACK_CHART_COLORS.map((fallback, i) => css.getPropertyValue(`--chart-${i + 1}`).trim() || fallback)
+  const read = (name, fallback) => css.getPropertyValue(name).trim() || fallback
+  return {
+    profit: read('--profit', FALLBACK_COLORS.profit),
+    loss: read('--loss', FALLBACK_COLORS.loss),
+    muted: read('--text-muted', FALLBACK_COLORS.muted),
+    grid: read('--border', FALLBACK_COLORS.grid),
+  }
 }
 
 // Colombo, for when neither a saved city nor the browser's position works.
@@ -43,47 +53,63 @@ async function succeeds(attempt) {
   try { await attempt(); return true } catch { return false }
 }
 
-const font = 'var(--font-body)'
-const rupees = (value) => `Rs. ${Number(value).toLocaleString()}`
 const shortRupees = (value) => (Math.abs(value) >= 1000 ? `${Math.round(value / 1000)}k` : `${value}`)
 
 function CustomTooltip({ active, payload, label }) {
   if (!active || !payload || !payload.length) return null
   return (
-    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 12px', fontFamily: font, fontSize: '13px', color: 'var(--text-primary)', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '10px', padding: '8px 12px', fontSize: '13px', color: 'var(--text-primary)', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }}>
       {label && <p style={{ fontWeight: 600, margin: '0 0 2px' }}>{label}</p>}
-      {payload.map((p, i) => (
-        <p key={i} style={{ margin: 0 }}>{p.name}: {rupees(p.value)}</p>
+      {payload.map((p) => (
+        <p key={p.dataKey} style={{ margin: 0 }}>{p.name}: {rupees(p.value)}</p>
       ))}
     </div>
   )
 }
 
-const card = {
-  background: 'var(--bg-card)',
-  border: '1px solid var(--border)',
-  borderRadius: 'var(--radius-card)',
-  padding: '22px 24px',
-  minWidth: 0,
+const panel = { ...card, padding: '20px 22px' }
+const panelTitle = { fontWeight: 700, fontSize: '17px', color: 'var(--text-primary)', margin: 0 }
+const panelSub = { fontSize: '14px', color: 'var(--text-muted)', margin: '2px 0 0' }
+const emptyText = { fontSize: '14px', color: 'var(--text-muted)', padding: '20px 0 8px', margin: 0 }
+const textButton = { background: 'none', border: 'none', color: 'var(--accent-lime)', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '14px', fontWeight: 600, padding: '4px 0' }
+
+function Legend({ color, label }) {
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-muted)' }}>
+      <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 3, background: color }} />
+      {label}
+    </span>
+  )
 }
 
-const cardTitle = { fontFamily: font, fontWeight: 700, fontSize: '17px', color: 'var(--text-primary)', margin: 0 }
-const cardSub = { fontFamily: font, fontSize: '14px', color: 'var(--text-muted)', margin: '2px 0 0' }
-const emptyText = { fontFamily: font, fontSize: '14px', color: 'var(--text-faint)', padding: '28px 0', textAlign: 'center' }
-const textButton = { background: 'none', border: 'none', color: 'var(--accent-lime)', cursor: 'pointer', fontFamily: font, fontSize: '13px', fontWeight: 600, padding: '4px 0' }
+function ResultChip({ result }) {
+  return <span className={result === 'PROFIT' ? 'badge-green' : result === 'LOSS' ? 'badge-red' : 'badge-gray'}>{humanize(result)}</span>
+}
 
-/** A colour key with the amount and share, as a list under a chart. */
-function ShareList({ rows, colors, total }) {
+/** Reminders as rows like the Android app's: icon, title, crop and time, and a done button. */
+function ReminderRows({ reminders, cropNames, onDone }) {
+  const now = new Date()
   return (
-    <ul style={{ listStyle: 'none', margin: '8px 0 0', padding: 0 }}>
-      {rows.map((row, i) => (
-        <li key={row.cropId} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 0', borderBottom: i < rows.length - 1 ? '1px solid var(--border)' : 'none', fontFamily: font, fontSize: '14px' }}>
-          <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: '3px', background: colors[i % colors.length], flexShrink: 0 }} />
-          <span style={{ flex: 1, minWidth: 0, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</span>
-          <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{rupees(row.value)}</span>
-          <span style={{ width: 44, textAlign: 'right', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{total > 0 ? `${Math.round((row.value / total) * 100)}%` : '0%'}</span>
-        </li>
-      ))}
+    <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+      {reminders.map((item) => {
+        const Icon = REMINDER_ICONS[item.type] || BellIcon
+        const overdue = new Date(item.reminderAt) < now
+        return (
+          <li key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '11px 0', borderTop: '1px solid var(--border)' }}>
+            <span className="record-icon" style={{ width: 36, height: 36, background: 'color-mix(in srgb, var(--accent-lime) 13%, transparent)', color: 'var(--accent-lime)', flexShrink: 0 }}><Icon size={18} /></span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <Link to={`/crops/${item.cropId}`} style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none' }}>{item.title}</Link>
+              <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
+                {[cropNames[item.cropId], formatDateTime(item.reminderAt)].filter(Boolean).join(' · ')}
+                {overdue && <span style={{ color: 'var(--loss)', fontWeight: 600 }}> · Overdue</span>}
+              </p>
+            </div>
+            <button type="button" className="icon-btn" onClick={() => onDone(item)} aria-label={`Mark ${item.title} done`} title="Mark done">
+              <CheckCircleIcon size={22} />
+            </button>
+          </li>
+        )
+      })}
     </ul>
   )
 }
@@ -91,7 +117,6 @@ function ShareList({ rows, colors, total }) {
 export default function DashboardPage() {
   const { user } = useAuth()
   const isMobile = useIsMobile()
-  const isNarrow = useIsMobile(520)
   const [chartColors] = useState(readChartColors)
   const [totals, setTotals] = useState(null)
   const [profitData, setProfitData] = useState([])
@@ -104,6 +129,7 @@ export default function DashboardPage() {
   const [weatherError, setWeatherError] = useState('')
   const [cropWeatherById, setCropWeatherById] = useState({})
   const [dueReminders, setDueReminders] = useState([])
+  const [upcomingReminders, setUpcomingReminders] = useState([])
   const [alerts, setAlerts] = useState([])
   const [movingReminderId, setMovingReminderId] = useState(null)
 
@@ -142,7 +168,7 @@ export default function DashboardPage() {
     setMovingReminderId(alert.reminderId)
     try {
       await updateCropReminder(alert.cropId, alert.reminderId, { reminderAt: alert.suggestedAt })
-      await Promise.all([loadAlerts(), loadDueReminders()])
+      await Promise.all([loadAlerts(), loadReminders()])
     } catch {
       // Leave the alert in place so the user can retry.
     } finally {
@@ -173,14 +199,15 @@ export default function DashboardPage() {
     try {
       const { data } = await getDashboardSummary()
       const rows = data.crops.map((crop) => ({
-        cropId: crop.cropId, name: crop.cropName, fieldLocation: crop.fieldLocation,
+        cropId: crop.cropId, name: crop.cropName, status: crop.status, fieldLocation: crop.fieldLocation,
         aiInsightsEnabled: crop.aiInsightsEnabled,
         expenses: Number(crop.totalExpenses), revenue: Number(crop.totalRevenue),
         profit: Number(crop.netProfit), result: crop.result,
       }))
       setTotals(data.totals)
       setProfitData(rows)
-      setDueReminders(data.dueReminders)
+      setDueReminders(data.dueReminders ?? [])
+      setUpcomingReminders(data.upcomingReminders ?? [])
       loadCropWeather(rows)
       loadInsights(rows)
     } catch (err) {
@@ -223,18 +250,23 @@ export default function DashboardPage() {
     setLoadingInsights(false)
   }
 
-  // The card's Refresh button only needs the reminders, not the whole summary.
-  const loadDueReminders = async () => {
-    try { const res = await getDueReminders(); setDueReminders(res.data) }
-    catch { setDueReminders([]) }
+  // Moving a task can shift it between "due now" and "this week", so both
+  // lists come back from the summary rather than being patched here.
+  const loadReminders = async () => {
+    try {
+      const { data } = await getDashboardSummary()
+      setDueReminders(data.dueReminders ?? [])
+      setUpcomingReminders(data.upcomingReminders ?? [])
+    } catch {
+      // Keep what is on screen.
+    }
   }
 
-  const markReminderDone = async (reminderId) => {
-    const reminder = dueReminders.find((item) => item.id === reminderId)
-    if (!reminder) return
+  const markReminderDone = async (reminder) => {
     try {
-      await updateCropReminder(reminder.cropId, reminderId, { completed: true })
-      setDueReminders((prev) => prev.filter((item) => item.id !== reminderId))
+      await updateCropReminder(reminder.cropId, reminder.id, { completed: true })
+      setDueReminders((prev) => prev.filter((item) => item.id !== reminder.id))
+      setUpcomingReminders((prev) => prev.filter((item) => item.id !== reminder.id))
     } catch {
       // Leave the reminder in place so the user can retry.
     }
@@ -245,10 +277,10 @@ export default function DashboardPage() {
   const netProfit = Number(totals?.netProfit ?? 0)
   const activeCrops = totals?.activeCrops ?? 0
   const totalCrops = totals?.totalCrops ?? 0
-  const margin = totalRevenue > 0 ? `${((netProfit / totalRevenue) * 100).toFixed(1)}%` : 'None yet'
-
-  const incomeRows = profitData.filter((row) => row.revenue > 0).map((row) => ({ cropId: row.cropId, name: row.name, value: row.revenue }))
-  const expenseRows = profitData.filter((row) => row.expenses > 0).map((row) => ({ cropId: row.cropId, name: row.name, value: row.expenses }))
+  const profitWord = netProfit >= 0 ? 'Profit' : 'Loss'
+  const netSub = totalRevenue > 0 ? `${profitWord}, ${((netProfit / totalRevenue) * 100).toFixed(1)}% of revenue` : profitWord
+  const cropNames = Object.fromEntries(profitData.map((row) => [row.cropId, row.name]))
+  const firstName = (user?.fullName || '').trim().split(' ')[0]
 
   const renderInsightContent = (rawInsight) => {
     const lines = rawInsight.split('\n').map(l => l.replace(/\*\*/g, '').trim()).filter(l => l.length > 0)
@@ -256,13 +288,13 @@ export default function DashboardPage() {
       if (line.startsWith('* ')) return (
         <div key={idx} style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', marginBottom: '4px' }}>
           <span aria-hidden="true" style={{ color: 'var(--accent-lime)', marginTop: '1px' }}>•</span>
-          <p style={{ fontFamily: font, fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.55, margin: 0 }}>{line.replace(/^\*\s+/, '')}</p>
+          <p style={{ fontSize: '14px', color: 'var(--text-primary)', lineHeight: 1.55, margin: 0 }}>{line.replace(/^\*\s+/, '')}</p>
         </div>
       )
       if (/^\d+\./.test(line)) return (
-        <p key={idx} style={{ fontFamily: font, fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: '6px 0 2px' }}>{line}</p>
+        <p key={idx} style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)', margin: '6px 0 2px' }}>{line}</p>
       )
-      return <p key={idx} style={{ fontFamily: font, fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.55, margin: '2px 0' }}>{line}</p>
+      return <p key={idx} style={{ fontSize: '14px', color: 'var(--text-muted)', lineHeight: 1.55, margin: '2px 0' }}>{line}</p>
     })
   }
 
@@ -271,7 +303,7 @@ export default function DashboardPage() {
       <Layout title={null}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', flexDirection: 'column', gap: '16px' }}>
           <div style={{ width: 36, height: 36, border: '3px solid var(--border)', borderTopColor: 'var(--accent-lime)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          <p style={{ fontFamily: font, color: 'var(--text-muted)', fontSize: '14px' }}>Loading dashboard…</p>
+          <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Loading dashboard…</p>
         </div>
       </Layout>
     )
@@ -279,236 +311,209 @@ export default function DashboardPage() {
 
   return (
     <Layout title={null}>
-      {/* Weather risks to planned tasks come first, because they need acting on */}
-      <WeatherAlerts alerts={alerts} onMove={moveReminder} movingId={movingReminderId} />
+      <header style={{ marginBottom: '20px' }}>
+        <h1 style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{firstName ? `Ayubowan, ${firstName}` : 'Ayubowan'}</h1>
+        <p style={{ ...panelSub, fontSize: '15px' }}>Here is how your farm is doing</p>
+      </header>
 
-      {/* ── Profit & loss ── */}
-      <section aria-labelledby="pl-title" style={{ ...card, marginBottom: '20px', padding: isMobile ? '20px 18px' : '26px 28px' }}>
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px 24px', marginBottom: '20px' }}>
-          <div>
-            <h1 id="pl-title" style={{ ...cardTitle, fontSize: '22px' }}>Profit &amp; loss</h1>
-            <p style={cardSub}>Income and expenses for each crop, across all your records</p>
-          </div>
-          <span style={{ fontFamily: font, fontSize: '14px', color: 'var(--text-muted)', padding: '6px 12px', border: '1px solid var(--border)', borderRadius: '8px' }}>
-            {`${totalCrops} crops, ${activeCrops} active`}
-          </span>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isNarrow ? 1 : isMobile ? 2 : 4}, minmax(0, 1fr))`, gap: '12px', marginBottom: '28px' }}>
-          <StatCard title="Harvest income" value={rupees(totalRevenue)} sub="Sales from all crops" />
-          <StatCard title="Total expenses" value={rupees(totalExpenses)} sub="Costs across all crops" />
-          <StatCard title="Net profit" value={rupees(netProfit)} tone={netProfit >= 0 ? 'good' : 'bad'} sub={netProfit >= 0 ? 'Profit' : 'Loss'} subTone={netProfit >= 0 ? 'good' : 'bad'} />
-          <StatCard title="Margin" value={margin} tone={totalRevenue > 0 ? (netProfit >= 0 ? 'good' : 'bad') : 'neutral'} sub="of income kept" />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'repeat(2, minmax(0, 1fr))', gap: isMobile ? '32px' : '48px' }}>
-          <div style={{ minWidth: 0 }}>
-            <h2 style={{ ...cardTitle, fontSize: '16px' }}>Income by crop</h2>
-            {incomeRows.length === 0 ? (
-              <p style={emptyText}>No harvests sold yet</p>
-            ) : (
-              <>
-                <ResponsiveContainer width="100%" height={220}>
-                  <PieChart>
-                    <Pie data={incomeRows} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={62} outerRadius={92} paddingAngle={2} stroke="none">
-                      {incomeRows.map((row, i) => <Cell key={row.cropId} fill={chartColors[i % chartColors.length]} />)}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                  </PieChart>
-                </ResponsiveContainer>
-                <ShareList rows={incomeRows} colors={chartColors} total={totalRevenue} />
-              </>
-            )}
-          </div>
-
-          <div style={{ minWidth: 0 }}>
-            <h2 style={{ ...cardTitle, fontSize: '16px' }}>Expenses by crop</h2>
-            {expenseRows.length === 0 ? (
-              <p style={emptyText}>No expenses recorded yet</p>
-            ) : (
-              <>
-                <ResponsiveContainer width="100%" height={Math.max(160, expenseRows.length * 52 + 40)}>
-                  <BarChart data={expenseRows} layout="vertical" margin={{ top: 12, right: 16, bottom: 4, left: 8 }}>
-                    <CartesianGrid horizontal={false} stroke="var(--border)" />
-                    <XAxis type="number" tickFormatter={shortRupees} tick={{ fill: 'var(--text-muted)', fontSize: 12 }} axisLine={false} tickLine={false} />
-                    <YAxis type="category" dataKey="name" width={96} tick={{ fill: 'var(--text-primary)', fontSize: 13 }} axisLine={false} tickLine={false} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--bg-row-hover)' }} />
-                    <Bar dataKey="value" name="Expenses" radius={[0, 4, 4, 0]} barSize={22}>
-                      {expenseRows.map((row, i) => <Cell key={row.cropId} fill={chartColors[i % chartColors.length]} />)}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-                <ShareList rows={expenseRows} colors={chartColors} total={totalExpenses} />
-              </>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Reminders and weather ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: isMobile ? 'minmax(0, 1fr)' : 'repeat(2, minmax(0, 1fr))', gap: '20px', marginBottom: '20px' }}>
-        <section aria-labelledby="due-title" style={card}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '12px' }}>
-            <h2 id="due-title" style={cardTitle}>Today's reminders</h2>
-            <button type="button" onClick={loadDueReminders} style={textButton}>Refresh</button>
-          </div>
-          {dueReminders.length === 0 ? (
-            <p style={emptyText}>No due reminders right now.</p>
-          ) : (
-            <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
-              {dueReminders.map((item, i) => (
-                <li key={item.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', padding: '12px 0', borderBottom: i < dueReminders.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                  <div style={{ minWidth: 0 }}>
-                    <p style={{ fontFamily: font, fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{item.title}</p>
-                    <p style={{ fontFamily: font, fontSize: '13px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
-                      {item.type?.replaceAll('_', ' ').toLowerCase()}, {item.reminderAt?.replace('T', ' ').slice(0, 16)}
-                    </p>
-                  </div>
-                  <button type="button" onClick={() => markReminderDone(item.id)} style={{ background: 'var(--bg-tile)', border: 'none', borderRadius: '8px', padding: '7px 12px', color: 'var(--accent-lime)', fontFamily: font, fontSize: '13px', fontWeight: 600, cursor: 'pointer', flexShrink: 0 }}>
-                    Mark done
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-
-        <section aria-labelledby="weather-title" style={card}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '12px', marginBottom: '12px' }}>
-            <div>
-              <h2 id="weather-title" style={cardTitle}>Weather</h2>
-              <p style={cardSub}>{weatherCurrent?.location || user?.city || 'Your location'}</p>
-            </div>
-            <button type="button" onClick={loadWeather} style={textButton}>Refresh</button>
-          </div>
-
-          {loadingWeather ? (
-            <p style={emptyText}>Loading weather…</p>
-          ) : weatherError ? (
-            <p style={{ fontFamily: font, fontSize: '14px', color: 'var(--accent-red)', padding: '12px 0' }}>{weatherError}</p>
-          ) : weatherCurrent ? (
-            <>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '16px' }}>
-                {weatherCurrent.iconUrl && <img src={weatherCurrent.iconUrl} alt="" style={{ width: 52, height: 52 }} />}
-                <div>
-                  <div style={{ fontFamily: font, fontSize: '34px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.1 }}>{Math.round(weatherCurrent.temperatureC ?? 0)}°C</div>
-                  <div style={{ fontFamily: font, fontSize: '14px', color: 'var(--text-muted)' }}>{weatherCurrent.description || ''}</div>
-                </div>
-                <dl style={{ marginLeft: 'auto', display: 'grid', gridTemplateColumns: 'auto auto', gap: '2px 12px', fontFamily: font, fontSize: '13px' }}>
-                  <dt style={{ color: 'var(--text-muted)' }}>Feels like</dt><dd style={{ margin: 0, color: 'var(--text-primary)' }}>{Math.round(weatherCurrent.feelsLikeC ?? 0)}°C</dd>
-                  <dt style={{ color: 'var(--text-muted)' }}>Humidity</dt><dd style={{ margin: 0, color: 'var(--text-primary)' }}>{weatherCurrent.humidity ?? 0}%</dd>
-                  <dt style={{ color: 'var(--text-muted)' }}>Wind</dt><dd style={{ margin: 0, color: 'var(--text-primary)' }}>{weatherCurrent.windSpeed ?? 0} m/s</dd>
-                </dl>
-              </div>
-
-              {weatherForecast.length > 0 && (
-                <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(weatherForecast.length, 5)}, minmax(0, 1fr))`, gap: '8px' }}>
-                  {weatherForecast.slice(0, 5).map((day) => (
-                    <div key={day.date} style={{ textAlign: 'center', background: 'var(--bg-tile)', borderRadius: '10px', padding: '10px 4px' }}>
-                      <div style={{ fontFamily: font, fontSize: '12px', color: 'var(--text-muted)' }}>
-                        {new Date(`${day.date}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'short' })}
-                      </div>
-                      {day.iconUrl && <img src={day.iconUrl} alt={day.description || ''} style={{ width: 32, height: 32, margin: '2px auto', display: 'block' }} />}
-                      <div style={{ fontFamily: font, fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                        {Math.round(day.maxTempC ?? 0)}° <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>{Math.round(day.minTempC ?? 0)}°</span>
-                      </div>
-                      <div style={{ fontFamily: font, fontSize: '12px', color: 'var(--accent-blue)' }}>{day.rainChancePercent ?? 0}% rain</div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <p style={emptyText}>No weather data available.</p>
-          )}
-        </section>
+      <div className="stat-tiles" style={{ '--tiles': 4, marginBottom: '20px' }}>
+        <StatCard title="Harvest revenue" value={rupees(totalRevenue)} tone="good" icon={<PaymentsIcon />} sub="Sales from all crops" />
+        <StatCard title="Total expenses" value={rupees(totalExpenses)} tone="bad" icon={<ReceiptIcon />} sub="Costs across all crops" />
+        <StatCard title="Net profit" value={rupees(netProfit)} tone={netProfit >= 0 ? 'good' : 'bad'} icon={netProfit >= 0 ? <TrendUpIcon /> : <TrendDownIcon />} sub={netSub} />
+        <StatCard title="Active crops" value={`${activeCrops}`} tone="brand" icon={<SproutIcon />} sub={`of ${totalCrops} crops`} />
       </div>
 
-      {/* ── Crop performance ── */}
-      <section aria-labelledby="crops-title" style={{ ...card, marginBottom: '28px' }}>
-        <h2 id="crops-title" style={{ ...cardTitle, marginBottom: '12px' }}>Crop performance</h2>
-        {profitData.length === 0 ? (
-          <p style={emptyText}>No crops added yet</p>
-        ) : (
-          <div className="table-scroll">
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '520px', fontFamily: font, fontSize: '14px' }}>
-              <thead>
-                <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                  {['Crop', 'Income', 'Expenses', 'Profit', 'Result'].map((h, i) => (
-                    <th key={h} scope="col" style={{ padding: '10px 12px', fontWeight: 600, color: 'var(--text-muted)', textAlign: i === 0 || i === 4 ? 'left' : 'right' }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {profitData.map((row, i) => (
-                  <tr key={row.cropId} style={{ borderBottom: i < profitData.length - 1 ? '1px solid var(--border)' : 'none' }}>
-                    <th scope="row" style={{ padding: '12px', fontWeight: 600, color: 'var(--text-primary)', textAlign: 'left' }}>{row.name}</th>
-                    <td style={{ padding: '12px', textAlign: 'right', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{rupees(row.revenue)}</td>
-                    <td style={{ padding: '12px', textAlign: 'right', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{rupees(row.expenses)}</td>
-                    <td style={{ padding: '12px', textAlign: 'right', fontWeight: 600, color: row.profit >= 0 ? 'var(--accent-lime)' : 'var(--accent-red)', fontVariantNumeric: 'tabular-nums' }}>{rupees(row.profit)}</td>
-                    <td style={{ padding: '12px' }}>
-                      <span className={row.result === 'PROFIT' ? 'badge-green' : row.result === 'LOSS' ? 'badge-red' : 'badge-gray'}>{row.result}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
+      {/* Weather risks to planned tasks sit high up: they are the only thing here that asks the farmer to do something */}
+      <WeatherAlerts alerts={alerts} onMove={moveReminder} movingId={movingReminderId} />
 
-      {/* ── AI insights ── */}
+      <div className="split" style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
+          <section aria-labelledby="chart-title" style={panel}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'baseline', gap: '8px 16px' }}>
+              <h2 id="chart-title" style={panelTitle}>Revenue vs expenses</h2>
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <Legend color={chartColors.profit} label="Revenue" />
+                <Legend color={chartColors.loss} label="Expenses" />
+              </div>
+            </div>
+            {profitData.length === 0 ? (
+              <p style={emptyText}>Add a crop and record its expenses and harvests to see them here.</p>
+            ) : (
+              <div style={{ marginTop: '16px' }}>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={profitData.slice(0, 8)} margin={{ top: 4, right: 4, bottom: 0, left: 0 }} barGap={4}>
+                    <CartesianGrid vertical={false} stroke={chartColors.grid} />
+                    <XAxis
+                      dataKey="name"
+                      interval={0}
+                      tickFormatter={(name) => (isMobile && name.length > 9 ? `${name.slice(0, 8)}…` : name)}
+                      tick={{ fill: chartColors.muted, fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <YAxis tickFormatter={shortRupees} tick={{ fill: chartColors.muted, fontSize: 12 }} axisLine={false} tickLine={false} width={44} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'var(--bg-row-hover)' }} />
+                    <Bar dataKey="revenue" name="Revenue" fill={chartColors.profit} radius={[4, 4, 0, 0]} maxBarSize={26} />
+                    <Bar dataKey="expenses" name="Expenses" fill={chartColors.loss} radius={[4, 4, 0, 0]} maxBarSize={26} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+          </section>
+
+          <section aria-labelledby="crops-title" style={panel}>
+            <h2 id="crops-title" style={{ ...panelTitle, marginBottom: '8px' }}>Your crops</h2>
+            {profitData.length === 0 ? (
+              <p style={emptyText}>No crops added yet.</p>
+            ) : isMobile ? (
+              <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
+                {profitData.map((row) => (
+                  <li key={row.cropId} style={{ padding: '12px 0', borderTop: '1px solid var(--border)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <Link to={`/crops/${row.cropId}`} style={{ flex: 1, minWidth: 0, fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none' }}>{row.name}</Link>
+                      <span style={{ fontWeight: 700, color: row.profit >= 0 ? 'var(--profit)' : 'var(--loss)', fontVariantNumeric: 'tabular-nums' }}>{rupees(row.profit)}</span>
+                    </div>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '3px 0 0' }}>
+                      {[humanize(row.status), `Revenue ${rupees(row.revenue)}`, `Expenses ${rupees(row.expenses)}`].filter(Boolean).join(' · ')}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="table-scroll">
+                <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '520px', fontSize: '14px' }}>
+                  <thead>
+                    <tr>
+                      {['Crop', 'Revenue', 'Expenses', 'Profit', ''].map((h, i) => (
+                        <th key={i} scope="col" style={{ padding: '10px 10px 10px 0', fontWeight: 500, color: 'var(--text-muted)', textAlign: i === 0 ? 'left' : 'right' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {profitData.map((row) => (
+                      <tr key={row.cropId} style={{ borderTop: '1px solid var(--border)' }}>
+                        <th scope="row" style={{ padding: '12px 10px 12px 0', textAlign: 'left', fontWeight: 400 }}>
+                          <Link to={`/crops/${row.cropId}`} style={{ fontWeight: 600, color: 'var(--text-primary)', textDecoration: 'none' }}>{row.name}</Link>
+                          {row.status && <span style={{ display: 'block', fontSize: '13px', color: 'var(--text-muted)' }}>{humanize(row.status)}</span>}
+                        </th>
+                        <td style={{ padding: '12px 10px 12px 0', textAlign: 'right', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{rupees(row.revenue)}</td>
+                        <td style={{ padding: '12px 10px 12px 0', textAlign: 'right', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{rupees(row.expenses)}</td>
+                        <td style={{ padding: '12px 10px 12px 0', textAlign: 'right', fontWeight: 700, color: row.profit >= 0 ? 'var(--profit)' : 'var(--loss)', fontVariantNumeric: 'tabular-nums' }}>{rupees(row.profit)}</td>
+                        <td style={{ padding: '12px 0', textAlign: 'right' }}><ResultChip result={row.result} /></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </div>
+
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', minWidth: 0 }}>
+          <section aria-labelledby="weather-title" style={panel}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '12px', marginBottom: '12px' }}>
+              <div style={{ minWidth: 0 }}>
+                <h2 id="weather-title" style={panelTitle}>Weather</h2>
+                <p style={panelSub}>{weatherCurrent?.location || user?.city || 'Your location'}</p>
+              </div>
+              <button type="button" onClick={loadWeather} style={textButton}>Refresh</button>
+            </div>
+
+            {loadingWeather ? (
+              <p style={emptyText}>Loading weather…</p>
+            ) : weatherError ? (
+              <p style={{ fontSize: '14px', color: 'var(--loss)', padding: '12px 0', margin: 0 }}>{weatherError}</p>
+            ) : weatherCurrent ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap', marginBottom: '14px' }}>
+                  {weatherCurrent.iconUrl && <img src={weatherCurrent.iconUrl} alt="" style={{ width: 52, height: 52 }} />}
+                  <div>
+                    <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1.1 }}>{Math.round(weatherCurrent.temperatureC ?? 0)}°C</div>
+                    <div style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{weatherCurrent.description || ''}</div>
+                  </div>
+                  <dl style={{ display: 'grid', gridTemplateColumns: 'auto auto', gap: '2px 12px', fontSize: '13px', margin: '0 0 0 auto' }}>
+                    <dt style={{ color: 'var(--text-muted)' }}>Feels like</dt><dd style={{ margin: 0, color: 'var(--text-primary)' }}>{Math.round(weatherCurrent.feelsLikeC ?? 0)}°C</dd>
+                    <dt style={{ color: 'var(--text-muted)' }}>Humidity</dt><dd style={{ margin: 0, color: 'var(--text-primary)' }}>{weatherCurrent.humidity ?? 0}%</dd>
+                    <dt style={{ color: 'var(--text-muted)' }}>Wind</dt><dd style={{ margin: 0, color: 'var(--text-primary)' }}>{weatherCurrent.windSpeed ?? 0} m/s</dd>
+                  </dl>
+                </div>
+
+                {weatherForecast.length > 0 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: `repeat(${Math.min(weatherForecast.length, 5)}, minmax(0, 1fr))`, gap: '6px' }}>
+                    {weatherForecast.slice(0, 5).map((day) => (
+                      <div key={day.date} style={{ textAlign: 'center', background: 'var(--bg-tile)', borderRadius: '12px', padding: '8px 2px' }}>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                          {new Date(`${day.date}T00:00:00`).toLocaleDateString('en-GB', { weekday: 'short' })}
+                        </div>
+                        {day.iconUrl && <img src={day.iconUrl} alt={day.description || ''} style={{ width: 30, height: 30, margin: '2px auto', display: 'block' }} />}
+                        <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {Math.round(day.maxTempC ?? 0)}° <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>{Math.round(day.minTempC ?? 0)}°</span>
+                        </div>
+                        <div style={{ fontSize: '12px', color: 'var(--accent-blue)' }}>{day.rainChancePercent ?? 0}%</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <p style={emptyText}>No weather data available.</p>
+            )}
+          </section>
+
+          <section aria-labelledby="reminders-title" style={panel}>
+            <h2 id="reminders-title" style={panelTitle}>Reminders</h2>
+            <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)', margin: '14px 0 4px' }}>Due now</h3>
+            {dueReminders.length === 0
+              ? <p style={{ ...emptyText, padding: '4px 0 0' }}>Nothing due right now.</p>
+              : <ReminderRows reminders={dueReminders} cropNames={cropNames} onDone={markReminderDone} />}
+            {upcomingReminders.length > 0 && (
+              <>
+                <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-muted)', margin: '18px 0 4px' }}>This week</h3>
+                <ReminderRows reminders={upcomingReminders} cropNames={cropNames} onDone={markReminderDone} />
+              </>
+            )}
+          </section>
+        </div>
+      </div>
+
       {profitData.length > 0 && (
         <section aria-labelledby="insights-title">
-          <h2 id="insights-title" style={{ ...cardTitle, fontSize: '19px', marginBottom: '4px' }}>AI insights</h2>
-          <p style={{ ...cardSub, marginBottom: '14px' }}>Advice for each crop, based on its figures and the weather at the field</p>
+          <h2 id="insights-title" style={{ ...panelTitle, fontSize: '19px' }}>AI advice for each crop</h2>
+          <p style={{ ...panelSub, marginBottom: '14px' }}>Based on each crop's figures and the weather at its field</p>
 
           {loadingInsights ? (
-            <div style={{ ...card, textAlign: 'center', padding: '40px' }}>
+            <div style={{ ...panel, textAlign: 'center', padding: '40px' }}>
               <div style={{ width: 28, height: 28, border: '3px solid var(--border)', borderTopColor: 'var(--accent-lime)', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 12px' }} />
-              <p style={{ fontFamily: font, fontSize: '14px', color: 'var(--text-muted)' }}>Reading your crops…</p>
+              <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>Reading your crops…</p>
             </div>
           ) : (
             <div style={{ display: 'grid', gridTemplateColumns: isMobile || profitData.length === 1 ? 'minmax(0, 1fr)' : 'repeat(2, minmax(0, 1fr))', gap: '20px' }}>
               {profitData.map((crop) => {
                 const weather = cropWeatherById[crop.cropId]
+                const insight = insights[crop.cropId]
                 return (
-                  <article key={crop.cropId} style={card}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-                      <h3 style={{ ...cardTitle, fontSize: '16px' }}>{crop.name}</h3>
-                      <span className={crop.result === 'PROFIT' ? 'badge-green' : 'badge-red'} style={{ marginLeft: 'auto' }}>{crop.result}</span>
+                  <article key={crop.cropId} style={panel}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                      <h3 style={{ ...panelTitle, fontSize: '16px' }}>{crop.name}</h3>
+                      <span style={{ marginLeft: 'auto' }}><ResultChip result={crop.result} /></span>
                     </div>
-
-                    <p style={{ fontFamily: font, fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 12px' }}>
+                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '0 0 12px' }}>
                       {weather
                         ? `${weather.location || crop.fieldLocation || 'Field'}: ${Math.round(weather.temperatureC ?? 0)}°C, ${weather.description || ''}`
-                        : `Weather not available for ${crop.fieldLocation || 'this field location'}.`}
+                        : `Weather not available for ${crop.fieldLocation || 'this field'}.`}
                     </p>
 
-                    {insights[crop.cropId] && insights[crop.cropId] !== '__AI_OFF__' ? (
-                      <div style={{ background: 'var(--bg-tile)', borderRadius: '10px', padding: '12px 14px' }}>
-                        {renderInsightContent(insights[crop.cropId])}
+                    {insight && insight !== '__AI_OFF__' ? (
+                      <div style={{ background: 'var(--bg-tile)', borderRadius: '12px', padding: '12px 14px' }}>
+                        {renderInsightContent(insight)}
                       </div>
-                    ) : insights[crop.cropId] === '__AI_OFF__' ? (
-                      <p style={{ fontFamily: font, fontSize: '14px', color: 'var(--accent-amber)', margin: 0 }}>
-                        AI off by farmer for this crop.
+                    ) : insight === '__AI_OFF__' ? (
+                      <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>
+                        AI advice is off for this crop. <Link to={`/crops/${crop.cropId}`} style={{ color: 'var(--accent-lime)', fontWeight: 600 }}>Turn it on</Link>
                       </p>
                     ) : (
-                      <p style={{ fontFamily: font, fontSize: '14px', color: 'var(--text-faint)', margin: 0 }}>No insights available</p>
+                      <p style={{ fontSize: '14px', color: 'var(--text-muted)', margin: 0 }}>No advice available right now.</p>
                     )}
-
-                    <dl style={{ marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border)', display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '8px', fontFamily: font }}>
-                      {[
-                        { label: 'Income', value: crop.revenue, color: 'var(--text-primary)' },
-                        { label: 'Expenses', value: crop.expenses, color: 'var(--text-primary)' },
-                        { label: 'Profit', value: crop.profit, color: crop.profit >= 0 ? 'var(--accent-lime)' : 'var(--accent-red)' },
-                      ].map(s => (
-                        <div key={s.label}>
-                          <dt style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{s.label}</dt>
-                          <dd style={{ margin: 0, fontSize: '14px', fontWeight: 600, color: s.color, fontVariantNumeric: 'tabular-nums' }}>{rupees(s.value)}</dd>
-                        </div>
-                      ))}
-                    </dl>
                   </article>
                 )
               })}

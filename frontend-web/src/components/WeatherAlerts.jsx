@@ -53,7 +53,7 @@ export default function WeatherAlerts({ alerts, onMove, movingId }) {
   return (
     <section
       aria-label="Weather alerts"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '22px 24px', marginBottom: '20px' }}
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', padding: '20px 22px', marginBottom: '20px' }}
     >
       <div style={{ fontFamily: font, fontWeight: 700, fontSize: '17px', color: 'var(--text-primary)', marginBottom: '4px' }}>
         Weather alerts for your plans
