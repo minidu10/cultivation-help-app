@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/offline/offline_banner.dart';
@@ -27,8 +28,12 @@ class AgroMasterApp extends ConsumerWidget {
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: ref.watch(routerProvider),
       // Above the router, so the offline banner and syncing span every screen.
-      builder: (context, child) => PushCoordinator(
-        child: SyncCoordinator(child: OfflineFrame(child: child ?? const SizedBox.shrink())),
+      // The bar style here covers screens without an app bar, such as sign-in.
+      builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+        value: AppTheme.systemBars(Theme.of(context)),
+        child: PushCoordinator(
+          child: SyncCoordinator(child: OfflineFrame(child: child ?? const SizedBox.shrink())),
+        ),
       ),
     );
   }

@@ -9,13 +9,13 @@ const inputStyle = {
   background: 'var(--bg-input)',
   border: '1px solid var(--border)',
   borderRadius: '10px', padding: '10px 14px',
-  fontFamily: 'Inter, sans-serif', fontSize: '14px',
+  fontFamily: 'var(--font-body)', fontSize: '14px',
   color: 'var(--text-primary)', outline: 'none',
   transition: 'border-color 0.2s',
 }
 
 const labelStyle = {
-  display: 'block', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px',
+  display: 'block', fontFamily: 'var(--font-body)', fontSize: '12px',
   color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 500,
 }
 
@@ -74,19 +74,19 @@ export default function ProfilePage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginBottom: '28px' }}>
           <div style={{
             width: 56, height: 56, borderRadius: '50%',
-            background: 'linear-gradient(135deg, #4ade80, #16a34a)',
+            background: 'var(--accent-lime)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '20px', fontWeight: 700, color: '#0a1a0f',
-            fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', flexShrink: 0,
-            boxShadow: '0 0 20px rgba(74,222,128,0.25)',
+            fontSize: '20px', fontWeight: 700, color: 'var(--on-accent)',
+            fontFamily: 'var(--font-body)', flexShrink: 0,
+            boxShadow: 'none',
           }}>
             {initials}
           </div>
           <div>
-            <h1 style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 800, fontSize: '22px', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px' }}>
+            <h1 style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: '22px', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px' }}>
               {form.fullName || 'Your Profile'}
             </h1>
-            <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)', marginTop: '2px' }}>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-faint)', marginTop: '2px' }}>
               {form.email}
             </p>
           </div>
@@ -97,27 +97,26 @@ export default function ProfilePage() {
           background: 'var(--bg-card)',
           border: '1px solid var(--border)',
           borderRadius: '16px',
-          backdropFilter: 'blur(12px)',
           padding: '28px',
         }}>
-          <h2 style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', margin: '0 0 20px 0' }}>
+          <h2 style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', margin: '0 0 20px 0' }}>
             Edit Profile
           </h2>
 
           {loading ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '20px 0' }}>
-              <div style={{ width: 22, height: 22, border: '3px solid rgba(74,222,128,0.2)', borderTopColor: '#4ade80', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-              <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', color: 'var(--text-muted)', fontSize: '14px' }}>Loading profile…</p>
+              <div style={{ width: 22, height: 22, border: '3px solid color-mix(in srgb, var(--accent-lime) 20%, transparent)', borderTopColor: 'var(--accent-lime)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+              <p style={{ fontFamily: 'var(--font-body)', color: 'var(--text-muted)', fontSize: '14px' }}>Loading profile…</p>
             </div>
           ) : (
             <form onSubmit={handleSubmit}>
               {message && (
-                <div style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.3)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: '#4ade80', marginBottom: '16px' }}>
+                <div style={{ background: 'color-mix(in srgb, var(--accent-lime) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-lime) 30%, transparent)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--accent-lime)', marginBottom: '16px' }}>
                   {message}
                 </div>
               )}
               {error && (
-                <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: '#f87171', marginBottom: '16px' }}>
+                <div style={{ background: 'color-mix(in srgb, var(--accent-red) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-red) 30%, transparent)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--accent-red)', marginBottom: '16px' }}>
                   {error}
                 </div>
               )}
@@ -145,7 +144,7 @@ export default function ProfilePage() {
                     disabled
                     style={{ ...inputStyle, opacity: 0.55, cursor: 'not-allowed' }}
                   />
-                  <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '11px', color: 'var(--text-faint)', marginTop: '4px' }}>Email cannot be changed</p>
+                  <p style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--text-faint)', marginTop: '4px' }}>Email cannot be changed</p>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', gap: '14px' }}>

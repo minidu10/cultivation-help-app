@@ -30,7 +30,7 @@ describe('session handling', () => {
   it('keeps visitors who never signed in on the landing page', async () => {
     renderWithApp(<App />, { route: '/dashboard' })
 
-    expect(await screen.findAllByRole('button', { name: /sign in|get started/i })).not.toHaveLength(0)
+    expect(await screen.findAllByRole('link', { name: /sign in/i })).not.toHaveLength(0)
     expect(screen.queryByText(/Your session has ended/)).not.toBeInTheDocument()
   })
 
@@ -52,7 +52,7 @@ describe('session handling', () => {
     const logoutButton = await screen.findByRole('button', { name: /log ?out|sign out/i })
     logoutButton.click()
 
-    await screen.findAllByRole('button', { name: /sign in|get started/i })
+    await screen.findAllByRole('link', { name: /sign in/i })
     expect(revoked).toEqual(['refresh-to-revoke'])
     expect(localStorage.getItem('refreshToken')).toBeNull()
   })

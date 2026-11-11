@@ -15,26 +15,25 @@ const STATUS_OPTIONS = ['PLANTED', 'GROWING', 'READY_TO_HARVEST', 'HARVESTED', '
 const REMINDER_TYPES = ['FERTILIZER', 'IRRIGATION', 'PEST_CONTROL', 'HARVEST', 'OTHER']
 
 const STATUS_STYLE = {
-  PLANTED:          { bg: 'rgba(96,165,250,0.12)',  border: 'rgba(96,165,250,0.3)',  text: '#60a5fa' },
-  GROWING:          { bg: 'rgba(74,222,128,0.12)',  border: 'rgba(74,222,128,0.3)',  text: '#4ade80' },
-  READY_TO_HARVEST: { bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.3)',  text: '#f59e0b' },
-  HARVESTED:        { bg: 'rgba(148,163,184,0.12)', border: 'rgba(148,163,184,0.3)', text: '#94a3b8' },
-  FAILED:           { bg: 'rgba(248,113,113,0.12)', border: 'rgba(248,113,113,0.3)', text: '#f87171' },
+  PLANTED:          { bg: 'color-mix(in srgb, var(--accent-blue) 12%, transparent)',  border: 'color-mix(in srgb, var(--accent-blue) 30%, transparent)',  text: 'var(--accent-blue)' },
+  GROWING:          { bg: 'color-mix(in srgb, var(--accent-lime) 12%, transparent)',  border: 'color-mix(in srgb, var(--accent-lime) 30%, transparent)',  text: 'var(--accent-lime)' },
+  READY_TO_HARVEST: { bg: 'color-mix(in srgb, var(--accent-amber) 12%, transparent)',  border: 'color-mix(in srgb, var(--accent-amber) 30%, transparent)',  text: 'var(--accent-amber)' },
+  HARVESTED:        { bg: 'color-mix(in srgb, var(--text-muted) 12%, transparent)', border: 'color-mix(in srgb, var(--text-muted) 30%, transparent)', text: 'var(--text-muted)' },
+  FAILED:           { bg: 'color-mix(in srgb, var(--accent-red) 12%, transparent)', border: 'color-mix(in srgb, var(--accent-red) 30%, transparent)', text: 'var(--accent-red)' },
 }
 
 const REMINDER_TYPE_COLORS = {
-  FERTILIZER:   '#f59e0b',
-  IRRIGATION:   '#60a5fa',
-  PEST_CONTROL: '#f87171',
-  HARVEST:      '#4ade80',
-  OTHER:        '#94a3b8',
+  FERTILIZER:   'var(--accent-amber)',
+  IRRIGATION:   'var(--accent-blue)',
+  PEST_CONTROL: 'var(--accent-red)',
+  HARVEST:      'var(--accent-lime)',
+  OTHER:        'var(--text-muted)',
 }
 
 const cardStyle = {
   background: 'var(--bg-card)',
   border: '1px solid var(--border)',
   borderRadius: '16px',
-  backdropFilter: 'blur(12px)',
   padding: '24px',
 }
 
@@ -43,12 +42,12 @@ const inputStyle = {
   background: 'var(--bg-input)',
   border: '1px solid var(--border)',
   borderRadius: '10px', padding: '10px 14px',
-  fontFamily: 'Inter, sans-serif', fontSize: '14px',
+  fontFamily: 'var(--font-body)', fontSize: '14px',
   color: 'var(--text-primary)', outline: 'none',
 }
 
 const labelStyle = {
-  display: 'block', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px',
+  display: 'block', fontFamily: 'var(--font-body)', fontSize: '12px',
   color: 'var(--text-muted)', marginBottom: '6px', fontWeight: 500,
 }
 
@@ -147,10 +146,10 @@ export default function CropManagementPage() {
 
   if (loading) {
     return (
-      <Layout>
+      <Layout title={null}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '40px 0' }}>
-          <div style={{ width: 28, height: 28, border: '3px solid rgba(74,222,128,0.2)', borderTopColor: '#4ade80', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-          <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', color: 'var(--text-muted)', fontSize: '14px' }}>Loading crop management…</p>
+          <div style={{ width: 28, height: 28, border: '3px solid color-mix(in srgb, var(--accent-lime) 20%, transparent)', borderTopColor: 'var(--accent-lime)', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+          <p style={{ fontFamily: 'var(--font-body)', color: 'var(--text-muted)', fontSize: '14px' }}>Loading crop management…</p>
         </div>
       </Layout>
     )
@@ -159,44 +158,44 @@ export default function CropManagementPage() {
   const sc = STATUS_STYLE[status] || STATUS_STYLE.PLANTED
 
   return (
-    <Layout>
+    <Layout title={null}>
       {/* Back + heading */}
       <div style={{ marginBottom: '24px' }}>
         <button
           onClick={() => navigate('/crops')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)', padding: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '6px' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)', padding: '0 0 8px 0', display: 'flex', alignItems: 'center', gap: '6px' }}
           onMouseEnter={e => e.currentTarget.style.color = 'var(--accent-lime)'}
           onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}
         >
           Back to Crops
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <h1 style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 800, fontSize: '24px', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px' }}>
+          <h1 style={{ fontFamily: 'var(--font-body)', fontWeight: 800, fontSize: '24px', color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px' }}>
             {crop?.name}
           </h1>
           {crop?.variety && (
-            <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)' }}>{crop.variety}</span>
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)' }}>{crop.variety}</span>
           )}
-          <span style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: '100px', padding: '3px 12px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', fontWeight: 600, color: sc.text }}>
+          <span style={{ background: sc.bg, border: `1px solid ${sc.border}`, borderRadius: '100px', padding: '3px 12px', fontFamily: 'var(--font-body)', fontSize: '12px', fontWeight: 600, color: sc.text }}>
             {status.replaceAll('_', ' ')}
           </span>
         </div>
-        <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)', marginTop: '4px' }}>
+        <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-faint)', marginTop: '4px' }}>
           Manage status, AI insights, and reminders for this crop.
         </p>
       </div>
 
       {/* Error */}
       {error && (
-        <div style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.3)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: '#f87171', marginBottom: '16px' }}>
+        <div style={{ background: 'color-mix(in srgb, var(--accent-red) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-red) 30%, transparent)', borderRadius: '10px', padding: '12px 16px', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--accent-red)', marginBottom: '16px' }}>
           {error}
         </div>
       )}
 
       {/* Crop Settings */}
       <div style={{ ...cardStyle, marginBottom: '20px' }}>
-        <h2 style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', margin: '0 0 18px 0' }}>Crop Settings</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '16px', alignItems: 'end' }}>
+        <h2 style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', margin: '0 0 18px 0' }}>Crop Settings</h2>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '16px', alignItems: 'end' }}>
           <div>
             <label style={labelStyle}>Crop Status</label>
             <select value={status} onChange={e => setStatus(e.target.value)} style={inputStyle}>
@@ -219,11 +218,11 @@ export default function CropManagementPage() {
               <div style={{
                 position: 'absolute', top: '2px', left: aiEnabled ? '20px' : '2px',
                 width: 16, height: 16, borderRadius: '50%',
-                background: aiEnabled ? '#0a1a0f' : 'var(--text-faint)',
+                background: aiEnabled ? 'var(--on-accent)' : 'var(--text-faint)',
                 transition: 'left 0.25s',
               }} />
             </div>
-            <label style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)', cursor: 'pointer' }}
+            <label style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)', cursor: 'pointer' }}
               onClick={() => setAiEnabled(v => !v)}>
               AI Recommendations
             </label>
@@ -233,7 +232,7 @@ export default function CropManagementPage() {
             onClick={saveCropSettings}
             disabled={savingCrop}
             className="agro-btn"
-            style={{ padding: '10px 20px', fontSize: '14px', opacity: savingCrop ? 0.6 : 1 }}
+            style={{ padding: '10px 20px', fontSize: '14px', opacity: savingCrop ? 0.6 : 1, justifySelf: 'end' }}
           >
             {savingCrop ? 'Saving…' : 'Save Settings'}
           </button>
@@ -245,9 +244,9 @@ export default function CropManagementPage() {
 
       {/* Add Reminder */}
       <div style={{ ...cardStyle, marginBottom: '20px' }}>
-        <h2 style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', margin: '0 0 18px 0' }}>Add Reminder</h2>
+        <h2 style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', margin: '0 0 18px 0' }}>Add Reminder</h2>
         <form onSubmit={handleReminderSubmit}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '14px' }}>
             <div>
               <label style={labelStyle}>Title *</label>
               <input
@@ -277,7 +276,7 @@ export default function CropManagementPage() {
                 { key: 'aiRecommended', label: 'AI Recommended' },
                 { key: 'enabled', label: 'Enabled' },
               ].map(({ key, label }) => (
-                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)', cursor: 'pointer' }}>
+                <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-muted)', cursor: 'pointer' }}>
                   <div
                     onClick={() => setForm(p => ({ ...p, [key]: !p[key] }))}
                     style={{
@@ -290,7 +289,7 @@ export default function CropManagementPage() {
                     <div style={{
                       position: 'absolute', top: '2px', left: form[key] ? '18px' : '2px',
                       width: 14, height: 14, borderRadius: '50%',
-                      background: form[key] ? '#0a1a0f' : 'var(--text-faint)',
+                      background: form[key] ? 'var(--on-accent)' : 'var(--text-faint)',
                       transition: 'left 0.25s',
                     }} />
                   </div>
@@ -319,10 +318,10 @@ export default function CropManagementPage() {
 
       {/* Reminders */}
       <div style={cardStyle}>
-        <h2 style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', margin: '0 0 16px 0' }}>
+        <h2 style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '16px', color: 'var(--text-primary)', margin: '0 0 16px 0' }}>
           Upcoming Reminders
           {upcoming.length > 0 && (
-            <span style={{ marginLeft: '10px', background: 'rgba(74,222,128,0.12)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: '100px', padding: '2px 10px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: '#4ade80', fontWeight: 600 }}>
+            <span style={{ marginLeft: '10px', background: 'color-mix(in srgb, var(--accent-lime) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-lime) 25%, transparent)', borderRadius: '100px', padding: '2px 10px', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--accent-lime)', fontWeight: 600 }}>
               {upcoming.length}
             </span>
           )}
@@ -330,13 +329,13 @@ export default function CropManagementPage() {
 
         {upcoming.length === 0 ? (
           <div style={{ textAlign: 'center', padding: '40px 0' }}>
-            <p style={{ fontSize: '32px', marginBottom: '8px' }}>🔔</p>
-            <p style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)' }}>No upcoming reminders</p>
+            <svg aria-hidden="true" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{ display: 'block', margin: '0 auto 8px' }}><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-faint)' }}>No upcoming reminders</p>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
             {upcoming.map(reminder => {
-              const typeColor = REMINDER_TYPE_COLORS[reminder.type] || '#94a3b8'
+              const typeColor = REMINDER_TYPE_COLORS[reminder.type] || 'var(--text-muted)'
               return (
                 <div key={reminder.id} style={{
                   background: 'var(--bg-input)', border: '1px solid var(--border)',
@@ -346,37 +345,37 @@ export default function CropManagementPage() {
                 }}>
                   <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                      <div style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '14px', color: 'var(--text-primary)', marginBottom: '4px' }}>
                         {reminder.title}
                       </div>
-                      <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-muted)' }}>
+                      <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)' }}>
                         <span style={{ background: `${typeColor}20`, border: `1px solid ${typeColor}40`, borderRadius: '100px', padding: '1px 8px', marginRight: '8px', color: typeColor, fontWeight: 600 }}>
                           {reminder.type?.replaceAll('_', ' ')}
                         </span>
                         {toDateTimeInput(reminder.reminderAt).replace('T', ' ')}
                         {reminder.aiRecommended && (
-                          <span style={{ marginLeft: '8px', background: 'rgba(96,165,250,0.12)', border: '1px solid rgba(96,165,250,0.3)', borderRadius: '100px', padding: '1px 8px', color: '#60a5fa', fontWeight: 600 }}>AI Suggested</span>
+                          <span style={{ marginLeft: '8px', background: 'color-mix(in srgb, var(--accent-blue) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-blue) 30%, transparent)', borderRadius: '100px', padding: '1px 8px', color: 'var(--accent-blue)', fontWeight: 600 }}>AI Suggested</span>
                         )}
                         {!reminder.enabled && (
-                          <span style={{ marginLeft: '8px', background: 'rgba(148,163,184,0.12)', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '100px', padding: '1px 8px', color: '#94a3b8', fontWeight: 600 }}>Disabled</span>
+                          <span style={{ marginLeft: '8px', background: 'color-mix(in srgb, var(--text-muted) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--text-muted) 30%, transparent)', borderRadius: '100px', padding: '1px 8px', color: 'var(--text-muted)', fontWeight: 600 }}>Disabled</span>
                         )}
                       </div>
                       {reminder.note && (
-                        <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-faint)', marginTop: '4px', fontStyle: 'italic' }}>{reminder.note}</div>
+                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-faint)', marginTop: '4px', fontStyle: 'italic' }}>{reminder.note}</div>
                       )}
                     </div>
                     <div style={{ display: 'flex', gap: '6px', flexShrink: 0 }}>
                       <button
                         onClick={() => toggleReminder(reminder, 'completed', true)}
-                        style={{ background: 'rgba(74,222,128,0.1)', border: '1px solid rgba(74,222,128,0.25)', borderRadius: '7px', padding: '5px 10px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: '#4ade80', cursor: 'pointer' }}
+                        style={{ background: 'color-mix(in srgb, var(--accent-lime) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-lime) 25%, transparent)', borderRadius: '7px', padding: '5px 10px', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--accent-lime)', cursor: 'pointer' }}
                       >Done</button>
                       <button
                         onClick={() => toggleReminder(reminder, 'enabled', !reminder.enabled)}
-                        style={{ background: 'rgba(245,158,11,0.1)', border: '1px solid rgba(245,158,11,0.25)', borderRadius: '7px', padding: '5px 10px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: '#f59e0b', cursor: 'pointer' }}
+                        style={{ background: 'color-mix(in srgb, var(--accent-amber) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-amber) 25%, transparent)', borderRadius: '7px', padding: '5px 10px', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--accent-amber)', cursor: 'pointer' }}
                       >{reminder.enabled ? 'Disable' : 'Enable'}</button>
                       <button
                         onClick={() => removeReminder(reminder.id)}
-                        style={{ background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.25)', borderRadius: '7px', padding: '5px 10px', fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: '#f87171', cursor: 'pointer' }}
+                        style={{ background: 'color-mix(in srgb, var(--accent-red) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-red) 25%, transparent)', borderRadius: '7px', padding: '5px 10px', fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--accent-red)', cursor: 'pointer' }}
                       >Delete</button>
                     </div>
                   </div>
@@ -388,12 +387,12 @@ export default function CropManagementPage() {
 
         {completed.length > 0 && (
           <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
-            <h3 style={{ fontFamily: 'Space Grotesk, Inter, system-ui, Segoe UI, sans-serif', fontWeight: 600, fontSize: '14px', color: 'var(--text-muted)', margin: '0 0 12px 0' }}>
+            <h3 style={{ fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '14px', color: 'var(--text-muted)', margin: '0 0 12px 0' }}>
               Completed ({completed.length})
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               {completed.map(reminder => (
-                <div key={reminder.id} style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-faint)', textDecoration: 'line-through', padding: '6px 0' }}>
+                <div key={reminder.id} style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: 'var(--text-faint)', textDecoration: 'line-through', padding: '6px 0' }}>
                   {reminder.title} — {toDateTimeInput(reminder.reminderAt).replace('T', ' ')}
                 </div>
               ))}

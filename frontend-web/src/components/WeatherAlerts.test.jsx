@@ -43,7 +43,6 @@ function mockDashboard(alerts, { onPut } = {}) {
   server.use(
     http.get('/api/dashboard/summary', () => HttpResponse.json(EMPTY_SUMMARY)),
     http.get('/api/alerts', () => HttpResponse.json(current)),
-    http.get('/api/reminders/due', () => HttpResponse.json([])),
     http.put('/api/crops/:cropId/reminders/:reminderId', async ({ params, request }) => {
       onPut?.({ ...params, body: await request.json() })
       current = current.filter((a) => String(a.reminderId) !== params.reminderId)
@@ -93,7 +92,7 @@ describe('weather alerts on the dashboard', () => {
     mockDashboard([])
 
     renderWithApp(<DashboardPage />)
-    await screen.findByText('Harvest Revenue')
+    await screen.findByText('Harvest revenue')
 
     expect(screen.queryByRole('region', { name: 'Weather alerts' })).not.toBeInTheDocument()
   })
@@ -105,6 +104,6 @@ describe('weather alerts on the dashboard', () => {
 
     renderWithApp(<DashboardPage />)
 
-    expect(await screen.findByText('Harvest Revenue')).toBeInTheDocument()
+    expect(await screen.findByText('Harvest revenue')).toBeInTheDocument()
   })
 })
