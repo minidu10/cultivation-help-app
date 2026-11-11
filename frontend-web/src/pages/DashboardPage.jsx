@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
 import WeatherAlerts from '../components/WeatherAlerts'
@@ -21,6 +21,7 @@ import { formatDateTime, humanize, rupees } from '../utils/format'
 // Recharts writes colours as SVG attributes, where CSS variables do not
 // resolve, so the theme's colours are read once and passed as values.
 const FALLBACK_COLORS = { profit: '#15803d', loss: '#dc2626', muted: '#424940', grid: '#d7ddd3' }
+const FALLBACK_PALETTE = ['#2f8f46', '#f59e0b', '#3f7fae', '#4ade80', '#8b6f5a', '#3a8f8a']
 
 function readChartColors() {
   const css = getComputedStyle(document.documentElement)
@@ -30,6 +31,8 @@ function readChartColors() {
     loss: read('--loss', FALLBACK_COLORS.loss),
     muted: read('--text-muted', FALLBACK_COLORS.muted),
     grid: read('--border', FALLBACK_COLORS.grid),
+    // One colour per crop in the pie charts.
+    palette: FALLBACK_PALETTE.map((fallback, i) => read(`--chart-${i + 1}`, fallback)),
   }
 }
 
@@ -79,6 +82,45 @@ function Legend({ color, label }) {
       <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 3, background: color }} />
       {label}
     </span>
+  )
+}
+
+/** A donut of each crop's share, with the total in the middle and the amounts listed under it. */
+function ShareDonut({ title, rows, total, colors, emptyMessage }) {
+  return (
+    <div style={{ minWidth: 0 }}>
+      <h3 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>{title}</h3>
+      {rows.length === 0 ? (
+        <p style={emptyText}>{emptyMessage}</p>
+      ) : (
+        <>
+          <div style={{ position: 'relative' }}>
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={rows} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={60} outerRadius={88} paddingAngle={2} stroke="none">
+                  {rows.map((row, i) => <Cell key={row.cropId} fill={colors[i % colors.length]} />)}
+                </Pie>
+                <Tooltip content={<CustomTooltip />} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div aria-hidden="true" style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Total</span>
+              <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{rupees(total)}</span>
+            </div>
+          </div>
+          <ul style={{ listStyle: 'none', margin: '4px 0 0', padding: 0 }}>
+            {rows.map((row, i) => (
+              <li key={row.cropId} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '8px 0', borderTop: '1px solid var(--border)', fontSize: '14px' }}>
+                <span aria-hidden="true" style={{ width: 10, height: 10, borderRadius: 3, background: colors[i % colors.length], flexShrink: 0 }} />
+                <span style={{ flex: 1, minWidth: 0, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{row.name}</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{rupees(row.value)}</span>
+                <span style={{ width: '40px', textAlign: 'right', color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}>{total > 0 ? `${Math.round((row.value / total) * 100)}%` : '0%'}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+    </div>
   )
 }
 
@@ -280,6 +322,8 @@ export default function DashboardPage() {
   const profitWord = netProfit >= 0 ? 'Profit' : 'Loss'
   const netSub = totalRevenue > 0 ? `${profitWord}, ${((netProfit / totalRevenue) * 100).toFixed(1)}% of revenue` : profitWord
   const cropNames = Object.fromEntries(profitData.map((row) => [row.cropId, row.name]))
+  const revenueRows = profitData.filter((row) => row.revenue > 0).map((row) => ({ cropId: row.cropId, name: row.name, value: row.revenue }))
+  const expenseRows = profitData.filter((row) => row.expenses > 0).map((row) => ({ cropId: row.cropId, name: row.name, value: row.expenses }))
   const firstName = (user?.fullName || '').trim().split(' ')[0]
 
   const renderInsightContent = (rawInsight) => {
@@ -316,7 +360,7 @@ export default function DashboardPage() {
         <p style={{ ...panelSub, fontSize: '15px' }}>Here is how your farm is doing</p>
       </header>
 
-      <div className="stat-tiles" style={{ '--tiles': 4, marginBottom: '20px' }}>
+      <div className="stat-tiles stat-tiles-4" style={{ '--tiles': 4, marginBottom: '20px' }}>
         <StatCard title="Harvest revenue" value={rupees(totalRevenue)} tone="good" icon={<PaymentsIcon />} sub="Sales from all crops" />
         <StatCard title="Total expenses" value={rupees(totalExpenses)} tone="bad" icon={<ReceiptIcon />} sub="Costs across all crops" />
         <StatCard title="Net profit" value={rupees(netProfit)} tone={netProfit >= 0 ? 'good' : 'bad'} icon={netProfit >= 0 ? <TrendUpIcon /> : <TrendDownIcon />} sub={netSub} />
@@ -359,6 +403,15 @@ export default function DashboardPage() {
                 </ResponsiveContainer>
               </div>
             )}
+          </section>
+
+          <section aria-labelledby="share-title" style={panel}>
+            <h2 id="share-title" style={panelTitle}>Share by crop</h2>
+            <p style={{ ...panelSub, marginBottom: '14px' }}>Where your revenue came from and where your costs went</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: '24px 32px' }}>
+              <ShareDonut title="Revenue by crop" rows={revenueRows} total={totalRevenue} colors={chartColors.palette} emptyMessage="No harvests sold yet." />
+              <ShareDonut title="Expenses by crop" rows={expenseRows} total={totalExpenses} colors={chartColors.palette} emptyMessage="No expenses recorded yet." />
+            </div>
           </section>
 
           <section aria-labelledby="crops-title" style={panel}>

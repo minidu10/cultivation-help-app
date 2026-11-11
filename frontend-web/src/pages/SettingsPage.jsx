@@ -83,6 +83,9 @@ export default function SettingsPage() {
         setThemePreference(data.themePreference || 'LIGHT')
         setDesktopMode(!!data.desktopMode)
         setReminderEmails(data.reminderEmailsEnabled !== false)
+        // The saved theme wins, so the highlighted button always matches the
+        // colours on screen, including a change made in the Android app.
+        updateUser({ themePreference: data.themePreference || 'LIGHT', desktopMode: !!data.desktopMode })
       } catch {
         if (!user) setError('Failed to load settings.')
       } finally {
@@ -92,14 +95,25 @@ export default function SettingsPage() {
     load()
   }, [])
 
-  const handleThemeChange = (newTheme) => {
-    if (newTheme === 'DESKTOP') {
-      setDesktopMode(true)
-      updateUser({ desktopMode: true })
-    } else {
-      setDesktopMode(false)
-      setThemePreference(newTheme)
-      updateUser({ themePreference: newTheme, desktopMode: false })
+  // Saved the moment it is picked, like the Android app. It used to wait for
+  // "Save settings", so leaving the page and coming back reloaded the old
+  // theme from the server and highlighted the wrong button.
+  const handleThemeChange = async (newTheme) => {
+    const previous = { themePreference, desktopMode }
+    const next = newTheme === 'DESKTOP'
+      ? { themePreference, desktopMode: true }
+      : { themePreference: newTheme, desktopMode: false }
+    setThemePreference(next.themePreference)
+    setDesktopMode(next.desktopMode)
+    updateUser(next)
+    setError('')
+    try {
+      await updateMyProfile(next)
+    } catch {
+      setThemePreference(previous.themePreference)
+      setDesktopMode(previous.desktopMode)
+      updateUser(previous)
+      setError('Could not save the theme. Check your connection and try again.')
     }
   }
 
@@ -161,29 +175,31 @@ export default function SettingsPage() {
           {THEME_OPTIONS.map(t => {
             const active = activeThemeKey === t.id
             return (
-              <div
+              <button
+                type="button"
                 key={t.id}
+                aria-pressed={active}
                 onClick={() => handleThemeChange(t.id)}
                 style={{
-                  padding: '22px', borderRadius: '14px',
+                  padding: '22px', borderRadius: 'var(--radius-card)', textAlign: 'left', font: 'inherit', width: '100%',
+                  display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start',
                   border: `2px solid ${active ? 'var(--accent-lime)' : 'var(--border)'}`,
                   background: active ? 'color-mix(in srgb, var(--accent-lime) 7%, transparent)' : 'var(--bg-card)',
-                  cursor: 'pointer', transition: 'all 0.2s',
-                  boxShadow: active ? 'none' : 'none',
+                  cursor: 'pointer', transition: 'border-color 0.2s',
                 }}
                 onMouseEnter={e => { if (!active) e.currentTarget.style.borderColor = 'var(--border-hover)' }}
                 onMouseLeave={e => { if (!active) e.currentTarget.style.borderColor = 'var(--border)' }}
               >
-                <div style={{ marginBottom: '12px', color: 'var(--accent-lime)' }}><ThemeIcon name={t.icon} /></div>
-                <div style={{ fontFamily: 'var(--font-body)', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', marginBottom: '5px' }}>{t.label}</div>
-                <div style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{t.desc}</div>
+                <span style={{ display: 'block', marginBottom: '12px', color: 'var(--accent-lime)' }}><ThemeIcon name={t.icon} /></span>
+                <span style={{ display: 'block', fontWeight: 700, fontSize: '15px', color: 'var(--text-primary)', marginBottom: '5px' }}>{t.label}</span>
+                <span style={{ display: 'block', fontSize: '13px', color: 'var(--text-muted)', lineHeight: 1.5 }}>{t.desc}</span>
                 {active && (
-                  <div style={{ marginTop: '14px', display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'color-mix(in srgb, var(--accent-lime) 12%, transparent)', border: '1px solid color-mix(in srgb, var(--accent-lime) 25%, transparent)', borderRadius: '100px', padding: '3px 10px' }}>
-                    <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-lime)' }} />
-                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '11px', color: 'var(--accent-lime)', fontWeight: 600 }}>Active</span>
-                  </div>
+                  <span style={{ marginTop: '14px', display: 'inline-flex', alignItems: 'center', gap: '5px', background: 'color-mix(in srgb, var(--accent-lime) 12%, transparent)', borderRadius: '999px', padding: '3px 10px' }}>
+                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent-lime)' }} />
+                    <span style={{ fontSize: '12px', color: 'var(--accent-lime)', fontWeight: 600 }}>Active</span>
+                  </span>
                 )}
-              </div>
+              </button>
             )
           })}
         </div>
