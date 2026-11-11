@@ -24,7 +24,9 @@ class AccountDeletionIntegrationTest extends IntegrationTest {
     private static final Set<String> KNOWN_TABLES = Set.of(
         "users", "crops", "expenses", "harvests", "reminders", "reminder_notifications",
         "crop_insights", "email_verifications", "refresh_tokens", "flyway_schema_history",
-        "crop_diagnoses", "crop_diagnosis_thumbnails", "device_tokens");
+        "crop_diagnoses", "crop_diagnosis_thumbnails", "device_tokens",
+        // Photos; erased by key prefix through MediaStorage.deletePrefix.
+        "media_objects");
 
     @Autowired
     private JdbcClient jdbc;

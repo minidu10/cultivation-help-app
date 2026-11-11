@@ -18,6 +18,7 @@ import com.cultivation.app.entity.EmailVerification.Purpose;
 import com.cultivation.app.entity.User;
 import com.cultivation.app.exception.ApiException;
 import com.cultivation.app.repository.UserRepository;
+import com.cultivation.app.storage.MediaStorage;
 
 @Service
 public class UserService {
@@ -32,13 +33,19 @@ public class UserService {
     private final GoogleAuthService googleAuthService;
     private final AccountDeletionService accountDeletionService;
     private final BCryptPasswordEncoder passwordEncoder;
+    private final MediaStorage mediaStorage;
+    private final PhotoProcessor photoProcessor;
 
     public UserService(UserRepository userRepository,
                        AuthTokenService authTokenService,
                        VerificationService verificationService,
                        MailService mailService,
                        GoogleAuthService googleAuthService,
-                       AccountDeletionService accountDeletionService) {
+                       AccountDeletionService accountDeletionService,
+                       MediaStorage mediaStorage,
+                       PhotoProcessor photoProcessor) {
+        this.mediaStorage = mediaStorage;
+        this.photoProcessor = photoProcessor;
         this.userRepository = userRepository;
         this.authTokenService = authTokenService;
         this.verificationService = verificationService;
@@ -212,7 +219,41 @@ public class UserService {
         return THEME_DARK.equals(normalized) ? THEME_DARK : THEME_LIGHT;
     }
 
+    private static String avatarKey(User user) {
+        return "avatars/" + user.getId() + "/photo.jpg";
+    }
+
+    @Transactional
+    public UserResponse setAvatar(User currentUser, byte[] upload) {
+        User user = findUser(currentUser);
+        mediaStorage.put(avatarKey(user), photoProcessor.avatar(upload), "image/jpeg");
+        user.setAvatarUpdatedAt(LocalDateTime.now());
+        return mapToUserResponse(userRepository.save(user));
+    }
+
+    public byte[] getAvatar(User currentUser) {
+        return mediaStorage.get(avatarKey(currentUser))
+            .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "No profile picture"));
+    }
+
+    @Transactional
+    public UserResponse removeAvatar(User currentUser) {
+        User user = findUser(currentUser);
+        mediaStorage.delete(avatarKey(user));
+        user.setAvatarUpdatedAt(null);
+        return mapToUserResponse(userRepository.save(user));
+    }
+
     private static UserResponse mapToUserResponse(User user) {
+        UserResponse response = mapBase(user);
+        if (user.getAvatarUpdatedAt() != null) {
+            response.setAvatarVersion(user.getAvatarUpdatedAt()
+                .atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli());
+        }
+        return response;
+    }
+
+    private static UserResponse mapBase(User user) {
         return new UserResponse(
             user.getId(),
             user.getFullName(),

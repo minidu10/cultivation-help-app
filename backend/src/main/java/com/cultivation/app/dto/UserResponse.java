@@ -26,6 +26,9 @@ public class UserResponse {
     /** Whether a Google account is linked, so Google can be used to confirm. */
     private boolean googleLinked;
 
+    /** Version of the profile picture (epoch millis), or null when there is none. */
+    private Long avatarVersion;
+
     // Constructor
     public UserResponse(Long id, String fullName, String email,
                         String phone,
@@ -64,4 +67,6 @@ public class UserResponse {
     public String getAuthProvider() { return authProvider; }
     public boolean isHasPassword() { return hasPassword; }
     public boolean isGoogleLinked() { return googleLinked; }
+    public Long getAvatarVersion() { return avatarVersion; }
+    public void setAvatarVersion(Long avatarVersion) { this.avatarVersion = avatarVersion; }
 }

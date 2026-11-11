@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.cultivation.app.entity.User;
+import com.cultivation.app.storage.MediaStorage;
 
 /**
  * Erases a farmer and everything they recorded, in one transaction.
@@ -26,8 +27,11 @@ public class AccountDeletionService {
 
     private final JdbcClient jdbc;
 
-    public AccountDeletionService(JdbcClient jdbc) {
+    private final MediaStorage mediaStorage;
+
+    public AccountDeletionService(JdbcClient jdbc, MediaStorage mediaStorage) {
         this.jdbc = jdbc;
+        this.mediaStorage = mediaStorage;
     }
 
     @Transactional
@@ -51,6 +55,16 @@ public class AccountDeletionService {
             .param("email", user.getEmail())
             .update();
         delete("DELETE FROM users WHERE id = :userId", userId);
+
+        // Photos live outside the database transaction, so they go last: a
+        // failure here must not undo the erasure, but is logged for cleanup.
+        for (String prefix : new String[] {"avatars/" + userId + "/", "diagnoses/" + userId + "/"}) {
+            try {
+                mediaStorage.deletePrefix(prefix);
+            } catch (RuntimeException ex) {
+                log.warn("Could not delete stored photos under {}: {}", prefix, ex.getMessage());
+            }
+        }
 
         log.info("Deleted account {} and all of its data", userId);
     }

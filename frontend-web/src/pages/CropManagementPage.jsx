@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Layout from '../components/Layout'
 import CropDoctor from '../components/CropDoctor'
+import CropWeather from '../components/CropWeather'
 import {
   createCropReminder,
   deleteCropReminder,
@@ -191,6 +192,8 @@ export default function CropManagementPage() {
           {error}
         </div>
       )}
+
+      <CropWeather location={crop?.fieldLocation} />
 
       {/* Crop Settings */}
       <div style={{ ...cardStyle, marginBottom: '20px' }}>

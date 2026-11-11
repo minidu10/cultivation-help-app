@@ -101,6 +101,10 @@ services:
       # so without this a 07:00 reminder would fire at 01:30 Sri Lanka time.
       TZ: ${TZ:-Asia/Colombo}
       AI_SERVICE_URL: ${AI_SERVICE_URL:-http://ai-service:8000}
+      # Blank keeps photos in the database. On EC2 the instance role supplies credentials.
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_REGION: ${S3_REGION:-ap-southeast-1}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
       SWAGGER_ENABLED: ${SWAGGER_ENABLED:-false}
       RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-true}
       AI_RATE_PER_MINUTE: ${AI_RATE_PER_MINUTE:-10}

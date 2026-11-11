@@ -84,6 +84,13 @@ app:
     refresh-days: ${JWT_REFRESH_DAYS:30}
   mail:
     from: ${MAIL_FROM:AgroMaster <agromaster026@gmail.com>}
+  storage:
+    # Blank keeps photos in the database (local development). On EC2 the
+    # instance's IAM role supplies credentials; no keys are needed.
+    s3-bucket: ${S3_BUCKET:}
+    s3-region: ${S3_REGION:ap-southeast-1}
+    # Only for S3-compatible stores such as R2 or MinIO.
+    s3-endpoint: ${S3_ENDPOINT:}
   ai:
     # Insights are generated backend-side so they can be cached; the browser
     # never calls the AI service for them.
