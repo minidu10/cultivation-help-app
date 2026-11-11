@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { logoutSession } from '../api/auth'
+import { getMyProfile } from '../api/users'
 import { clearTokens, getRefreshToken, onSessionExpired, saveTokens } from '../api/session'
 
 const AuthContext = createContext(null)
@@ -66,6 +67,16 @@ export function AuthProvider({ children }) {
       return next
     })
   }
+
+  // The saved user may predate the profile picture, or come from another
+  // device, so its version is read once per sign-in.
+  const signedIn = !!user
+  useEffect(() => {
+    if (!signedIn) return
+    getMyProfile()
+      .then((res) => updateUser({ avatarVersion: res.data.avatarVersion ?? null }))
+      .catch(() => {})
+  }, [signedIn])
 
   return (
     <AuthContext.Provider value={{ user, login, logout, updateUser, sessionExpired }}>

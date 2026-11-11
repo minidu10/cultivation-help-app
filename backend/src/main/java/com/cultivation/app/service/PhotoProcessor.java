@@ -43,11 +43,23 @@ public class PhotoProcessor {
     static final int AI_SIDE = 1024;
     /** What the history list shows. */
     static final int THUMB_SIDE = 320;
+    /** A profile picture is shown at most a couple of hundred pixels wide. */
+    static final int AVATAR_SIDE = 256;
 
     public record Prepared(byte[] forAi, byte[] thumbnail) {
     }
 
     public Prepared prepare(byte[] upload) {
+        BufferedImage rgb = load(upload);
+        return new Prepared(jpeg(fit(rgb, AI_SIDE), 0.85f), jpeg(fit(rgb, THUMB_SIDE), 0.75f));
+    }
+
+    /** A profile picture as a small JPEG, EXIF and GPS dropped. */
+    public byte[] avatar(byte[] upload) {
+        return jpeg(fit(load(upload), AVATAR_SIDE), 0.8f);
+    }
+
+    private static BufferedImage load(byte[] upload) {
         if (upload == null || upload.length == 0) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Choose a photo to check");
         }
@@ -58,8 +70,7 @@ public class PhotoProcessor {
             throw new ApiException(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "Use a JPEG or PNG photo");
         }
 
-        BufferedImage rgb = flatten(decode(upload));
-        return new Prepared(jpeg(fit(rgb, AI_SIDE), 0.85f), jpeg(fit(rgb, THUMB_SIDE), 0.75f));
+        return flatten(decode(upload));
     }
 
     static boolean isJpeg(byte[] b) {
