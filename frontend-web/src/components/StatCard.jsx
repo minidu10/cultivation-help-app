@@ -1,45 +1,26 @@
-const ICON_MAP = { green: '🌾', red: '💸', blue: '📈', amber: '⚠️' }
-const COLOR_MAP = { green: 'var(--accent-lime)', red: 'var(--accent-red)', blue: 'var(--accent-blue)', amber: 'var(--accent-amber)' }
+const TONE_COLOR = {
+  good: 'var(--profit)',
+  bad: 'var(--loss)',
+  brand: 'var(--accent-lime)',
+  neutral: 'var(--text-primary)',
+}
 
-export default function StatCard({ title, value, sub, color = 'green', icon }) {
-  const accent = COLOR_MAP[color] || 'var(--accent-lime)'
-  const displayIcon = icon || ICON_MAP[color] || '📊'
-
+/**
+ * One figure on a card, laid out like the Android app's stat tile: the label
+ * with an icon beside it, the value in the tile's colour, then a short line.
+ */
+export default function StatCard({ title, value, sub, tone = 'neutral', icon }) {
+  const color = TONE_COLOR[tone] || TONE_COLOR.neutral
   return (
-    <div
-      style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border)',
-        borderRadius: '16px', padding: '24px',
-        backdropFilter: 'blur(12px)',
-        transition: 'all 0.3s', flex: 1,
-        cursor: 'default',
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.borderColor = 'var(--border-hover)'
-        e.currentTarget.style.transform = 'translateY(-2px)'
-        e.currentTarget.style.boxShadow = '0 8px 32px rgba(74,222,128,0.08)'
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.borderColor = 'var(--border)'
-        e.currentTarget.style.transform = 'translateY(0)'
-        e.currentTarget.style.boxShadow = 'none'
-      }}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
-        <span style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>
-          {title}
-        </span>
-        <span style={{ fontSize: '20px' }}>{displayIcon}</span>
+    <div style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', borderRadius: 'var(--radius-card)', padding: '16px 18px', display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+        <span style={{ fontSize: '14px', fontWeight: 500, color: 'var(--text-muted)' }}>{title}</span>
+        {icon && <span style={{ color: tone === 'neutral' ? 'var(--text-muted)' : color }}>{icon}</span>}
       </div>
-      <div style={{
-        fontFamily: 'Space Grotesk, sans-serif',
-        fontSize: '28px', fontWeight: 800,
-        color: accent, letterSpacing: '-1px', marginBottom: '8px',
-      }}>{value}</div>
-      {sub && (
-        <div style={{ fontFamily: 'Inter, system-ui, -apple-system, Segoe UI, sans-serif', fontSize: '12px', color: 'var(--text-faint)' }}>{sub}</div>
-      )}
+      <div style={{ fontSize: 'clamp(19px, 4.6vw, 26px)', fontWeight: 700, lineHeight: 1.2, color, fontVariantNumeric: 'tabular-nums', overflowWrap: 'break-word' }}>
+        {value}
+      </div>
+      {sub && <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{sub}</div>}
     </div>
   )
 }
