@@ -15,8 +15,19 @@ that matters: **did this crop actually make money?**
 
 **Documentation:** [Deployment runbook](docs/DEPLOYMENT.md) ·
 [Mobile app](mobile-app/README.md) · [Technical Overview](docs/AgroMaster-Technical-Overview.pdf)
-(12 pages — how it works and why) and [Software Requirements Specification](docs/AgroMaster-SRS.pdf)
-(19 pages), both written for v1, the web app
+(v2.0 — how the whole system works and why, web and mobile) ·
+[Software Requirements Specification](docs/AgroMaster-SRS.pdf) (19 pages, written for v1, the web app)
+
+---
+
+## Screenshots
+
+| | |
+|---|---|
+| ![Landing page](docs/images/screenshots/landing.png) | ![Farm dashboard](docs/images/screenshots/dashboard.png) |
+| **Landing page** — what AgroMaster does, for a first-time visitor | **Dashboard** — revenue, costs and profit per crop, with the 5-day forecast |
+| ![Crop doctor diagnosis](docs/images/screenshots/crop-doctor.png) | ![AI advisor answer](docs/images/screenshots/ai-advisor.png) |
+| **Crop doctor** — a leaf photo diagnosed as rice blast, with treatments and a referral note | **AI advisor** — a fertiliser plan for paddy, with doses and costs in rupees |
 
 ---
 
@@ -148,8 +159,10 @@ cultivation-help-app/
 │   └── Dockerfile
 ├── deploy/                   # server bootstrap and boot automation
 ├── docs/
-│   ├── AgroMaster-Technical-Overview.pdf  # architecture and design rationale (v1)
+│   ├── AgroMaster-Technical-Overview.pdf  # architecture and design rationale (v2)
+│   ├── technical-overview.html            # source of that PDF
 │   ├── AgroMaster-SRS.pdf                 # requirements specification (v1)
+│   ├── images/                            # architecture diagram and screenshots
 │   └── DEPLOYMENT.md                      # production runbook
 ├── scripts/
 │   ├── seed-local.sql        # demo data for local analysis
