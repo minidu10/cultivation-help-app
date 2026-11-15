@@ -9,8 +9,10 @@ the apps can rely on the shape whatever the model actually produced.
 import json
 import os
 import re
+from functools import lru_cache
 from typing import Literal
 
+from openai import OpenAI
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 from services import advisor
@@ -48,6 +50,41 @@ Severity = Literal["none", "low", "moderate", "severe"]
 def vision_model() -> str:
     """A separate model for images when set; the chat model otherwise."""
     return os.getenv("AI_VISION_MODEL", "").strip() or advisor.model()
+
+
+def _vision_base_url() -> str:
+    return os.getenv("AI_VISION_BASE_URL", "").strip()
+
+
+def _vision_api_key() -> str:
+    return os.getenv("AI_VISION_API_KEY", "").strip()
+
+
+@lru_cache(maxsize=1)
+def _separate_client() -> OpenAI:
+    # Either setting alone falls back to the chat provider's for the other, so
+    # a second provider on the same key (or the same provider with a second
+    # key) needs only the one variable.
+    api_key = _vision_api_key() or os.getenv("AI_API_KEY", "").strip()
+    base_url = _vision_base_url() or advisor.base_url()
+    if not api_key:
+        raise RuntimeError("AI_VISION_API_KEY is not set, and neither is AI_API_KEY.")
+    if not base_url:
+        raise RuntimeError("AI_VISION_BASE_URL is not set, and neither is AI_BASE_URL.")
+    return OpenAI(api_key=api_key, base_url=base_url, timeout=90.0)
+
+
+def _client() -> OpenAI:
+    """
+    The vision provider: its own endpoint and key when AI_VISION_BASE_URL or
+    AI_VISION_API_KEY is set, otherwise the same client the chat advisor uses.
+
+    That lets chat stay on a fast text-only host (Groq) while photos go to a
+    provider with a vision model (Gemini).
+    """
+    if _vision_base_url() or _vision_api_key():
+        return _separate_client()
+    return advisor._client()
 
 
 class Diagnosis(BaseModel):
@@ -188,7 +225,7 @@ def _create(kwargs: dict):
     """
     for _ in range(3):
         try:
-            return advisor._client().chat.completions.create(**kwargs)
+            return _client().chat.completions.create(**kwargs)
         # Broad on purpose: each provider SDK raises its own exception types.
         except Exception as e:
             message = str(e)
