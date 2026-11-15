@@ -1,0 +1,73 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>AgroMaster architecture</title>
+<style>
+  html,body{margin:0;padding:0;background:#f4f7f0}
+  svg{display:block;font-family:"Segoe UI",Roboto,Arial,sans-serif}
+  .box{fill:#fff;stroke:#c9d8c5;stroke-width:2}
+  .hero{fill:#17301f;stroke:none}
+  .t{font-size:21px;font-weight:700;fill:#17301f}
+  .s{font-size:15px;fill:#53665a}
+  .w{fill:#fff}
+  .s.l{fill:#cfe6d6}
+  .arrow{stroke:#1f9d55;stroke-width:3;fill:none;marker-end:url(#a)}
+</style></head><body>
+<svg width="1200" height="627" viewBox="0 0 1200 627" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#1f9d55"/></marker></defs>
+  <rect width="1200" height="627" fill="#f4f7f0"/>
+
+  <text x="48" y="72" font-size="38" font-weight="800" fill="#17301f">AgroMaster</text>
+  <text x="48" y="106" font-size="19" fill="#53665a">Crop, cost and weather management for Sri Lankan farmers. Web, Android and an AI advisor.</text>
+
+  <!-- row 1 -->
+  <rect class="box" x="48" y="160" width="230" height="100" rx="14"/>
+  <text class="t" x="68" y="198">Clients</text>
+  <text class="s" x="68" y="224">React web · Flutter mobile</text>
+  <text class="s" x="68" y="244">Offline queue · push alerts</text>
+
+  <rect class="box" x="332" y="160" width="210" height="100" rx="14"/>
+  <text class="t" x="352" y="198">nginx + TLS</text>
+  <text class="s" x="352" y="224">AWS EC2 · Let's Encrypt</text>
+  <text class="s" x="352" y="244">DuckDNS · HTTPS only</text>
+
+  <rect class="hero" x="596" y="160" width="250" height="100" rx="14"/>
+  <text class="t w" x="616" y="198">Spring Boot API</text>
+  <text class="s l" x="616" y="224">JWT auth · rate limiting</text>
+  <text class="s l" x="616" y="244">Flyway migrations</text>
+
+  <rect class="box" x="900" y="160" width="252" height="100" rx="14"/>
+  <text class="t" x="920" y="198">Neon PostgreSQL</text>
+  <text class="s" x="920" y="224">Managed, off-server</text>
+  <text class="s" x="920" y="244">Data survives server stop</text>
+
+  <path class="arrow" d="M278 210 H326"/>
+  <path class="arrow" d="M542 210 H590"/>
+  <path class="arrow" d="M846 210 H894"/>
+
+  <!-- row 2 -->
+  <rect class="box" x="332" y="340" width="210" height="100" rx="14"/>
+  <text class="t" x="352" y="378">External APIs</text>
+  <text class="s" x="352" y="404">OpenWeather forecast</text>
+  <text class="s" x="352" y="424">Firebase push · Google sign-in</text>
+
+  <rect class="box" x="596" y="340" width="250" height="100" rx="14"/>
+  <text class="t" x="616" y="378">FastAPI AI service</text>
+  <text class="s" x="616" y="404">Farm advisor chat</text>
+  <text class="s" x="616" y="424">Crop doctor (photo diagnosis)</text>
+
+  <rect class="box" x="900" y="340" width="252" height="100" rx="14"/>
+  <text class="t" x="920" y="378">LLM provider</text>
+  <text class="s" x="920" y="404">OpenAI-compatible API</text>
+  <text class="s" x="920" y="424">Groq / Gemini, swappable</text>
+
+  <path class="arrow" d="M640 260 V300 H437 V334"/>
+  <path class="arrow" d="M760 260 V334"/>
+  <path class="arrow" d="M846 390 H894"/>
+
+  <!-- CI/CD -->
+  <rect x="48" y="490" width="1104" height="74" rx="14" fill="#e2efdf" stroke="#c9d8c5" stroke-width="2"/>
+  <text class="t" x="72" y="522">CI/CD</text>
+  <text class="s" x="72" y="548">GitHub Actions: tests, lint, build  →  images to ghcr.io  →  EC2 pulls and starts on boot. Nothing compiles on the server.</text>
+
+  <text x="48" y="600" font-size="15" fill="#53665a">Java 17 · Spring Boot · React · Flutter · Python · PostgreSQL · Docker · AWS EC2</text>
+</svg>
+</body></html>
