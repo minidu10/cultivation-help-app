@@ -1,11 +1,12 @@
 import json
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 
 from main import app
 from services import diagnosis
-from tests.conftest import completion
+from tests.conftest import FakeCompletions, completion
 
 TINY_JPEG = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAEBAQ=="  # any base64 will do; the model is fake
 
@@ -129,6 +130,63 @@ class TestCallingTheModel:
     def test_rejects_other_image_types(self):
         with pytest.raises(ValueError, match="JPEG and PNG"):
             diagnosis.diagnose(TINY_JPEG, "image/gif")
+
+
+class TestVisionProvider:
+    """Chat can stay on Groq while photos go to a provider with a vision model."""
+
+    @pytest.fixture(autouse=True)
+    def fresh_clients(self):
+        # Clear the real cached client before and after. A test may have
+        # swapped in a plain fake, which has no cache to clear.
+        real = diagnosis._separate_client
+        real.cache_clear()
+        yield
+        real.cache_clear()
+
+    def test_photos_use_the_chat_client_when_no_vision_provider_is_set(self, fake_model):
+        chat = fake_model(completion(json.dumps(BLAST)))
+
+        diagnosis.diagnose(TINY_JPEG)
+
+        assert len(chat.calls) == 1
+
+    def test_photos_go_to_the_vision_provider_not_the_chat_one(self, fake_model, monkeypatch):
+        monkeypatch.setenv("AI_VISION_BASE_URL", "https://vision.invalid/v1/")
+        monkeypatch.setenv("AI_VISION_API_KEY", "vision-key")
+        chat = fake_model()  # scripted with no replies: any call to it would fail
+        vision = FakeCompletions(completion(json.dumps(BLAST)))
+        monkeypatch.setattr(
+            diagnosis, "_separate_client", lambda: SimpleNamespace(chat=SimpleNamespace(completions=vision))
+        )
+
+        assert diagnosis.diagnose(TINY_JPEG).condition == "Rice blast"
+        assert len(vision.calls) == 1
+        assert chat.calls == []
+
+    def test_the_vision_client_is_built_from_the_vision_settings(self, monkeypatch):
+        monkeypatch.setenv("AI_VISION_BASE_URL", "https://vision.invalid/v1/")
+        monkeypatch.setenv("AI_VISION_API_KEY", "vision-key")
+
+        client = diagnosis._client()
+
+        assert str(client.base_url).startswith("https://vision.invalid/v1")
+        assert client.api_key == "vision-key"
+
+    def test_a_vision_url_alone_reuses_the_chat_key(self, monkeypatch):
+        monkeypatch.setenv("AI_VISION_BASE_URL", "https://vision.invalid/v1/")
+        monkeypatch.delenv("AI_VISION_API_KEY", raising=False)
+
+        assert diagnosis._client().api_key == "test-key"
+
+    def test_a_vision_key_alone_reuses_the_chat_url(self, monkeypatch):
+        monkeypatch.setenv("AI_VISION_API_KEY", "vision-key")
+        monkeypatch.delenv("AI_VISION_BASE_URL", raising=False)
+
+        client = diagnosis._client()
+
+        assert client.api_key == "vision-key"
+        assert str(client.base_url).startswith("https://example.invalid/v1")
 
 
 class TestRoute:

@@ -35,6 +35,9 @@ def configured(monkeypatch):
     monkeypatch.setenv("AI_MODEL", "test-model")
     monkeypatch.delenv("AI_REASONING_EFFORT", raising=False)
     monkeypatch.delenv("AI_MAX_TOKENS", raising=False)
+    # A developer's own .env must not decide which provider a test talks to.
+    for name in ("AI_VISION_MODEL", "AI_VISION_BASE_URL", "AI_VISION_API_KEY"):
+        monkeypatch.delenv(name, raising=False)
 
 
 @pytest.fixture

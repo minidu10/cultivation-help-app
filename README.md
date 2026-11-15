@@ -78,6 +78,8 @@ The parts of this build that were not obvious, and why they were done that way:
 
 ## Architecture
 
+![AgroMaster architecture](docs/images/architecture.png)
+
 ```
                Browser               Android app (Flutter)
                   │  HTTPS                │  HTTPS
@@ -477,6 +479,7 @@ All configuration lives in the root `.env`. The frontend has no environment file
 | `RATE_LIMIT_ENABLED` | No | Per-IP limits on `/api/auth/**` and `/api/weather/**`, per-farmer limits on AI. Leave on |
 | `AI_RATE_PER_MINUTE` / `AI_RATE_PER_DAY` | No | AI calls allowed per farmer, default `10` / `150` |
 | `AI_VISION_MODEL` | No | Model for crop doctor photos. Blank uses `AI_MODEL`, which must then accept images |
+| `AI_VISION_BASE_URL` / `AI_VISION_API_KEY` | No | A separate provider for photos only, so chat can stay on a text-only host (Groq) while photos go to Gemini. Blank reuses `AI_BASE_URL` / `AI_API_KEY` |
 | `DIAGNOSIS_DAILY_LIMIT` | No | Crop doctor photo checks per farmer per day, default `10` |
 | `FIREBASE_CREDENTIALS` | No | Firebase service account JSON (or a path to it) for push notifications. Blank turns push off |
 | `FIREBASE_PROJECT_ID` | No | Firebase project; read from the service account when blank |
