@@ -78,6 +78,8 @@ The parts of this build that were not obvious, and why they were done that way:
 
 ## Architecture
 
+![AgroMaster architecture](docs/images/architecture.png)
+
 ```
                Browser               Android app (Flutter)
                   │  HTTPS                │  HTTPS
