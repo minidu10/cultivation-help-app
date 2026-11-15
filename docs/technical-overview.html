@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AgroMaster Technical Overview</title>
+<!--
+  Source of docs/AgroMaster-Technical-Overview.pdf. To rebuild the PDF on Windows:
+  "C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe" --headless --disable-gpu
+    --no-pdf-header-footer --print-to-pdf="<repo>\docs\AgroMaster-Technical-Overview.pdf"
+    "file:///<repo>/docs/technical-overview.html"
+-->
+<style>
+  @page { size: A4; margin: 18mm 17mm 18mm 17mm; }
+  :root {
+    --ink: #1b2a20; --muted: #56675c; --line: #d6e0d8; --accent: #23784a;
+    --soft: #eaf4ee; --code: #eef2ef; --warn: #8a5410; --warn-soft: #fbf1e2;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; color: var(--ink); background: #fff; font: 10.6pt/1.55 "Segoe UI", Roboto, Arial, sans-serif; }
+  h1, h2, h3 { line-height: 1.25; margin: 0; color: var(--ink); }
+  h2 { font-size: 16pt; margin: 22pt 0 8pt; padding-top: 6pt; border-top: 2px solid var(--line); break-after: avoid; }
+  h3 { font-size: 11.6pt; margin: 14pt 0 5pt; break-after: avoid; }
+  p { margin: 0 0 7pt; }
+  ul, ol { margin: 0 0 8pt; padding-left: 16pt; }
+  li { margin-bottom: 3pt; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 9.4pt; background: var(--code); padding: 0 3pt; border-radius: 3px; }
+  pre { font-family: Consolas, "Courier New", monospace; font-size: 9pt; background: var(--code); padding: 8pt 10pt; border-radius: 5px; margin: 0 0 9pt; white-space: pre; overflow: hidden; break-inside: avoid; line-height: 1.4; }
+  table { width: 100%; border-collapse: collapse; margin: 2pt 0 10pt; font-size: 9.6pt; break-inside: avoid; }
+  th, td { text-align: left; vertical-align: top; padding: 4pt 7pt; border-bottom: 1px solid var(--line); }
+  th { background: var(--code); font-weight: 600; font-size: 8.8pt; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .lead { font-size: 11.4pt; }
+  .box { background: var(--soft); border-left: 4px solid var(--accent); padding: 8pt 11pt; margin: 4pt 0 11pt; border-radius: 0 5px 5px 0; break-inside: avoid; }
+  .box.warn { background: var(--warn-soft); border-left-color: var(--warn); }
+  .box p:last-child, .box ul:last-child { margin-bottom: 0; }
+  figure { margin: 4pt 0 12pt; break-inside: avoid; }
+  figure img { width: 100%; border: 1px solid var(--line); border-radius: 5px; display: block; }
+  figcaption { font-size: 9pt; color: var(--muted); margin-top: 4pt; }
+  .shots { display: grid; grid-template-columns: 1fr 1fr; gap: 10pt; }
+  .page-break { break-before: page; }
+
+  /* cover */
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .cover .mark { font-size: 10pt; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); font-weight: 700; }
+  .cover h1 { font-size: 38pt; margin: 6pt 0 4pt; letter-spacing: -.01em; }
+  .cover .sub { font-size: 15pt; color: var(--muted); max-width: 135mm; }
+  .cover img { width: 100%; border: 1px solid var(--line); border-radius: 6px; }
+  .meta { display: grid; grid-template-columns: 34mm 1fr; gap: 3pt 10pt; font-size: 10pt; }
+  .meta dt { color: var(--muted); text-transform: uppercase; letter-spacing: .06em; font-size: 8.6pt; padding-top: 1pt; }
+  .meta dd { margin: 0; }
+  .toc { columns: 2; column-gap: 14mm; font-size: 10.2pt; padding-left: 14pt; }
+</style>
+</head>
+<body>
+
+<!-- ============================== COVER ============================== -->
+<section class="cover">
+  <div>
+    <div class="mark">AgroMaster</div>
+    <h1>Technical Overview</h1>
+    <p class="sub">How the system works, and why it was built this way. Web app, Android app, backend, AI and deployment.</p>
+  </div>
+  <img src="images/screenshots/dashboard.png" alt="AgroMaster farm dashboard">
+  <dl class="meta">
+    <dt>Version</dt><dd>2.0 (replaces 1.0 of 16 September 2026)</dd>
+    <dt>Date</dt><dd>15 November 2026</dd>
+    <dt>Author</dt><dd>Minidu Dhananjana</dd>
+    <dt>Live</dt><dd>https://agromaster.duckdns.org</dd>
+    <dt>Android app</dt><dd>github.com/minidu10/cultivation-help-app/releases/latest</dd>
+    <dt>Repository</dt><dd>github.com/minidu10/cultivation-help-app</dd>
+  </dl>
+</section>
+
+<!-- ============================== 1 ============================== -->
+<h2 class="page-break">1. What this system is</h2>
+<p class="lead">AgroMaster helps a small-scale Sri Lankan farmer answer one question that is hard to answer without records: <strong>did this crop actually make money?</strong></p>
+<p>A farmer spends money on a crop for months (seed, labour, fertiliser, water, transport) and then sells the harvest in one or two payments. Without writing it all down, "was the paddy worth it?" is a guess. AgroMaster records each crop from planting to harvest, every cost, and every sale, and shows the profit or loss per crop and for the whole farm.</p>
+<p>On top of the records there are four helpers:</p>
+<ul>
+  <li><strong>AI advisor</strong> that answers farming questions in short, plain answers, with costs in rupees.</li>
+  <li><strong>Crop doctor</strong> that looks at a photo of a sick leaf and suggests the likely problem and treatments.</li>
+  <li><strong>Weather alerts</strong> that warn when rain, wind or heat will spoil a planned task, and suggest a better time.</li>
+  <li><strong>Reminders</strong> by daily email and phone push notification.</li>
+</ul>
+<p>Each account belongs to one farmer. There are no shared farms or roles. Every record belongs to exactly one user, and that rule is enforced inside every database query, not only in the screens.</p>
+
+<h3>What changed since version 1.0</h3>
+<div class="box">
+<ul>
+  <li><strong>Android app</strong> (Flutter) with offline saving and push notifications.</li>
+  <li><strong>Crop doctor</strong>: photo diagnosis with a separate vision AI provider.</li>
+  <li><strong>Weather alerts</strong> for planned tasks, with a one-tap move to a safer time.</li>
+  <li><strong>Short login tokens</strong> (30 minutes) with single-use refresh tokens and theft detection, replacing 24-hour tokens.</li>
+  <li><strong>The AI advisor stays on farming</strong>: off-topic questions get one fixed reply.</li>
+  <li><strong>Real test coverage</strong>: about 320 automated tests across four suites, all run in CI. Version 1.0 had one.</li>
+</ul>
+</div>
+
+<h3>Size</h3>
+<table>
+  <thead><tr><th>Part</th><th class="num">Files</th><th class="num">Lines</th></tr></thead>
+  <tbody>
+    <tr><td>Backend (Java)</td><td class="num">111</td><td class="num">~8,100</td></tr>
+    <tr><td>Mobile app (Dart)</td><td class="num">72</td><td class="num">~7,200</td></tr>
+    <tr><td>Website (React)</td><td class="num">39</td><td class="num">~5,100</td></tr>
+    <tr><td>AI service (Python)</td><td class="num">4</td><td class="num">~540</td></tr>
+  </tbody>
+</table>
+<p>Counts exclude tests and generated code.</p>
+
+<h3>Screens</h3>
+<div class="shots">
+  <figure><img src="images/screenshots/landing.png" alt="Landing page"><figcaption>Landing page for new visitors.</figcaption></figure>
+  <figure><img src="images/screenshots/ai-advisor.png" alt="AI advisor"><figcaption>AI advisor: a fertiliser plan for paddy.</figcaption></figure>
+</div>
+<figure><img src="images/screenshots/crop-doctor.png" alt="Crop doctor result"><figcaption>Crop doctor: rice blast at 92% confidence, with symptoms, treatments and a referral to the local Agrarian Service Centre.</figcaption></figure>
+
+<!-- ============================== 2 ============================== -->
+<h2 class="page-break">2. Architecture</h2>
+<figure><img src="images/architecture.png" alt="Architecture diagram"><figcaption>Two apps, one public entry point, three services, and outside providers.</figcaption></figure>
+
+<h3>Following one request</h3>
+<p>A farmer opens the dashboard and the app asks for <code>/api/dashboard</code>:</p>
+<ol>
+  <li><strong>nginx</strong> receives it on port 443, decrypts HTTPS, sees the path starts with <code>/api</code>, and passes it to the backend.</li>
+  <li><strong>JwtFilter</strong> runs before anything else. It checks the token's signature and expiry and loads the user. No token, or a bad one, and the request stops here.</li>
+  <li>The <strong>controller</strong> gets the logged-in user. The <strong>service</strong> reads that farmer's crops, expenses and harvests. The user id is part of every query, so another farmer's rows are never even read.</li>
+  <li><strong>PostgreSQL</strong> on Neon returns the rows. The backend adds up profit and returns JSON, which nginx compresses on the way out.</li>
+  <li>Weather and alerts come from a <strong>separate</strong> call, so a slow weather service never delays the money figures.</li>
+</ol>
+
+<h3>Why each part exists</h3>
+<ul>
+  <li><strong>nginx in front.</strong> It is the only public door: it handles HTTPS, serves the website files with compression and caching, and passes API calls on. The backend and AI service listen only on <code>127.0.0.1</code> and cannot be reached from the internet.</li>
+  <li><strong>A separate AI service.</strong> AI code is Python; business logic is Java. Keeping them apart means the AI provider can change without touching the backend, and an AI outage cannot take down crop records.</li>
+  <li><strong>The database outside AWS.</strong> Neon holds the data, so the server can be stopped, deleted or rebuilt without losing a row. This matters for a server that is switched off between demos.</li>
+</ul>
+
+<!-- ============================== 3 ============================== -->
+<h2>3. The four applications</h2>
+<h3>Backend: Spring Boot 4, Java 17</h3>
+<p>Owns everything important: login, the data model, ownership rules, the database, email, push notifications, weather and alerts. It is also the only way to reach the AI service. Code is layered controller → service → repository → entity, and DTOs are used at the edge so database entities are never sent to the apps directly. Two scheduled jobs run daily: the reminder digest at 07:00 and a clean-up of expired refresh tokens at 03:30.</p>
+
+<h3>Website: React 19, Vite, Recharts</h3>
+<p>A single-page app that holds no secrets. It calls the API on relative paths (<code>/api/...</code>), which nginx forwards in production and the Vite dev server forwards locally, so one build runs in both places with no environment file. Even the Google client id is fetched at runtime. Pages are lazy-loaded, so the landing page does not carry the charting library.</p>
+
+<h3>Android app: Flutter, Riverpod, Dio</h3>
+<p>The same features as the website, plus a camera button for the crop doctor, offline saving and push notifications. It talks to the same API with the same accounts. Release builds only use HTTPS; plain HTTP is allowed only in debug builds for local testing. Details in section 9.</p>
+
+<h3>AI service: FastAPI, Python 3.12</h3>
+<p>Four endpoints: <code>/ai/ask</code> (advisor), <code>/ai/insights</code> (per-crop comment), <code>/ai/diagnose</code> (crop doctor) and <code>/ai/health</code>. It has no database and no login of its own, and it is only reachable from the backend over the internal Docker network.</p>
+
+<!-- ============================== 4 ============================== -->
+<h2>4. Data model</h2>
+<pre>users (1) ──&lt; (N) crops (1) ──&lt; (N) expenses
+     │                     ├──&lt; (N) harvests
+     │                     ├──&lt; (N) reminders (1) ──&lt; (N) reminder_notifications
+     │                     ├──&lt; (1) crop_insights
+     │                     └──&lt; (N) crop_diagnoses (1) ── (1) crop_diagnosis_thumbnails
+     ├──&lt; (N) refresh_tokens
+     └──&lt; (N) device_tokens
+email_verifications   standalone: no user exists yet at registration
+media_objects         photos and avatars, when no S3 bucket is configured</pre>
+<p><strong>13 tables</strong>, built by <strong>16 Flyway migrations</strong> (V0 to V15).</p>
+
+<h3>Why it is shaped this way</h3>
+<ul>
+  <li><strong>Everything hangs off crops.</strong> An expense without a crop means nothing, so <code>crop_id</code> is required and child tables cascade on delete. Deleting a crop removes its costs, sales, reminders and diagnoses in one step, with no orphans.</li>
+  <li><strong><code>email_verifications</code> has no user id.</strong> Email is verified before the account exists (section 5).</li>
+  <li><strong><code>reminder_notifications</code> is its own table.</strong> Each reminder is announced twice (two days and one day ahead), which one flag cannot store. A unique rule on <code>(reminder_id, lead_days)</code> makes a double send impossible.</li>
+  <li><strong>Diagnosis thumbnails are a separate table.</strong> History lists load quickly because they never pull image bytes until asked.</li>
+  <li><strong>Offline records carry a client reference.</strong> A unique index on <code>(crop_id, client_ref)</code> turns a repeated upload into "return the existing row" (section 9).</li>
+  <li><strong>Schema changes only through Flyway.</strong> Hibernate's <code>ddl-auto</code> is <code>none</code>. Migrations run at start-up, so an empty database builds itself on first boot.</li>
+</ul>
+
+<h3>Indexes</h3>
+<p>PostgreSQL does not index foreign keys by itself, and the first schema had no indexes, so every query was a full table scan. Migration V4 added composite indexes that match each query's filter and sort:</p>
+<table>
+  <thead><tr><th>Index</th><th>Serves</th></tr></thead>
+  <tbody>
+    <tr><td><code>idx_crops_user_created</code></td><td>a farmer's crop list, newest first</td></tr>
+    <tr><td><code>idx_expenses_crop_date</code></td><td>expenses per crop, and the expense total</td></tr>
+    <tr><td><code>idx_harvests_crop_date</code></td><td>harvests per crop, and the revenue total</td></tr>
+    <tr><td><code>idx_reminders_due</code></td><td>partial index, pending reminders only</td></tr>
+  </tbody>
+</table>
+<p>Checked with <code>EXPLAIN ANALYZE</code>: Index Scan, not Seq Scan.</p>
+
+<!-- ============================== 5 ============================== -->
+<h2>5. Authentication</h2>
+<p>Three ways in: email and password (with a verified email), password reset, and Google sign-in.</p>
+
+<h3>Registration in three steps</h3>
+<pre>POST /api/auth/send-code     { email }          → 6-digit code emailed
+POST /api/auth/verify-code   { email, code }    → confirmed
+POST /api/auth/register      { name, email, … } → account created, tokens returned</pre>
+<p>The email is verified <strong>before</strong> the account is created. If mail fails, the farmer simply cannot register yet and can try again; no half-made account is left behind. A code is used instead of a link because it can be typed on another device, which matters where a family shares one phone.</p>
+<p>Six digits is only a million options, so the code is protected by four rules together:</p>
+<table>
+  <thead><tr><th>Rule</th><th>Value</th></tr></thead>
+  <tbody>
+    <tr><td>Expiry</td><td>10 minutes</td></tr>
+    <tr><td>Wrong guesses</td><td>5, then the code is dead</td></tr>
+    <tr><td>Resend cooldown</td><td>60 seconds per address</td></tr>
+    <tr><td>Use</td><td>once only</td></tr>
+  </tbody>
+</table>
+<p>The code itself is never stored, only <code>SHA-256(email + ":" + code)</code>, so a database leak does not reveal live codes.</p>
+
+<h3>Google sign-in</h3>
+<p>The app gets an ID token from Google, and the backend checks its signature, issuer, audience and expiry against Google's public keys. Without this check, anyone could send a hand-made token naming any email address. A forged <code>alg: none</code> token was tested and is rejected. An existing password account is linked only when Google says the address is verified.</p>
+
+<h3>Tokens</h3>
+<ul>
+  <li><strong>Access token:</strong> a signed JWT that lasts <strong>30 minutes</strong> and is sent with every request.</li>
+  <li><strong>Refresh token:</strong> lasts 30 days and gets a new access token without logging in again. Each one works <strong>once</strong>; every refresh issues a new one. Only its SHA-256 hash is stored.</li>
+  <li><strong>Theft detection:</strong> if a used refresh token shows up again, it must have been copied. Its whole family is cancelled, and both the real user and the copier must log in again.</li>
+  <li><strong>Password change logs everyone out:</strong> <code>password_changed_at</code> is stamped on every change, and tokens issued before it are rejected.</li>
+  <li><strong>One refresh at a time:</strong> when the access token expires, every open request fails together. Both apps queue them behind a single refresh. Without this, the second refresh would look like theft and end the session.</li>
+</ul>
+
+<h3>Rate limits</h3>
+<p>Per IP address, per minute. The IP is the one nginx sets in <code>X-Real-IP</code>, not the first <code>X-Forwarded-For</code> value, which any client can fake.</p>
+<table>
+  <thead><tr><th>Endpoint</th><th class="num">Requests per minute</th></tr></thead>
+  <tbody>
+    <tr><td>send-code, forgot-password, register</td><td class="num">5</td></tr>
+    <tr><td>login, verify-code, reset-password, google</td><td class="num">10</td></tr>
+    <tr><td>refresh</td><td class="num">30</td></tr>
+    <tr><td>weather</td><td class="num">60</td></tr>
+  </tbody>
+</table>
+<p>AI calls have their own limits per farmer (section 6), because each one costs money.</p>
+
+<!-- ============================== 6 ============================== -->
+<h2>6. The AI layer</h2>
+<h3>One client for every provider</h3>
+<p>Groq, Gemini, OpenAI, OpenRouter and Ollama all use the same "chat completions" protocol. So the service uses one OpenAI SDK client with a configurable address, and switching provider is a settings change, not a code change. Version 1.0 began with three separate SDKs, and one SDK's update broke another at import time, taking the whole service down. One client means one set of dependencies.</p>
+
+<h3>Two providers: chat and vision</h3>
+<p>The advisor runs on a fast text model on Groq (<code>gpt-oss-120b</code>). That model cannot read images, so the crop doctor has its own optional provider settings:</p>
+<pre>AI_BASE_URL / AI_API_KEY / AI_MODEL                       chat (Groq)
+AI_VISION_BASE_URL / AI_VISION_API_KEY / AI_VISION_MODEL  photos (Gemini)</pre>
+<p>If the vision settings are empty, photos use the chat provider. Each feature uses the best model for its job.</p>
+
+<h3>Keeping the advisor on farming</h3>
+<p>The system prompt allows only farming topics: crops, soil, fertiliser, pests, water, weather on the farm, harvest, selling and farm money. Anything else, including "ignore your rules" tricks, gets one fixed sentence: <em>"I can only help with farming questions."</em> The farmer's "farm context" text is added as information only, after the rules, so it cannot override them.</p>
+
+<h3>Cost control</h3>
+<ul>
+  <li><strong>Per-farmer limits:</strong> 10 advisor questions a minute, 150 a day, and 10 photo checks a day.</li>
+  <li><strong>Short answers:</strong> under 110 words, plain text. Output tokens are most of the bill.</li>
+  <li><strong>Insight caching:</strong> each per-crop comment is stored with a SHA-256 fingerprint of the numbers behind it. If the numbers have not changed, the stored text is reused. Opening the dashboard fifty times costs nothing; adding one expense regenerates just that crop.</li>
+</ul>
+
+<h3>Two lessons</h3>
+<p>The interface shows plain text, so a stray <code>**</code> from the model would appear on screen. A small server-side cleaner removes markdown but leaves maths like <code>Rs. 5000 * 2 acres</code> alone. And reasoning models spend part of <code>max_tokens</code> on hidden thinking: with a 1,024 ceiling, answers were cut off mid-sentence. The ceiling is now 4,096; short answers come from the prompt, not the limit.</p>
+
+<!-- ============================== 7 ============================== -->
+<h2>7. Crop doctor</h2>
+<p>The farmer photographs a sick leaf, fruit or stem, optionally adds a note, and gets a likely cause with treatments.</p>
+<ol>
+  <li><strong>Check the file.</strong> The type is read from the file's first bytes, not its name. Only JPEG and PNG are accepted.</li>
+  <li><strong>Check the size before decoding.</strong> Images with too many pixels are refused before any pixel is loaded, so a crafted image cannot exhaust memory.</li>
+  <li><strong>Re-encode.</strong> The image is saved again, which strips EXIF data, including the GPS location of the farm.</li>
+  <li><strong>Ask the vision model</strong> with a 1,024-pixel copy, asking for strict JSON: crop, condition, confidence, severity, symptoms, organic and chemical treatment, prevention.</li>
+  <li><strong>Trust nothing it returns.</strong> Every field is checked, clamped and shortened. Confidence given as a percentage is converted. Unknown severity becomes "moderate".</li>
+  <li><strong>Refer when unsure.</strong> Confidence under 50%, or anything severe, adds a note to show the result to the local Agrarian Service Centre. Not a plant? The answer is "retake the photo".</li>
+  <li><strong>Store a 320-pixel thumbnail</strong> with the result, so the farmer can see later whether a treatment worked.</li>
+</ol>
+<p>Chemical advice names active ingredients only, never brands, and always reminds the farmer to follow the label and wear protection. Photos are stored in the database, or in S3 (or an S3-compatible store such as Cloudflare R2) when a bucket is configured.</p>
+
+<!-- ============================== 8 ============================== -->
+<h2>8. Weather and reminders</h2>
+<h3>Weather</h3>
+<p>Current weather and a five-day forecast come from OpenWeather for each field's town. To stay inside the free API quota, results are cached: town locations for 24 hours, current weather for 10 minutes, forecasts for 30 minutes.</p>
+
+<h3>Weather alerts</h3>
+<p>Every upcoming task is checked against its field's forecast. Five risks are flagged:</p>
+<table>
+  <thead><tr><th>Risk</th><th>Example</th></tr></thead>
+  <tbody>
+    <tr><td>Rain wash-off</td><td>fertiliser or spray planned before heavy rain</td></tr>
+    <tr><td>Spray in wind</td><td>spraying planned on a windy day</td></tr>
+    <tr><td>Irrigation before rain</td><td>watering just before a downpour</td></tr>
+    <tr><td>Harvest in rain</td><td>harvest planned on a wet day</td></tr>
+    <tr><td>Heat stress</td><td>field work in extreme heat</td></tr>
+  </tbody>
+</table>
+<p>Each alert explains the risk and suggests the next safe time, which the farmer can accept with one tap. Alerts have their own endpoint, so slow weather data never delays the dashboard.</p>
+
+<h3>Reminders</h3>
+<ul>
+  <li><strong>Notice in advance.</strong> Two days ahead and again one day ahead, because a reminder to buy fertiliser is useless the moment it is needed.</li>
+  <li><strong>One digest per day.</strong> All of a farmer's tasks go in one email at 07:00, never one email per task, which floods the inbox and teaches people to ignore it. The same digest arrives as a push notification on the phone, and tapping it opens the crop.</li>
+  <li><strong>No double sends.</strong> The database's unique rule blocks a second send even after a restart or an overlapping run. Rows are written only after a successful send, so a mail failure retries tomorrow instead of being lost.</li>
+  <li><strong>Opt-out in the query.</strong> A farmer who switched emails off is never selected.</li>
+  <li><strong>Time zone.</strong> Reminders are stored as local times, and containers use UTC by default, so without <code>TZ=Asia/Colombo</code> a 07:00 reminder fired at 01:30.</li>
+</ul>
+
+<!-- ============================== 9 ============================== -->
+<h2>9. The Android app</h2>
+<h3>Offline saving without duplicates</h3>
+<p>Rural signal is unreliable. With no connection the app shows the data it last loaded, and new expenses and harvests go into an outbox on the phone. Each record gets a UUID on the phone before it is saved. When the signal returns, the outbox is sent. If a reply is lost and the record is sent again, the server finds the same <code>(crop_id, client_ref)</code> and returns the existing row instead of adding a copy. Every record arrives exactly once.</p>
+
+<h3>Push notifications</h3>
+<p>Push uses the Firebase Cloud Messaging HTTP v1 API directly: an OAuth token from <code>google-auth-library</code> and one REST call per message. The full Firebase Admin SDK was not used because it would not fit inside the backend's 640 MB memory limit. Device tokens that Firebase reports as gone are deleted. Push is optional; without Firebase settings it is simply off.</p>
+
+<h3>Releases</h3>
+<p>Every CI run builds a release APK. A public release is made by pushing a tag such as <code>mobile-v1.0.1</code>: a workflow checks that the tag matches the version in <code>pubspec.yaml</code>, builds a signed APK and publishes it as a GitHub Release with a SHA-256 checksum. The current release is 1.0.1.</p>
+
+<!-- ============================== 10 ============================== -->
+<h2>10. Security</h2>
+<table>
+  <thead><tr><th>Control</th><th>What it prevents</th></tr></thead>
+  <tbody>
+    <tr><td>BCrypt password hashing</td><td>reading passwords from a database leak</td></tr>
+    <tr><td>Codes and refresh tokens stored as SHA-256</td><td>leaked values being usable</td></tr>
+    <tr><td>10-minute codes, 5 tries, single use</td><td>guessing a 6-digit code</td></tr>
+    <tr><td>30-minute JWT, single-use refresh, reuse detection</td><td>a stolen token staying useful</td></tr>
+    <tr><td><code>password_changed_at</code> check</td><td>a stolen token surviving a password reset</td></tr>
+    <tr><td>Per-IP limits using nginx's real IP</td><td>mail bombing, password guessing, fake-IP bypass</td></tr>
+    <tr><td>Same reply for unknown email and wrong password</td><td>finding out which emails are registered</td></tr>
+    <tr><td>Google token signature check</td><td>forged tokens claiming any account</td></tr>
+    <tr><td>Ownership in every query</td><td>reading another farmer's data by changing an id</td></tr>
+    <tr><td>AI behind the logged-in backend, with per-farmer limits</td><td>strangers spending the project's AI credit</td></tr>
+    <tr><td>Farming-only prompt, context as information</td><td>the advisor being used for other things</td></tr>
+    <tr><td>Photo type by header, pixel limit, re-encode</td><td>malicious files, memory exhaustion, GPS leaks</td></tr>
+    <tr><td>Backend and AI bound to <code>127.0.0.1</code></td><td>the API being reached over plain HTTP</td></tr>
+    <tr><td>Swagger off in production</td><td>publishing a map of the whole API</td></tr>
+    <tr><td>No JWT secret fallback; app refuses a weak one</td><td>running with a known signing key</td></tr>
+    <tr><td>HSTS, CSP, X-Frame-Options</td><td>downgrade attacks and clickjacking</td></tr>
+    <tr><td>Release APKs use HTTPS only</td><td>traffic being read on public Wi-Fi</td></tr>
+  </tbody>
+</table>
+<div class="box warn"><p><strong>The most serious issue found</strong> was in version 1.0: the AI endpoint was briefly public through nginx with no login, an open AI endpoint billed to this project's key. It now sits on the internal network behind the authenticated backend.</p></div>
+
+<!-- ============================== 11 ============================== -->
+<h2>11. Deployment and CI/CD</h2>
+<pre>backend    → mvnw verify: unit + Testcontainers tests, JaCoCo   ┐
+web        → npm ci, eslint, vitest, build                      │ every push and
+ai-service → ruff, pytest                                       │ pull request
+mobile     → generated code current, analyze, test, APK         ┘
+images     → build 3, push to ghcr.io     ┐ main only, after
+deploy     → ssh, git pull, pull, restart ┘ the checks pass
+mobile-v*  → signed APK to GitHub Releases   on tag</pre>
+<p><strong>Images are built in CI, never on the server.</strong> The 1 GB server could not reliably compile Java; builds were often killed for lack of memory. Now GitHub Actions builds and publishes, and the server only downloads. Deploys went from 3 to 5 minutes, with a failure risk, to about 30 seconds, and the server has no JDK, Maven or Node installed. Every image is tagged <code>:latest</code> and <code>:&lt;commit-sha&gt;</code>, so rolling back means setting <code>IMAGE_TAG</code> to an older commit and restarting. A release that does not come up healthy fails the job.</p>
+
+<h3>On boot</h3>
+<p>The server (EC2 t3.micro, Singapore, the same region as the database) is switched off between demos, and AWS gives it a new public IP on every start. A systemd unit runs, in order:</p>
+<ol>
+  <li>tell DuckDNS the new IP, so the domain keeps working;</li>
+  <li>pull and start the containers;</li>
+  <li>renew the HTTPS certificate if due, and reload nginx.</li>
+</ol>
+<p>Renewal is last because Let's Encrypt checks the site through nginx on port 80. An expired certificate does not stop nginx from starting, so even after months switched off the server comes up and then repairs its own certificate.</p>
+
+<h3>One compose file</h3>
+<p><code>COMPOSE_PROFILES</code> decides which services start, so the command is the same locally and in production and the two cannot drift.</p>
+<table>
+  <thead><tr><th>Service</th><th>local</th><th>prod</th></tr></thead>
+  <tbody>
+    <tr><td>Postgres container</td><td>starts</td><td>not started (Neon)</td></tr>
+    <tr><td>Mailpit mail catcher</td><td>starts</td><td>not started (real SMTP)</td></tr>
+    <tr><td>backend, ai-service</td><td>starts</td><td>starts</td></tr>
+    <tr><td>nginx frontend</td><td>not started (Vite dev server)</td><td>starts</td></tr>
+  </tbody>
+</table>
+
+<h3>Cost and portability</h3>
+<p>Free-tier EC2, Neon free tier, DuckDNS and GHCR: effectively zero. There is no Elastic IP on purpose, because AWS bills for one while the server is stopped. Nothing ties the system to AWS: it is Docker plus an outside database, so any Linux server can run it with the same bootstrap script.</p>
+
+<!-- ============================== 12 ============================== -->
+<h2>12. Testing</h2>
+<table>
+  <thead><tr><th>Suite</th><th>Tools</th><th class="num">Tests</th><th>Covers</th></tr></thead>
+  <tbody>
+    <tr><td>Backend</td><td>JUnit 5, Testcontainers, JaCoCo</td><td class="num">~150</td><td>Real Flyway migrations on a real Postgres. Sign-up codes, token rotation and reuse detection, one farmer unable to touch another's crops, profit figures, validation, rate limits, digest de-duplication, weather alerts, crop doctor uploads, offline replays, push registration, account deletion.</td></tr>
+    <tr><td>Website</td><td>Vitest, Testing Library, MSW</td><td class="num">~33</td><td>Session and token refresh, dashboard, expense editing, weather alerts, crop doctor.</td></tr>
+    <tr><td>AI service</td><td>pytest, ruff</td><td class="num">53</td><td>Prompt rules, markdown cleaning, diagnosis parsing and limits, provider fallbacks, separate vision provider. A fake model replays answers, so no test calls a paid model.</td></tr>
+    <tr><td>Android</td><td>flutter test</td><td class="num">81</td><td>Sign-in and sign-up, crops, dashboard, alerts, crop doctor, offline outbox, push. The fake backend accepts each refresh token once, like the real one.</td></tr>
+  </tbody>
+</table>
+<p>Outside services (AI, OpenWeather, Firebase) are replaced with fakes in tests. All four suites must pass before anything is deployed.</p>
+
+<h3>A bug worth knowing</h3>
+<p>The wrong-guess counter on verification codes once did nothing. On a wrong guess it was increased, saved, and then an exception was thrown, but <code>@Transactional</code> rolled the increase back. The brute-force limit looked correct in the code and silently did not work. It was found by checking the database after five wrong guesses and seeing zero, and fixed with <code>noRollbackFor</code>.</p>
+
+<!-- ============================== 13 ============================== -->
+<h2>13. Known gaps</h2>
+<ul>
+  <li><strong>One server.</strong> If it fails, the site is down. Rate limits and caches live in memory, so they reset on restart and would not be shared by a second server. Scaling out needs a load balancer and a shared store such as Redis, and the reminder job assumes a single instance.</li>
+  <li><strong>SSH is open to the internet</strong> because the CI deploy job connects from GitHub's changing addresses. The proper fix is AWS Systems Manager with GitHub OIDC: no port 22 and no stored private key.</li>
+  <li><strong>The code attempt limit has no dedicated test.</strong> The fix in section 12 was checked by hand; an integration test that makes five wrong guesses and expects the sixth to fail would lock it in.</li>
+  <li><strong>No monitoring</strong> beyond container logs and health checks: no uptime alerts or error tracking yet.</li>
+  <li><strong>No staging environment.</strong> Changes go from pull request tests straight to production.</li>
+  <li><strong>iOS is untested.</strong> Flutter could build it, but only Android is built and released.</li>
+  <li><strong>The server sleeps between demos</strong> to stay free; a real launch needs it always on.</li>
+  <li><strong>AI can be wrong.</strong> The crop doctor shows confidence and refers uncertain or severe cases to an expert, but it supports the farmer and does not replace an agriculture officer.</li>
+</ul>
+
+<!-- ============================== 14 ============================== -->
+<h2>14. Running it</h2>
+<h3>Locally</h3>
+<pre>cp .env.example .env
+docker compose up -d --build
+cd frontend-web &amp;&amp; npm install &amp;&amp; npm run dev</pre>
+<table>
+  <tbody>
+    <tr><td>Website</td><td>http://localhost:5173</td></tr>
+    <tr><td>Backend</td><td>http://localhost:8080</td></tr>
+    <tr><td>Mail inbox (Mailpit)</td><td>http://localhost:8025</td></tr>
+    <tr><td>Postgres</td><td>localhost:5434</td></tr>
+  </tbody>
+</table>
+<p>No mail leaves the machine locally: Mailpit catches it and shows it in a web inbox. The Android app runs with <code>flutter run</code> against the same local backend.</p>
+
+<h3>Showing it to someone</h3>
+<ol>
+  <li>EC2 console → Instance state → Start.</li>
+  <li>Wait about 90 seconds; DNS, containers and certificate sort themselves out.</li>
+  <li>Open https://agromaster.duckdns.org, or install the APK from the Releases page.</li>
+  <li>Stop the instance afterwards.</li>
+</ol>
+
+<h3>If something is wrong</h3>
+<pre>sudo journalctl -u agromaster -n 50      # what the boot sequence did
+docker compose ps                        # all three should be healthy
+docker compose logs backend --tail 50
+docker compose logs ai-service --tail 50</pre>
+<table>
+  <thead><tr><th>Symptom</th><th>Likely cause</th></tr></thead>
+  <tbody>
+    <tr><td>Site unreachable, instance running</td><td>DNS not updated: run <code>deploy/update-dns.sh</code></td></tr>
+    <tr><td>Certificate warning</td><td>expired while off: renew and reload</td></tr>
+    <tr><td>Backend unhealthy</td><td>usually the Neon credentials</td></tr>
+    <tr><td>Crop doctor fails, advisor works</td><td>vision settings: <code>AI_VISION_MODEL</code> must be a model name, and the key must match <code>AI_VISION_BASE_URL</code></td></tr>
+    <tr><td>Google button missing</td><td><code>GOOGLE_CLIENT_ID</code> empty in <code>.env</code></td></tr>
+  </tbody>
+</table>
+
+<p style="margin-top:16pt;color:var(--muted)">End of document.</p>
+</body>
+</html>
