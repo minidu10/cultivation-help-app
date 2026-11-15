@@ -116,12 +116,23 @@ class _Day extends StatelessWidget {
         Text('${day.maxTempC.round()}°', style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
         Text('${day.minTempC.round()}°', style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 2),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.water_drop, size: 11, color: theme.colorScheme.primary),
-            Text(context.l10n.rainChance(day.rainChancePercent), style: theme.textTheme.labelSmall),
-          ],
+        // Five columns share the card width, so "100% rain" cannot fit beside
+        // its icon and ran into the next column. The drop icon already says
+        // "rain"; the full phrase stays as the screen-reader label.
+        Semantics(
+          label: context.l10n.rainChance(day.rainChancePercent),
+          excludeSemantics: true,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.water_drop, size: 11, color: theme.colorScheme.primary),
+                const SizedBox(width: 2),
+                Text('${day.rainChancePercent}%', style: theme.textTheme.labelSmall),
+              ],
+            ),
+          ),
         ),
       ],
     );

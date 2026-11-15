@@ -208,7 +208,7 @@ class _CropChart extends StatelessWidget {
       children: [
         SizedBox(
           height: 190,
-          child: BarChart(
+          child: LayoutBuilder(builder: (context, constraints) => BarChart(
             BarChartData(
               maxY: maxY == 0 ? 1 : maxY * 1.15,
               gridData: const FlGridData(show: false),
@@ -228,16 +228,25 @@ class _CropChart extends StatelessWidget {
                 bottomTitles: AxisTitles(
                   sideTitles: SideTitles(
                     showTitles: true,
-                    reservedSize: 28,
+                    reservedSize: 40,
                     getTitlesWidget: (value, meta) {
                       final i = value.toInt();
                       if (i < 0 || i >= shown.length) return const SizedBox.shrink();
+                      // fl_chart gives a title unbounded width, so ellipsis
+                      // never applied and neighbouring names ran together.
+                      // Confine each name to its own slot and let it wrap.
+                      final slot = constraints.maxWidth / shown.length - 4;
                       return Padding(
                         padding: const EdgeInsets.only(top: 6),
-                        child: Text(
-                          shown[i].cropName,
-                          style: theme.textTheme.labelSmall,
-                          overflow: TextOverflow.ellipsis,
+                        child: SizedBox(
+                          width: slot,
+                          child: Text(
+                            shown[i].cropName,
+                            style: theme.textTheme.labelSmall,
+                            textAlign: TextAlign.center,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       );
                     },
@@ -256,7 +265,7 @@ class _CropChart extends StatelessWidget {
                   ),
               ],
             ),
-          ),
+          )),
         ),
         const SizedBox(height: 8),
         Row(
